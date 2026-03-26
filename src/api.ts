@@ -26,14 +26,31 @@ export class ApiHelper {
       const response = await this.client.request({
         method,
         url: path,
-        [method.toLowerCase() === 'get' ? 'params' : 'data']: args,
+        [method.toLowerCase() === 'get' || method.toLowerCase() === 'delete'
+          ? 'params'
+          : 'data']: args,
       });
+
+      if (!response?.data) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                error: 'API Error',
+                message: 'No data received from the API',
+              }),
+            },
+          ],
+          isError: true,
+        };
+      }
 
       return {
         content: [
           {
             type: 'text',
-            text: JSON.stringify(response.data, null, 2),
+            text: JSON.stringify(response.data),
           },
         ],
       };
@@ -70,7 +87,7 @@ export class ApiHelper {
       content: [
         {
           type: 'text',
-          text: JSON.stringify(errorResponse, null, 2),
+          text: JSON.stringify(errorResponse),
         },
       ],
       isError: true,

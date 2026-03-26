@@ -28,9 +28,7 @@
   "paths": {
     "/v1/user/me": {
       "get": {
-        "tags": [
-          "Account"
-        ],
+        "tags": ["Account"],
         "security": [
           {
             "oauth2": []
@@ -74,10 +72,7 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "name",
-                          "id"
-                        ],
+                        "required": ["name", "id"],
                         "additionalProperties": false
                       }
                     }
@@ -100,9 +95,7 @@
     },
     "/v1/project": {
       "get": {
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "description": "Get a list of projects",
         "parameters": [
           {
@@ -142,10 +135,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "scheduled",
-                "archived"
-              ]
+              "enum": ["scheduled", "archived"]
             },
             "in": "query",
             "name": "filter",
@@ -290,12 +280,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "total",
-                    "limit",
-                    "page",
-                    "items"
-                  ],
+                  "required": ["total", "limit", "page", "items"],
                   "additionalProperties": false
                 }
               }
@@ -306,9 +291,7 @@
     },
     "/v1/project/{projectId}": {
       "get": {
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "description": "Get the details of a project",
         "parameters": [
           {
@@ -445,9 +428,7 @@
     },
     "/v1/project/{projectId}/vacq": {
       "get": {
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "description": "Get the VACQ score for a project",
         "security": [
           {
@@ -502,9 +483,7 @@
     },
     "/v1/project/category": {
       "get": {
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "description": "Get the list of categories",
         "security": [
           {
@@ -538,17 +517,12 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "id",
-                          "name"
-                        ],
+                        "required": ["id", "name"],
                         "additionalProperties": false
                       }
                     }
                   },
-                  "required": [
-                    "items"
-                  ],
+                  "required": ["items"],
                   "additionalProperties": false
                 }
               }
@@ -559,9 +533,7 @@
     },
     "/v1/project/workflow-status": {
       "get": {
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "description": "Get the list of workflow statuses",
         "security": [
           {
@@ -609,18 +581,12 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "id",
-                          "key",
-                          "name"
-                        ],
+                        "required": ["id", "key", "name"],
                         "additionalProperties": false
                       }
                     }
                   },
-                  "required": [
-                    "items"
-                  ],
+                  "required": ["items"],
                   "additionalProperties": false
                 }
               }
@@ -631,9 +597,7 @@
     },
     "/v1/project/{projectId}/item": {
       "get": {
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "description": "Get the sitemap items of a project",
         "parameters": [
           {
@@ -726,10 +690,7 @@
                           },
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "link",
-                              "container"
-                            ]
+                            "enum": ["link", "container"]
                           },
                           "category": {
                             "default": null,
@@ -818,9 +779,7 @@
     },
     "/v1/project/{projectId}/item/{itemId}": {
       "get": {
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "description": "Get the details of a sitemap item of a project",
         "security": [
           {
@@ -867,10 +826,7 @@
                     },
                     "type": {
                       "type": "string",
-                      "enum": [
-                        "link",
-                        "container"
-                      ]
+                      "enum": ["link", "container"]
                     },
                     "category": {
                       "default": null,
@@ -921,20 +877,12 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "title",
-                        "sm",
-                        "lg"
-                      ],
+                      "required": ["title", "sm", "lg"],
                       "additionalProperties": false
                     },
                     "mode": {
                       "type": "string",
-                      "enum": [
-                        "",
-                        "Slug",
-                        "Static"
-                      ]
+                      "enum": ["", "Slug", "Static"]
                     },
                     "slug": {
                       "type": "string"
@@ -964,10 +912,7 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "href",
-                          "lang"
-                        ],
+                        "required": ["href", "lang"],
                         "additionalProperties": false
                       }
                     }
@@ -1002,9 +947,7 @@
     },
     "/v1/project/group": {
       "get": {
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "description": "Get list of project groups",
         "security": [
           {
@@ -1037,18 +980,12 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "id",
-                          "name",
-                          "color"
-                        ],
+                        "required": ["id", "name", "color"],
                         "additionalProperties": false
                       }
                     }
                   },
-                  "required": [
-                    "groups"
-                  ],
+                  "required": ["groups"],
                   "additionalProperties": false
                 }
               }
@@ -1059,9 +996,7 @@
     },
     "/v1/project/url": {
       "post": {
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "description": "Create a Project from URL",
         "requestBody": {
           "required": true,
@@ -1170,10 +1105,7 @@
                       },
                       "inputs": {
                         "description": "Website authentication inputs",
-                        "example": [
-                          "username@email.com",
-                          "password321"
-                        ],
+                        "example": ["username@email.com", "password321"],
                         "type": "array",
                         "items": {
                           "type": "string"
@@ -1213,21 +1145,13 @@
                         "matchType": {
                           "default": "any",
                           "type": "string",
-                          "enum": [
-                            "any",
-                            "beginning",
-                            "end",
-                            "whole",
-                            "regex"
-                          ]
+                          "enum": ["any", "beginning", "end", "whole", "regex"]
                         },
                         "pattern": {
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "pattern"
-                      ]
+                      "required": ["pattern"]
                     }
                   },
                   "includeLinks": {
@@ -1240,21 +1164,13 @@
                         "matchType": {
                           "default": "any",
                           "type": "string",
-                          "enum": [
-                            "any",
-                            "beginning",
-                            "end",
-                            "whole",
-                            "regex"
-                          ]
+                          "enum": ["any", "beginning", "end", "whole", "regex"]
                         },
                         "pattern": {
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "pattern"
-                      ]
+                      "required": ["pattern"]
                     }
                   },
                   "includeLinksByProject": {
@@ -1275,10 +1191,7 @@
                           "description": "Item IDs to include links from"
                         }
                       },
-                      "required": [
-                        "projectId",
-                        "itemIds"
-                      ]
+                      "required": ["projectId", "itemIds"]
                     }
                   },
                   "excludeLinks": {
@@ -1291,21 +1204,13 @@
                         "matchType": {
                           "default": "any",
                           "type": "string",
-                          "enum": [
-                            "any",
-                            "beginning",
-                            "end",
-                            "whole",
-                            "regex"
-                          ]
+                          "enum": ["any", "beginning", "end", "whole", "regex"]
                         },
                         "pattern": {
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "pattern"
-                      ]
+                      "required": ["pattern"]
                     }
                   },
                   "excludeLinksByProject": {
@@ -1326,10 +1231,7 @@
                           "description": "Item IDs to exclude links from"
                         }
                       },
-                      "required": [
-                        "projectId",
-                        "itemIds"
-                      ]
+                      "required": ["projectId", "itemIds"]
                     }
                   },
                   "includeContentByXpath": {
@@ -1360,10 +1262,7 @@
                     "title": "Speed",
                     "description": "Speed of the crawl. Default is as fast as possible",
                     "type": "string",
-                    "enum": [
-                      "slower",
-                      "slowest"
-                    ]
+                    "enum": ["slower", "slowest"]
                   },
                   "javascriptRenderDelay": {
                     "title": "Javascript render delay",
@@ -1376,9 +1275,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "url"
-                ]
+                "required": ["url"]
               }
             }
           }
@@ -1404,9 +1301,7 @@
                       "description": "Project ID"
                     }
                   },
-                  "required": [
-                    "id"
-                  ],
+                  "required": ["id"],
                   "additionalProperties": false
                 }
               }
@@ -1417,9 +1312,7 @@
     },
     "/v1/project/url/{id}": {
       "get": {
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "description": "Get Project job status created by URL",
         "parameters": [
           {
@@ -1455,12 +1348,7 @@
                     "status": {
                       "default": "PENDING",
                       "type": "string",
-                      "enum": [
-                        "PENDING",
-                        "RUNNING",
-                        "PERSIST",
-                        "FINISHED"
-                      ],
+                      "enum": ["PENDING", "RUNNING", "PERSIST", "FINISHED"],
                       "description": "Job Status"
                     },
                     "data": {
@@ -1488,11 +1376,7 @@
                           "type": "number"
                         }
                       },
-                      "required": [
-                        "pageCount",
-                        "downloadCount",
-                        "crawlTime"
-                      ],
+                      "required": ["pageCount", "downloadCount", "crawlTime"],
                       "additionalProperties": false
                     },
                     "created": {
@@ -1502,12 +1386,7 @@
                       "description": "Job Created Date"
                     }
                   },
-                  "required": [
-                    "id",
-                    "status",
-                    "data",
-                    "created"
-                  ],
+                  "required": ["id", "status", "data", "created"],
                   "additionalProperties": false
                 }
               }
@@ -1516,9 +1395,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "description": "Cancel Project job created by URL",
         "parameters": [
           {
@@ -1552,9 +1429,7 @@
                       "description": "Project ID that was cancelled"
                     }
                   },
-                  "required": [
-                    "id"
-                  ],
+                  "required": ["id"],
                   "additionalProperties": false
                 }
               }
@@ -1565,9 +1440,7 @@
     },
     "/v1/project/url/{id}/refresh": {
       "post": {
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "description": "Refresh Project created by URL",
         "requestBody": {
           "required": true,
@@ -1580,10 +1453,7 @@
                     "title": "Speed",
                     "description": "Speed of the crawl. Default is as fast as possible",
                     "type": "string",
-                    "enum": [
-                      "slower",
-                      "slowest"
-                    ]
+                    "enum": ["slower", "slowest"]
                   },
                   "overwriteMetadata": {
                     "title": "Overwrite metadata",
@@ -1610,10 +1480,7 @@
                     "properties": {
                       "inputs": {
                         "description": "Website authentication inputs",
-                        "example": [
-                          "username@email.com",
-                          "password321"
-                        ],
+                        "example": ["username@email.com", "password321"],
                         "type": "array",
                         "items": {
                           "type": "string"
@@ -1672,9 +1539,7 @@
                       "description": "Project ID"
                     }
                   },
-                  "required": [
-                    "id"
-                  ],
+                  "required": ["id"],
                   "additionalProperties": false
                 }
               }
@@ -1683,9 +1548,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "description": "Cancel Project refresh created by URL",
         "parameters": [
           {
@@ -1719,9 +1582,7 @@
                       "description": "Project ID refresh that was cancelled"
                     }
                   },
-                  "required": [
-                    "id"
-                  ],
+                  "required": ["id"],
                   "additionalProperties": false
                 }
               }
@@ -1732,9 +1593,7 @@
     },
     "/v1/project/text/{id}": {
       "get": {
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "description": "Get Project job status created from text file",
         "parameters": [
           {
@@ -1834,9 +1693,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "description": "Cancel Project job status from text file",
         "parameters": [
           {
@@ -1866,9 +1723,7 @@
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "id"
-                  ],
+                  "required": ["id"],
                   "additionalProperties": false
                 }
               }
@@ -1879,9 +1734,7 @@
     },
     "/v1/project/text/{id}/refresh": {
       "post": {
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "description": "Refresh Project from text file",
         "requestBody": {
           "required": true,
@@ -1894,10 +1747,7 @@
                     "title": "Speed",
                     "description": "Speed of the crawl. Default is as fast as possible",
                     "type": "string",
-                    "enum": [
-                      "slower",
-                      "slowest"
-                    ]
+                    "enum": ["slower", "slowest"]
                   },
                   "addNewPages": {
                     "description": "Whether to add new pages",
@@ -1941,9 +1791,7 @@
                       "description": "Project ID"
                     }
                   },
-                  "required": [
-                    "id"
-                  ],
+                  "required": ["id"],
                   "additionalProperties": false
                 }
               }
@@ -1952,9 +1800,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "description": "Cancel Refresh Project from text file",
         "parameters": [
           {
@@ -1984,9 +1830,7 @@
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "id"
-                  ],
+                  "required": ["id"],
                   "additionalProperties": false
                 }
               }
@@ -1997,9 +1841,7 @@
     },
     "/v1/project/xml/{id}": {
       "get": {
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "description": "Get Project job status created from xml file",
         "parameters": [
           {
@@ -2099,9 +1941,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "description": "Cancel Project job created from xml file",
         "parameters": [
           {
@@ -2131,9 +1971,7 @@
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "id"
-                  ],
+                  "required": ["id"],
                   "additionalProperties": false
                 }
               }
@@ -2144,9 +1982,7 @@
     },
     "/v1/project/xml/{id}/refresh": {
       "post": {
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "description": "Refresh Project from xml file",
         "requestBody": {
           "required": true,
@@ -2159,10 +1995,7 @@
                     "title": "Speed",
                     "description": "Speed of the crawl. Default is as fast as possible",
                     "type": "string",
-                    "enum": [
-                      "slower",
-                      "slowest"
-                    ]
+                    "enum": ["slower", "slowest"]
                   },
                   "addNewPages": {
                     "description": "Whether to add new pages",
@@ -2206,9 +2039,7 @@
                       "description": "Project ID"
                     }
                   },
-                  "required": [
-                    "id"
-                  ],
+                  "required": ["id"],
                   "additionalProperties": false
                 }
               }
@@ -2217,9 +2048,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "description": "Cancel Refresh Project from xml file",
         "parameters": [
           {
@@ -2249,9 +2078,7 @@
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "id"
-                  ],
+                  "required": ["id"],
                   "additionalProperties": false
                 }
               }
@@ -2262,9 +2089,7 @@
     },
     "/v1/project/custom-login": {
       "get": {
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "description": "Get custom login list",
         "security": [
           {
@@ -2310,10 +2135,7 @@
                                   "type": "boolean"
                                 }
                               },
-                              "required": [
-                                "label",
-                                "obscure"
-                              ],
+                              "required": ["label", "obscure"],
                               "additionalProperties": false
                             }
                           },
@@ -2342,9 +2164,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "items"
-                  ],
+                  "required": ["items"],
                   "additionalProperties": false
                 }
               }
@@ -2355,9 +2175,7 @@
     },
     "/v1/project/custom-login/test": {
       "post": {
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "description": "Test custom login",
         "requestBody": {
           "required": true,
@@ -2391,10 +2209,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "id",
-                  "inputs"
-                ]
+                "required": ["id", "inputs"]
               }
             }
           }
@@ -2420,9 +2235,7 @@
                       "description": "Test id that can be used to retrieve the result"
                     }
                   },
-                  "required": [
-                    "id"
-                  ],
+                  "required": ["id"],
                   "additionalProperties": false
                 }
               }
@@ -2431,9 +2244,7 @@
         }
       },
       "get": {
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "description": "Get custom login test result",
         "parameters": [
           {
@@ -2479,11 +2290,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "id",
-                    "success",
-                    "reason"
-                  ],
+                  "required": ["id", "success", "reason"],
                   "additionalProperties": false
                 }
               }
@@ -2494,9 +2301,7 @@
     },
     "/v1/project/text": {
       "post": {
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "description": "Create a Project from text file",
         "requestBody": {
           "required": true,
@@ -2513,10 +2318,7 @@
                         "title": "Speed",
                         "description": "Speed of the crawl. Default is as fast as possible",
                         "type": "string",
-                        "enum": [
-                          "slower",
-                          "slowest"
-                        ]
+                        "enum": ["slower", "slowest"]
                       },
                       "url": {
                         "type": "string",
@@ -2563,9 +2365,7 @@
                       "description": "Project ID"
                     }
                   },
-                  "required": [
-                    "id"
-                  ],
+                  "required": ["id"],
                   "additionalProperties": false
                 }
               }
@@ -2576,9 +2376,7 @@
     },
     "/v1/project/xml": {
       "post": {
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "description": "Create a Project from xml file",
         "requestBody": {
           "required": true,
@@ -2595,10 +2393,7 @@
                         "title": "Speed",
                         "description": "Speed of the crawl. Default is as fast as possible",
                         "type": "string",
-                        "enum": [
-                          "slower",
-                          "slowest"
-                        ]
+                        "enum": ["slower", "slowest"]
                       },
                       "url": {
                         "type": "string",
@@ -2645,9 +2440,7 @@
                       "description": "Project ID"
                     }
                   },
-                  "required": [
-                    "id"
-                  ],
+                  "required": ["id"],
                   "additionalProperties": false
                 }
               }
@@ -2658,9 +2451,7 @@
     },
     "/v1/inventory/{projectId}": {
       "get": {
-        "tags": [
-          "Inventory"
-        ],
+        "tags": ["Inventory"],
         "description": "Get inventory of a project",
         "parameters": [
           {
@@ -2682,12 +2473,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "occurrence",
-                "status",
-                "id",
-                "last_modified"
-              ]
+              "enum": ["occurrence", "status", "id", "last_modified"]
             },
             "in": "query",
             "name": "orderBy",
@@ -2704,12 +2490,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "ok",
-                "bad",
-                "redirect",
-                "unexpected"
-              ]
+              "enum": ["ok", "bad", "redirect", "unexpected"]
             },
             "in": "query",
             "name": "status",
@@ -2718,14 +2499,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "page",
-                "image",
-                "file",
-                "document",
-                "audio",
-                "video"
-              ]
+              "enum": ["page", "image", "file", "document", "audio", "video"]
             },
             "in": "query",
             "name": "type",
@@ -2734,10 +2508,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "internal",
-                "external"
-              ]
+              "enum": ["internal", "external"]
             },
             "in": "query",
             "name": "location",
@@ -2891,13 +2662,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "total",
-                    "limit",
-                    "page",
-                    "pageSize",
-                    "items"
-                  ],
+                  "required": ["total", "limit", "page", "pageSize", "items"],
                   "additionalProperties": false
                 }
               }
@@ -2908,9 +2673,7 @@
     },
     "/v1/inventory/{projectId}/summary": {
       "get": {
-        "tags": [
-          "Inventory"
-        ],
+        "tags": ["Inventory"],
         "description": "Get inventory summary of a project",
         "security": [
           {
@@ -2978,9 +2741,7 @@
     },
     "/v1/inventory/{projectId}/{itemId}": {
       "get": {
-        "tags": [
-          "Inventory"
-        ],
+        "tags": ["Inventory"],
         "description": "Get links of a project sitemap item",
         "parameters": [
           {
@@ -3002,12 +2763,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "occurrence",
-                "status",
-                "id",
-                "last_modified"
-              ]
+              "enum": ["occurrence", "status", "id", "last_modified"]
             },
             "in": "query",
             "name": "orderBy",
@@ -3024,12 +2780,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "ok",
-                "bad",
-                "redirect",
-                "unexpected"
-              ]
+              "enum": ["ok", "bad", "redirect", "unexpected"]
             },
             "in": "query",
             "name": "status",
@@ -3038,14 +2789,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "page",
-                "image",
-                "file",
-                "document",
-                "audio",
-                "video"
-              ]
+              "enum": ["page", "image", "file", "document", "audio", "video"]
             },
             "in": "query",
             "name": "type",
@@ -3054,10 +2798,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "internal",
-                "external"
-              ]
+              "enum": ["internal", "external"]
             },
             "in": "query",
             "name": "location",
@@ -3194,13 +2935,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "total",
-                    "limit",
-                    "page",
-                    "pageSize",
-                    "items"
-                  ],
+                  "required": ["total", "limit", "page", "pageSize", "items"],
                   "additionalProperties": false
                 }
               }
@@ -3211,9 +2946,7 @@
     },
     "/v1/inventory/{projectId}/{linkId}/occurrences": {
       "get": {
-        "tags": [
-          "Inventory"
-        ],
+        "tags": ["Inventory"],
         "description": "Get occurrences of a link in inventory",
         "parameters": [
           {
@@ -3325,13 +3058,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "total",
-                    "limit",
-                    "page",
-                    "pageSize",
-                    "items"
-                  ],
+                  "required": ["total", "limit", "page", "pageSize", "items"],
                   "additionalProperties": false
                 }
               }
@@ -3342,9 +3069,7 @@
     },
     "/v1/audit/{projectId}": {
       "get": {
-        "tags": [
-          "Audit"
-        ],
+        "tags": ["Audit"],
         "description": "Get audit results of a project",
         "parameters": [
           {
@@ -3466,13 +3191,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "total",
-                    "limit",
-                    "page",
-                    "pageSize",
-                    "items"
-                  ],
+                  "required": ["total", "limit", "page", "pageSize", "items"],
                   "additionalProperties": false
                 }
               }
@@ -3483,9 +3202,7 @@
     },
     "/v1/audit/{projectId}/score": {
       "get": {
-        "tags": [
-          "Audit"
-        ],
+        "tags": ["Audit"],
         "description": "Get audit score of a project",
         "security": [
           {
@@ -3523,11 +3240,7 @@
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "score",
-                    "crawlability",
-                    "indexability"
-                  ],
+                  "required": ["score", "crawlability", "indexability"],
                   "additionalProperties": false
                 }
               }
@@ -3538,9 +3251,7 @@
     },
     "/v1/audit/{projectId}/broken-links": {
       "get": {
-        "tags": [
-          "Audit"
-        ],
+        "tags": ["Audit"],
         "description": "Get broken links audit of a project",
         "parameters": [
           {
@@ -3554,10 +3265,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "0",
-                "1"
-              ]
+              "enum": ["0", "1"]
             },
             "in": "query",
             "name": "archived",
@@ -3634,23 +3342,12 @@
                             "type": "number"
                           }
                         },
-                        "required": [
-                          "id",
-                          "url",
-                          "status",
-                          "occurrences"
-                        ],
+                        "required": ["id", "url", "status", "occurrences"],
                         "additionalProperties": false
                       }
                     }
                   },
-                  "required": [
-                    "total",
-                    "limit",
-                    "page",
-                    "pageSize",
-                    "items"
-                  ],
+                  "required": ["total", "limit", "page", "pageSize", "items"],
                   "additionalProperties": false
                 }
               }
@@ -3661,9 +3358,7 @@
     },
     "/v1/audit/{projectId}/client-error": {
       "get": {
-        "tags": [
-          "Audit"
-        ],
+        "tags": ["Audit"],
         "description": "Get client errors audit of a project",
         "parameters": [
           {
@@ -3677,10 +3372,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "0",
-                "1"
-              ]
+              "enum": ["0", "1"]
             },
             "in": "query",
             "name": "archived",
@@ -3757,23 +3449,12 @@
                             "type": "number"
                           }
                         },
-                        "required": [
-                          "id",
-                          "url",
-                          "status",
-                          "occurrences"
-                        ],
+                        "required": ["id", "url", "status", "occurrences"],
                         "additionalProperties": false
                       }
                     }
                   },
-                  "required": [
-                    "total",
-                    "limit",
-                    "page",
-                    "pageSize",
-                    "items"
-                  ],
+                  "required": ["total", "limit", "page", "pageSize", "items"],
                   "additionalProperties": false
                 }
               }
@@ -3784,9 +3465,7 @@
     },
     "/v1/audit/{projectId}/duplicate-title": {
       "get": {
-        "tags": [
-          "Audit"
-        ],
+        "tags": ["Audit"],
         "description": "Get duplicate title audit of a project",
         "parameters": [
           {
@@ -3800,10 +3479,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "0",
-                "1"
-              ]
+              "enum": ["0", "1"]
             },
             "in": "query",
             "name": "archived",
@@ -3883,23 +3559,12 @@
                             }
                           }
                         },
-                        "required": [
-                          "id",
-                          "title",
-                          "links",
-                          "urls"
-                        ],
+                        "required": ["id", "title", "links", "urls"],
                         "additionalProperties": false
                       }
                     }
                   },
-                  "required": [
-                    "total",
-                    "limit",
-                    "page",
-                    "pageSize",
-                    "items"
-                  ],
+                  "required": ["total", "limit", "page", "pageSize", "items"],
                   "additionalProperties": false
                 }
               }
@@ -3910,9 +3575,7 @@
     },
     "/v1/audit/{projectId}/missing-title": {
       "get": {
-        "tags": [
-          "Audit"
-        ],
+        "tags": ["Audit"],
         "description": "Get missing title audit of a project",
         "parameters": [
           {
@@ -3926,10 +3589,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "0",
-                "1"
-              ]
+              "enum": ["0", "1"]
             },
             "in": "query",
             "name": "archived",
@@ -4000,21 +3660,12 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "id",
-                          "url"
-                        ],
+                        "required": ["id", "url"],
                         "additionalProperties": false
                       }
                     }
                   },
-                  "required": [
-                    "total",
-                    "limit",
-                    "page",
-                    "pageSize",
-                    "items"
-                  ],
+                  "required": ["total", "limit", "page", "pageSize", "items"],
                   "additionalProperties": false
                 }
               }
@@ -4025,9 +3676,7 @@
     },
     "/v1/audit/{projectId}/long-title": {
       "get": {
-        "tags": [
-          "Audit"
-        ],
+        "tags": ["Audit"],
         "description": "Get long title audit of a project",
         "parameters": [
           {
@@ -4041,10 +3690,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "0",
-                "1"
-              ]
+              "enum": ["0", "1"]
             },
             "in": "query",
             "name": "archived",
@@ -4121,23 +3767,12 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "id",
-                          "title",
-                          "length",
-                          "url"
-                        ],
+                        "required": ["id", "title", "length", "url"],
                         "additionalProperties": false
                       }
                     }
                   },
-                  "required": [
-                    "total",
-                    "limit",
-                    "page",
-                    "pageSize",
-                    "items"
-                  ],
+                  "required": ["total", "limit", "page", "pageSize", "items"],
                   "additionalProperties": false
                 }
               }
@@ -4148,9 +3783,7 @@
     },
     "/v1/audit/{projectId}/duplicate-description": {
       "get": {
-        "tags": [
-          "Audit"
-        ],
+        "tags": ["Audit"],
         "description": "Get duplicate description audit of a project",
         "parameters": [
           {
@@ -4164,10 +3797,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "0",
-                "1"
-              ]
+              "enum": ["0", "1"]
             },
             "in": "query",
             "name": "archived",
@@ -4247,23 +3877,12 @@
                             }
                           }
                         },
-                        "required": [
-                          "id",
-                          "description",
-                          "links",
-                          "urls"
-                        ],
+                        "required": ["id", "description", "links", "urls"],
                         "additionalProperties": false
                       }
                     }
                   },
-                  "required": [
-                    "total",
-                    "limit",
-                    "page",
-                    "pageSize",
-                    "items"
-                  ],
+                  "required": ["total", "limit", "page", "pageSize", "items"],
                   "additionalProperties": false
                 }
               }
@@ -4274,9 +3893,7 @@
     },
     "/v1/audit/{projectId}/missing-description": {
       "get": {
-        "tags": [
-          "Audit"
-        ],
+        "tags": ["Audit"],
         "description": "Get missing description audit of a project",
         "parameters": [
           {
@@ -4290,10 +3907,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "0",
-                "1"
-              ]
+              "enum": ["0", "1"]
             },
             "in": "query",
             "name": "archived",
@@ -4364,21 +3978,12 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "id",
-                          "url"
-                        ],
+                        "required": ["id", "url"],
                         "additionalProperties": false
                       }
                     }
                   },
-                  "required": [
-                    "total",
-                    "limit",
-                    "page",
-                    "pageSize",
-                    "items"
-                  ],
+                  "required": ["total", "limit", "page", "pageSize", "items"],
                   "additionalProperties": false
                 }
               }
@@ -4389,9 +3994,7 @@
     },
     "/v1/audit/{projectId}/long-description": {
       "get": {
-        "tags": [
-          "Audit"
-        ],
+        "tags": ["Audit"],
         "description": "Get long description audit of a project",
         "parameters": [
           {
@@ -4405,10 +4008,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "0",
-                "1"
-              ]
+              "enum": ["0", "1"]
             },
             "in": "query",
             "name": "archived",
@@ -4485,23 +4085,12 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "id",
-                          "description",
-                          "length",
-                          "url"
-                        ],
+                        "required": ["id", "description", "length", "url"],
                         "additionalProperties": false
                       }
                     }
                   },
-                  "required": [
-                    "total",
-                    "limit",
-                    "page",
-                    "pageSize",
-                    "items"
-                  ],
+                  "required": ["total", "limit", "page", "pageSize", "items"],
                   "additionalProperties": false
                 }
               }
@@ -4512,9 +4101,7 @@
     },
     "/v1/audit/{projectId}/non-crawlable": {
       "get": {
-        "tags": [
-          "Audit"
-        ],
+        "tags": ["Audit"],
         "description": "Get non-crawlable pages audit of a project",
         "parameters": [
           {
@@ -4528,10 +4115,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "0",
-                "1"
-              ]
+              "enum": ["0", "1"]
             },
             "in": "query",
             "name": "archived",
@@ -4622,13 +4206,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "total",
-                    "limit",
-                    "page",
-                    "pageSize",
-                    "items"
-                  ],
+                  "required": ["total", "limit", "page", "pageSize", "items"],
                   "additionalProperties": false
                 }
               }
@@ -4639,9 +4217,7 @@
     },
     "/v1/audit/{projectId}/non-indexable": {
       "get": {
-        "tags": [
-          "Audit"
-        ],
+        "tags": ["Audit"],
         "description": "Get non-indexable pages audit of a project",
         "parameters": [
           {
@@ -4655,10 +4231,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "0",
-                "1"
-              ]
+              "enum": ["0", "1"]
             },
             "in": "query",
             "name": "archived",
@@ -4759,13 +4332,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "total",
-                    "limit",
-                    "page",
-                    "pageSize",
-                    "items"
-                  ],
+                  "required": ["total", "limit", "page", "pageSize", "items"],
                   "additionalProperties": false
                 }
               }
@@ -4776,9 +4343,7 @@
     },
     "/v1/audit/{projectId}/orphan-pages": {
       "get": {
-        "tags": [
-          "Audit"
-        ],
+        "tags": ["Audit"],
         "description": "Get orphan pages audit of a project",
         "parameters": [
           {
@@ -4792,10 +4357,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "0",
-                "1"
-              ]
+              "enum": ["0", "1"]
             },
             "in": "query",
             "name": "archived",
@@ -4866,21 +4428,12 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "id",
-                          "url"
-                        ],
+                        "required": ["id", "url"],
                         "additionalProperties": false
                       }
                     }
                   },
-                  "required": [
-                    "total",
-                    "limit",
-                    "page",
-                    "pageSize",
-                    "items"
-                  ],
+                  "required": ["total", "limit", "page", "pageSize", "items"],
                   "additionalProperties": false
                 }
               }
@@ -4891,9 +4444,7 @@
     },
     "/v1/analytics/{projectId}": {
       "get": {
-        "tags": [
-          "Analytics"
-        ],
+        "tags": ["Analytics"],
         "description": "Get analytics of a project",
         "parameters": [
           {
@@ -4998,9 +4549,7 @@
     },
     "/v1/analytics/{projectId}/daily": {
       "get": {
-        "tags": [
-          "Analytics"
-        ],
+        "tags": ["Analytics"],
         "description": "Get analytics daily data",
         "parameters": [
           {
@@ -5110,9 +4659,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -5123,9 +4670,7 @@
     },
     "/v1/analytics/{projectId}/traffic-source": {
       "get": {
-        "tags": [
-          "Analytics"
-        ],
+        "tags": ["Analytics"],
         "description": "Get traffic sources",
         "parameters": [
           {
@@ -5229,9 +4774,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -5242,9 +4785,7 @@
     },
     "/v1/analytics/{projectId}/events": {
       "get": {
-        "tags": [
-          "Analytics"
-        ],
+        "tags": ["Analytics"],
         "description": "Get events",
         "parameters": [
           {
@@ -5328,9 +4869,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -5341,9 +4880,7 @@
     },
     "/v1/analytics/{projectId}/pages": {
       "get": {
-        "tags": [
-          "Analytics"
-        ],
+        "tags": ["Analytics"],
         "description": "Get events",
         "parameters": [
           {
@@ -5398,10 +4935,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ]
+              "enum": ["asc", "desc"]
             },
             "in": "query",
             "name": "orderDir",
@@ -5524,13 +5058,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "total",
-                    "limit",
-                    "page",
-                    "pageSize",
-                    "items"
-                  ],
+                  "required": ["total", "limit", "page", "pageSize", "items"],
                   "additionalProperties": false
                 }
               }
@@ -5541,9 +5069,7 @@
     },
     "/v1/analytics/{projectId}/{linkId}": {
       "get": {
-        "tags": [
-          "Analytics"
-        ],
+        "tags": ["Analytics"],
         "description": "Get analytics of a sitemap item",
         "parameters": [
           {
@@ -5656,9 +5182,7 @@
     },
     "/v1/analytics/{projectId}/{linkId}/daily": {
       "get": {
-        "tags": [
-          "Analytics"
-        ],
+        "tags": ["Analytics"],
         "description": "Get analytics daily data of a sitemap item",
         "parameters": [
           {
@@ -5776,9 +5300,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -5789,9 +5311,7 @@
     },
     "/v1/visibility/{projectId}": {
       "get": {
-        "tags": [
-          "Visibility"
-        ],
+        "tags": ["Visibility"],
         "description": "Get keywords ranking of a project",
         "parameters": [
           {
@@ -5838,10 +5358,7 @@
             "schema": {
               "default": "asc",
               "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ]
+              "enum": ["asc", "desc"]
             },
             "in": "query",
             "name": "orderDir",
@@ -5866,11 +5383,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "desktop",
-                "tablet",
-                "mobile"
-              ]
+              "enum": ["desktop", "tablet", "mobile"]
             },
             "in": "query",
             "name": "device",
@@ -6095,13 +5608,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "total",
-                    "limit",
-                    "page",
-                    "pageSize",
-                    "items"
-                  ],
+                  "required": ["total", "limit", "page", "pageSize", "items"],
                   "additionalProperties": false
                 }
               }
@@ -6112,9 +5619,7 @@
     },
     "/v1/visibility/{projectId}/score": {
       "get": {
-        "tags": [
-          "Visibility"
-        ],
+        "tags": ["Visibility"],
         "description": "Get keywords score of a project",
         "parameters": [
           {
@@ -6548,9 +6053,7 @@
     },
     "/v1/visibility/{projectId}/group": {
       "get": {
-        "tags": [
-          "Visibility"
-        ],
+        "tags": ["Visibility"],
         "description": "Get keyword groups",
         "security": [
           {
@@ -6590,17 +6093,12 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "id",
-                          "name"
-                        ],
+                        "required": ["id", "name"],
                         "additionalProperties": false
                       }
                     }
                   },
-                  "required": [
-                    "groups"
-                  ],
+                  "required": ["groups"],
                   "additionalProperties": false
                 }
               }
@@ -6611,9 +6109,7 @@
     },
     "/v1/visibility/{projectId}/{keywordId}": {
       "get": {
-        "tags": [
-          "Visibility"
-        ],
+        "tags": ["Visibility"],
         "description": "Get daily ranking of a keyword in a project",
         "parameters": [
           {
@@ -6640,11 +6136,7 @@
             "schema": {
               "default": "google",
               "type": "string",
-              "enum": [
-                "google",
-                "bing",
-                "yahoo"
-              ]
+              "enum": ["google", "bing", "yahoo"]
             },
             "in": "query",
             "name": "service",
@@ -6712,22 +6204,12 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "date",
-                          "position",
-                          "link"
-                        ],
+                        "required": ["date", "position", "link"],
                         "additionalProperties": false
                       }
                     }
                   },
-                  "required": [
-                    "id",
-                    "keyword",
-                    "locale",
-                    "device",
-                    "data"
-                  ],
+                  "required": ["id", "keyword", "locale", "device", "data"],
                   "additionalProperties": false
                 }
               }
@@ -6738,9 +6220,7 @@
     },
     "/v1/accessibility/{projectId}": {
       "post": {
-        "tags": [
-          "Accessibility"
-        ],
+        "tags": ["Accessibility"],
         "description": "Run accessibility checker on a project",
         "requestBody": {
           "required": true,
@@ -6750,9 +6230,7 @@
                 "type": "object",
                 "properties": {
                   "guidelines": {
-                    "default": [
-                      "WCAG22-AAA"
-                    ],
+                    "default": ["WCAG22-AAA"],
                     "description": "Accessibility guidelines to follow",
                     "type": "array",
                     "items": {
@@ -6798,10 +6276,7 @@
                     "properties": {
                       "inputs": {
                         "description": "Website authentication inputs",
-                        "example": [
-                          "username@email.com",
-                          "password321"
-                        ],
+                        "example": ["username@email.com", "password321"],
                         "type": "array",
                         "items": {
                           "type": "string"
@@ -6860,9 +6335,7 @@
                       "description": "Accessibility test report ID"
                     }
                   },
-                  "required": [
-                    "id"
-                  ],
+                  "required": ["id"],
                   "additionalProperties": false
                 }
               }
@@ -6871,9 +6344,7 @@
         }
       },
       "get": {
-        "tags": [
-          "Accessibility"
-        ],
+        "tags": ["Accessibility"],
         "description": "Get accessibility results of a project",
         "parameters": [
           {
@@ -7026,13 +6497,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "total",
-                    "limit",
-                    "page",
-                    "pageSize",
-                    "items"
-                  ],
+                  "required": ["total", "limit", "page", "pageSize", "items"],
                   "additionalProperties": false
                 }
               }
@@ -7043,9 +6508,7 @@
     },
     "/v1/accessibility/{projectId}/{reportId}": {
       "delete": {
-        "tags": [
-          "Accessibility"
-        ],
+        "tags": ["Accessibility"],
         "description": "Delete accessibility results of a project",
         "security": [
           {
@@ -7086,9 +6549,7 @@
                       "description": "Project ID"
                     }
                   },
-                  "required": [
-                    "id"
-                  ],
+                  "required": ["id"],
                   "additionalProperties": false
                 }
               }
@@ -7097,9 +6558,7 @@
         }
       },
       "get": {
-        "tags": [
-          "Accessibility"
-        ],
+        "tags": ["Accessibility"],
         "description": "Get accessibility report items",
         "parameters": [
           {
@@ -7136,10 +6595,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ]
+              "enum": ["asc", "desc"]
             },
             "in": "query",
             "name": "orderDir",
@@ -7302,13 +6758,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "total",
-                    "limit",
-                    "page",
-                    "pageSize",
-                    "items"
-                  ],
+                  "required": ["total", "limit", "page", "pageSize", "items"],
                   "additionalProperties": false
                 }
               }
@@ -7319,9 +6769,7 @@
     },
     "/v1/accessibility/{projectId}/history": {
       "get": {
-        "tags": [
-          "Accessibility"
-        ],
+        "tags": ["Accessibility"],
         "description": "Get results history of a project on a specified date range",
         "parameters": [
           {
@@ -7407,9 +6855,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -7420,9 +6866,7 @@
     },
     "/v1/accessibility/{projectId}/score": {
       "get": {
-        "tags": [
-          "Accessibility"
-        ],
+        "tags": ["Accessibility"],
         "description": "Get accessibility score of a project",
         "security": [
           {
@@ -7491,9 +6935,7 @@
     },
     "/v1/accessibility/{projectId}/{reportId}/problems": {
       "get": {
-        "tags": [
-          "Accessibility"
-        ],
+        "tags": ["Accessibility"],
         "description": "Get accessibility report problems",
         "security": [
           {
@@ -7561,9 +7003,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "problems"
-                  ],
+                  "required": ["problems"],
                   "additionalProperties": false
                 }
               }
@@ -7574,9 +7014,7 @@
     },
     "/v1/accessibility/{projectId}/{reportId}/groups": {
       "get": {
-        "tags": [
-          "Accessibility"
-        ],
+        "tags": ["Accessibility"],
         "description": "Get accessibility report groups and subgroups",
         "security": [
           {
@@ -7647,12 +7085,7 @@
                                   "type": "number"
                                 }
                               },
-                              "required": [
-                                "id",
-                                "name",
-                                "pages",
-                                "problems"
-                              ],
+                              "required": ["id", "name", "pages", "problems"],
                               "additionalProperties": false
                             }
                           }
@@ -7668,9 +7101,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "groups"
-                  ],
+                  "required": ["groups"],
                   "additionalProperties": false
                 }
               }
@@ -7681,9 +7112,7 @@
     },
     "/v1/accessibility/{projectId}/{reportId}/{itemId}": {
       "get": {
-        "tags": [
-          "Accessibility"
-        ],
+        "tags": ["Accessibility"],
         "description": "Get accessibility report item result",
         "security": [
           {
@@ -7794,18 +7223,12 @@
                                   }
                                 }
                               },
-                              "required": [
-                                "name",
-                                "problems"
-                              ],
+                              "required": ["name", "problems"],
                               "additionalProperties": false
                             }
                           }
                         },
-                        "required": [
-                          "name",
-                          "subgroups"
-                        ],
+                        "required": ["name", "subgroups"],
                         "additionalProperties": false
                       }
                     },
@@ -7876,18 +7299,12 @@
                                   }
                                 }
                               },
-                              "required": [
-                                "name",
-                                "problems"
-                              ],
+                              "required": ["name", "problems"],
                               "additionalProperties": false
                             }
                           }
                         },
-                        "required": [
-                          "name",
-                          "subgroups"
-                        ],
+                        "required": ["name", "subgroups"],
                         "additionalProperties": false
                       }
                     },
@@ -7958,18 +7375,12 @@
                                   }
                                 }
                               },
-                              "required": [
-                                "name",
-                                "problems"
-                              ],
+                              "required": ["name", "problems"],
                               "additionalProperties": false
                             }
                           }
                         },
-                        "required": [
-                          "name",
-                          "subgroups"
-                        ],
+                        "required": ["name", "subgroups"],
                         "additionalProperties": false
                       }
                     },
@@ -8040,18 +7451,12 @@
                                   }
                                 }
                               },
-                              "required": [
-                                "name",
-                                "problems"
-                              ],
+                              "required": ["name", "problems"],
                               "additionalProperties": false
                             }
                           }
                         },
-                        "required": [
-                          "name",
-                          "subgroups"
-                        ],
+                        "required": ["name", "subgroups"],
                         "additionalProperties": false
                       }
                     }
@@ -8072,9 +7477,7 @@
     },
     "/v1/accessibility/{projectId}/pdf": {
       "get": {
-        "tags": [
-          "Accessibility"
-        ],
+        "tags": ["Accessibility"],
         "description": "List PDF accessibility files",
         "parameters": [
           {
@@ -8088,10 +7491,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "internal",
-                "external"
-              ]
+              "enum": ["internal", "external"]
             },
             "in": "query",
             "name": "location",
@@ -8114,10 +7514,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ]
+              "enum": ["asc", "desc"]
             },
             "in": "query",
             "name": "orderDir",
@@ -8271,13 +7668,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "total",
-                    "limit",
-                    "page",
-                    "pageSize",
-                    "items"
-                  ],
+                  "required": ["total", "limit", "page", "pageSize", "items"],
                   "additionalProperties": false
                 }
               }
@@ -8288,9 +7679,7 @@
     },
     "/v1/accessibility/pdf-guidelines": {
       "get": {
-        "tags": [
-          "Accessibility"
-        ],
+        "tags": ["Accessibility"],
         "description": "List PDF accessibility guidelines",
         "security": [
           {
@@ -8328,19 +7717,12 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "criteria",
-                          "title",
-                          "description",
-                          "url"
-                        ],
+                        "required": ["criteria", "title", "description", "url"],
                         "additionalProperties": false
                       }
                     }
                   },
-                  "required": [
-                    "WCAG20"
-                  ],
+                  "required": ["WCAG20"],
                   "additionalProperties": false
                 }
               }
@@ -8351,9 +7733,7 @@
     },
     "/v1/accessibility/{projectId}/pdf/{itemId}": {
       "get": {
-        "tags": [
-          "Accessibility"
-        ],
+        "tags": ["Accessibility"],
         "description": "Get PDF accessibility item result",
         "security": [
           {
@@ -8441,9 +7821,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "result"
-                  ],
+                  "required": ["result"],
                   "additionalProperties": false
                 }
               }
@@ -8454,9 +7832,7 @@
     },
     "/v1/comments/{projectId}": {
       "get": {
-        "tags": [
-          "Comments"
-        ],
+        "tags": ["Comments"],
         "description": "Get commented items for a project",
         "parameters": [
           {
@@ -8488,10 +7864,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "lastActivity",
-                "comments"
-              ]
+              "enum": ["lastActivity", "comments"]
             },
             "in": "query",
             "name": "orderBy",
@@ -8547,10 +7920,7 @@
                           },
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "link",
-                              "container"
-                            ]
+                            "enum": ["link", "container"]
                           },
                           "url": {
                             "nullable": true,
@@ -8576,13 +7946,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "total",
-                    "limit",
-                    "page",
-                    "pageSize",
-                    "items"
-                  ],
+                  "required": ["total", "limit", "page", "pageSize", "items"],
                   "additionalProperties": false
                 }
               }
@@ -8593,17 +7957,13 @@
     },
     "/v1/comments/{projectId}/{itemId}": {
       "get": {
-        "tags": [
-          "Comments"
-        ],
+        "tags": ["Comments"],
         "description": "Get item comments",
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "date"
-              ]
+              "enum": ["date"]
             },
             "in": "query",
             "name": "orderBy",
@@ -8612,10 +7972,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ]
+              "enum": ["asc", "desc"]
             },
             "in": "query",
             "name": "orderDir",
@@ -8700,9 +8057,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "items"
-                  ],
+                  "required": ["items"],
                   "additionalProperties": false
                 }
               }
@@ -8713,9 +8068,7 @@
     },
     "/v1/assignments": {
       "get": {
-        "tags": [
-          "Assignments"
-        ],
+        "tags": ["Assignments"],
         "description": "Get a paginated list of assignments",
         "parameters": [
           {
@@ -8750,10 +8103,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "open",
-                "completed"
-              ]
+              "enum": ["open", "completed"]
             },
             "in": "query",
             "name": "status",
@@ -8847,11 +8197,7 @@
             "schema": {
               "default": "created",
               "type": "string",
-              "enum": [
-                "created",
-                "start",
-                "due"
-              ]
+              "enum": ["created", "start", "due"]
             },
             "in": "query",
             "name": "orderBy",
@@ -8861,10 +8207,7 @@
             "schema": {
               "default": "desc",
               "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ]
+              "enum": ["asc", "desc"]
             },
             "in": "query",
             "name": "orderDir",
@@ -8940,10 +8283,7 @@
                           },
                           "status": {
                             "type": "string",
-                            "enum": [
-                              "open",
-                              "completed"
-                            ]
+                            "enum": ["open", "completed"]
                           },
                           "itemTitle": {
                             "default": null,
@@ -8997,13 +8337,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "total",
-                    "limit",
-                    "page",
-                    "pageSize",
-                    "items"
-                  ],
+                  "required": ["total", "limit", "page", "pageSize", "items"],
                   "additionalProperties": false
                 }
               }
@@ -9014,9 +8348,7 @@
     },
     "/v1/assignments/{projectId}": {
       "get": {
-        "tags": [
-          "Assignments"
-        ],
+        "tags": ["Assignments"],
         "description": "Get a paginated list of assignments by project",
         "parameters": [
           {
@@ -9051,10 +8383,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "open",
-                "completed"
-              ]
+              "enum": ["open", "completed"]
             },
             "in": "query",
             "name": "status",
@@ -9148,11 +8477,7 @@
             "schema": {
               "default": "created",
               "type": "string",
-              "enum": [
-                "created",
-                "start",
-                "due"
-              ]
+              "enum": ["created", "start", "due"]
             },
             "in": "query",
             "name": "orderBy",
@@ -9162,10 +8487,7 @@
             "schema": {
               "default": "desc",
               "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ]
+              "enum": ["asc", "desc"]
             },
             "in": "query",
             "name": "orderDir",
@@ -9249,10 +8571,7 @@
                           },
                           "status": {
                             "type": "string",
-                            "enum": [
-                              "open",
-                              "completed"
-                            ]
+                            "enum": ["open", "completed"]
                           },
                           "itemTitle": {
                             "default": null,
@@ -9306,13 +8625,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "total",
-                    "limit",
-                    "page",
-                    "pageSize",
-                    "items"
-                  ],
+                  "required": ["total", "limit", "page", "pageSize", "items"],
                   "additionalProperties": false
                 }
               }
@@ -9323,9 +8636,7 @@
     },
     "/v1/assignments/totals": {
       "get": {
-        "tags": [
-          "Assignments"
-        ],
+        "tags": ["Assignments"],
         "description": "Get assignment totals",
         "parameters": [
           {
@@ -9386,9 +8697,7 @@
     },
     "/v1/assignments/{projectId}/totals": {
       "get": {
-        "tags": [
-          "Assignments"
-        ],
+        "tags": ["Assignments"],
         "description": "Get assignment totals by project",
         "parameters": [
           {
@@ -9457,9 +8766,7 @@
     },
     "/v1/assignments/assignment/{id}": {
       "get": {
-        "tags": [
-          "Assignments"
-        ],
+        "tags": ["Assignments"],
         "description": "Get an assignment by id",
         "parameters": [
           {
@@ -9515,10 +8822,7 @@
                     },
                     "status": {
                       "type": "string",
-                      "enum": [
-                        "open",
-                        "completed"
-                      ]
+                      "enum": ["open", "completed"]
                     },
                     "startDate": {
                       "type": "string",
@@ -9561,11 +8865,7 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "id",
-                          "name",
-                          "color"
-                        ],
+                        "required": ["id", "name", "color"],
                         "additionalProperties": false
                       }
                     }

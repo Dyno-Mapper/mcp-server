@@ -1,4 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
+import { type CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 
 export class ApiHelper {
   private client: AxiosInstance;
@@ -16,28 +17,62 @@ export class ApiHelper {
     });
   }
 
-  async handleToolRequest(method: string, path: string, args: any) {
-    return null as any;
+  async handleToolRequest(
+    method: string,
+    path: string,
+    args: any
+  ): Promise<CallToolResult> {
+    try {
+      const response = await this.client.request({
+        method,
+        url: path,
+        [method.toLowerCase() === 'get' ? 'params' : 'data']: args,
+      });
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(response.data, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      return this.handleError(error);
+    }
   }
 
-  async handleError(error: any) {
+  async handleError(error: any): Promise<CallToolResult> {
+    let errorResponse: { error: string; message: string };
+
     if (error.response) {
       // The request was made and the server responded with a status code
       // that falls out of the range of 2xx
-      console.log(error.response.data);
-      console.log(error.response.status);
-      console.log(error.response.headers);
-      return {};
+      errorResponse = error.response.data || {
+        error: 'API Error',
+        message: error.message || 'Unknown API error',
+      };
     } else if (error.request) {
       // The request was made but no response was received
-      // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
-      // http.ClientRequest in node.js
-      console.log(error.request);
+      errorResponse = {
+        error: 'Network Error',
+        message: 'No response received from the API',
+      };
     } else {
       // Something happened in setting up the request that triggered an Error
-      console.log('Error', error.message);
+      errorResponse = {
+        error: 'Request Error',
+        message: error.message || 'Error setting up the request',
+      };
     }
 
-    return null as any;
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(errorResponse, null, 2),
+        },
+      ],
+      isError: true,
+    };
   }
 }

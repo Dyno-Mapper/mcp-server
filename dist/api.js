@@ -15,27 +15,57 @@ export class ApiHelper {
         });
     }
     async handleToolRequest(method, path, args) {
-        return null;
+        try {
+            const response = await this.client.request({
+                method,
+                url: path,
+                [method.toLowerCase() === 'get' ? 'params' : 'data']: args,
+            });
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: JSON.stringify(response.data, null, 2),
+                    },
+                ],
+            };
+        }
+        catch (error) {
+            return this.handleError(error);
+        }
     }
     async handleError(error) {
+        let errorResponse;
         if (error.response) {
             // The request was made and the server responded with a status code
             // that falls out of the range of 2xx
-            console.log(error.response.data);
-            console.log(error.response.status);
-            console.log(error.response.headers);
-            return {};
+            errorResponse = error.response.data || {
+                error: 'API Error',
+                message: error.message || 'Unknown API error',
+            };
         }
         else if (error.request) {
             // The request was made but no response was received
-            // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
-            // http.ClientRequest in node.js
-            console.log(error.request);
+            errorResponse = {
+                error: 'Network Error',
+                message: 'No response received from the API',
+            };
         }
         else {
             // Something happened in setting up the request that triggered an Error
-            console.log('Error', error.message);
+            errorResponse = {
+                error: 'Request Error',
+                message: error.message || 'Error setting up the request',
+            };
         }
-        return null;
+        return {
+            content: [
+                {
+                    type: 'text',
+                    text: JSON.stringify(errorResponse, null, 2),
+                },
+            ],
+            isError: true,
+        };
     }
 }

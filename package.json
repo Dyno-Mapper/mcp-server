@@ -15,7 +15,8 @@
     "watch": "tsc -w",
     "prepublishOnly": "npm run build",
     "format": "prettier --write .",
-    "dev": "tsx src/index.ts"
+    "dev": "tsx src/index.ts",
+    "test": "tsx --test src/*.test.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",

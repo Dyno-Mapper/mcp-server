@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import * as dotenv from 'dotenv';
-import { DynoMapperServer } from './server.js';
+dotenv.config({ quiet: true });
 
-dotenv.config();
+import { DynoMapperServer } from './server.js';
 
 const server = new DynoMapperServer();
 server.run().catch(console.error);

@@ -43,7 +43,7 @@ export class DynoMapperServer {
           outputSchema: tool.outputSchema,
         },
         async (args) => {
-          return this.apiHelper.handleToolRequest(tool.name, tool.path, args);
+          return this.apiHelper.handleToolRequest(tool.method, tool.path, args);
         }
       );
     }

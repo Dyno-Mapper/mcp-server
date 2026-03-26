@@ -53,6 +53,7 @@ export class ApiHelper {
             text: JSON.stringify(response.data),
           },
         ],
+        structuredContent: response.data,
       };
     } catch (error) {
       return this.handleError(error);

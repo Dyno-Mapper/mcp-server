@@ -5,7 +5,6 @@ import { ApiHelper } from './api.js';
 export class DynoMapperServer {
     server;
     apiHelper;
-    API_BASE_URL = process.env.DYNOMAPPER_API_URL || 'https://api.dynomapper.com';
     constructor() {
         const apiKey = process.env.DYNOMAPPER_API_KEY;
         if (!apiKey) {

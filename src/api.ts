@@ -11,7 +11,7 @@ export class ApiHelper {
     this.client = axios.create({
       baseURL: this.baseUrl,
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${this.apiKey}`,
         'Content-Type': 'application/json',
       },
     });
@@ -28,6 +28,7 @@ export class ApiHelper {
         url: path,
         [method.toLowerCase() === 'get' ? 'params' : 'data']: args,
       });
+
       return {
         content: [
           {

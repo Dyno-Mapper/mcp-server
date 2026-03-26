@@ -9,7 +9,7 @@ export class ApiHelper {
         this.client = axios.create({
             baseURL: this.baseUrl,
             headers: {
-                Authorization: `Bearer ${apiKey}`,
+                Authorization: `Bearer ${this.apiKey}`,
                 'Content-Type': 'application/json',
             },
         });

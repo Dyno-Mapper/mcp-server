@@ -6,22 +6,25 @@ import { tools } from './tools/tools.js';
 import { ApiHelper } from './api.js';
 
 export class DynoMapperServer {
-  private server: McpServer;
+  private readonly server: McpServer;
   private apiHelper: ApiHelper;
 
   constructor() {
-    const apiKey = process.env.DYNOMAPPER_API_KEY;
+    const apiKey =
+      process.env.DYNOMAPPER_API_KEY ||
+      process.env.MCP_API_KEY ||
+      process.env.API_KEY;
+
+    this.apiHelper = new ApiHelper(
+      process.env.DYNOMAPPER_API_URL || 'https://api.dynomapper.com',
+      String(apiKey)
+    );
 
     this.server = new McpServer({
       name: '@dynomapper/mcp-server',
       version: '0.1.0',
       description: 'DYNO Mapper MCP Server',
     });
-
-    this.apiHelper = new ApiHelper(
-      process.env.DYNOMAPPER_API_URL || 'https://api.dynomapper.com',
-      String(apiKey)
-    );
 
     this.setupHandlers();
 

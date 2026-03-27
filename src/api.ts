@@ -5,8 +5,8 @@ export class ApiHelper {
   private client: AxiosInstance;
 
   constructor(
-    private readonly baseUrl: string,
-    private readonly apiKey: string
+    readonly baseUrl: string,
+    readonly apiKey: string
   ) {
     this.client = axios.create({
       baseURL: this.baseUrl,

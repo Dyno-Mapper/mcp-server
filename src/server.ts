@@ -45,8 +45,16 @@ export class DynoMapperServer {
           inputSchema: tool.inputSchema,
           outputSchema: tool.outputSchema,
         },
-        async (args) => {
-          return this.apiHelper.handleToolRequest(tool.method, tool.path, args);
+        async (args, extra) => {
+          const authHeader = extra.requestInfo?.headers?.authorization;
+          const apiKey = Array.isArray(authHeader) ? authHeader[0] : authHeader;
+
+          return this.apiHelper.handleToolRequest(
+            tool.method,
+            tool.path,
+            args,
+            apiKey
+          );
         }
       );
     }

@@ -17,15 +17,30 @@ export class ApiHelper {
     });
   }
 
+  private resolveApiKey(apiKey: string) {
+    if (!apiKey.startsWith('Bearer ')) {
+      return `Bearer ${apiKey}`;
+    }
+    return apiKey;
+  }
+
   async handleToolRequest(
     method: string,
     path: string,
-    args: any
+    args: any,
+    apiKey?: string
   ): Promise<CallToolResult> {
     try {
+      const headers: Record<string, string> = {};
+
+      if (apiKey) {
+        headers.Authorization = this.resolveApiKey(apiKey);
+      }
+
       const response = await this.client.request({
         method,
         url: path,
+        headers,
         [method.toLowerCase() === 'get' || method.toLowerCase() === 'delete'
           ? 'params'
           : 'data']: args,

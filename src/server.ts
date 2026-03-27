@@ -20,13 +20,8 @@ export class DynoMapperServer {
       String(apiKey)
     );
 
-    this.server = new McpServer({
-      name: '@dynomapper/mcp-server',
-      version: '0.1.0',
-      description: 'DYNO Mapper MCP Server',
-    });
-
-    this.setupHandlers();
+    this.server = this.createServer();
+    this.setupHandlers(this.server);
 
     this.server.server.onerror = (error) => console.error('[MCP Error]', error);
 
@@ -36,9 +31,79 @@ export class DynoMapperServer {
     });
   }
 
-  private setupHandlers() {
+  async run() {
+    const transport = new StdioServerTransport();
+    await this.server.connect(transport);
+    console.error('DYNO Mapper MCP server running on stdio');
+  }
+
+  async runSSE(port: number = 3000) {
+    const app = createMcpExpressApp();
+    const servers = new Map<string, McpServer>();
+    const transports = new Map<string, StreamableHTTPServerTransport>();
+
+    app.all('/mcp', async (req, res) => {
+      const sessionId =
+        (Array.isArray(req.headers['mcp-session-id'])
+          ? req.headers['mcp-session-id'][0]
+          : req.headers['mcp-session-id']) || '';
+
+      let server: McpServer | undefined;
+      let transport: StreamableHTTPServerTransport | undefined;
+
+      if (sessionId) {
+        server = servers.get(sessionId);
+        transport = transports.get(sessionId);
+      }
+
+      if (!server) {
+        server = this.createServer();
+        this.setupHandlers(server);
+        server.server.onerror = (error) => console.error('[MCP Error]', error);
+
+        const newTransport = new StreamableHTTPServerTransport({
+          sessionIdGenerator: () => crypto.randomUUID().toString(),
+          onsessioninitialized: (newId) => {
+            transports.set(newId, newTransport);
+            servers.set(newId, server!);
+            console.log(`Session ${newId} initialized`);
+          },
+          onsessionclosed: (id) => {
+            transports.delete(id);
+            servers.get(id)?.close();
+            servers.delete(id);
+            console.log(`Session ${id} closed`);
+          },
+        });
+
+        await server.connect(newTransport);
+        transport = newTransport;
+      }
+
+      if (!transport) {
+        throw new Error('MCP transport not initialized');
+      }
+
+      try {
+        await transport.handleRequest(req, res, req.body);
+      } catch (error) {
+        console.error('[MCP SSE Error]', error);
+        if (!res.headersSent) {
+          res.status(500).send('Internal Server Error');
+        }
+      }
+    });
+
+    app.listen(port, () => {
+      console.error(
+        `DYNO Mapper MCP server running on http://localhost:${port}/mcp`
+      );
+    });
+  }
+
+  private setupHandlers(server: McpServer) {
     for (const tool of Object.values(tools)) {
-      this.server.registerTool(
+      server.registerTool(
         tool.name,
         {
           description: tool.description,
@@ -60,36 +125,11 @@ export class DynoMapperServer {
     }
   }
 
-  async run() {
-    const transport = new StdioServerTransport();
-    await this.server.connect(transport);
-    console.error('DYNO Mapper MCP server running on stdio');
-  }
-
-  async runSSE(port: number = 3000) {
-    const app = createMcpExpressApp();
-    const transport = new StreamableHTTPServerTransport({
-      sessionIdGenerator: () => Math.random().toString(36).substring(2),
-    });
-
-    await this.server.connect(transport);
-
-    app.all('/mcp', async (req, res) => {
-      console.error(`[SSE Request] ${req.method} ${req.url}`);
-      try {
-        await transport.handleRequest(req, res, req.body);
-      } catch (error) {
-        console.error('[SSE Error]', error);
-        if (!res.headersSent) {
-          res.status(500).send('Internal Server Error');
-        }
-      }
-    });
-
-    app.listen(port, () => {
-      console.error(
-        `DYNO Mapper MCP server running on http://localhost:${port}/mcp`
-      );
+  private createServer() {
+    return new McpServer({
+      name: '@dynomapper/mcp-server',
+      version: '0.1.0',
+      description: 'DYNO Mapper MCP Server',
     });
   }
 }

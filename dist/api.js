@@ -14,11 +14,22 @@ export class ApiHelper {
             },
         });
     }
-    async handleToolRequest(method, path, args) {
+    resolveApiKey(apiKey) {
+        if (!apiKey.startsWith('Bearer ')) {
+            return `Bearer ${apiKey}`;
+        }
+        return apiKey;
+    }
+    async handleToolRequest(method, path, args, apiKey) {
         try {
+            const headers = {};
+            if (apiKey) {
+                headers.Authorization = this.resolveApiKey(apiKey);
+            }
             const response = await this.client.request({
                 method,
                 url: path,
+                headers,
                 [method.toLowerCase() === 'get' || method.toLowerCase() === 'delete'
                     ? 'params'
                     : 'data']: args,

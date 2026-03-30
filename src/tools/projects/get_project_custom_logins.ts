@@ -9,7 +9,7 @@ export const get_project_custom_logins = {
       z.object({
         id: z.number().describe('Custom login ID'),
         title: z.string().describe('Login title'),
-        url: z.string().nullable().describe('Login URL'),
+        url: z.string().optional().nullish().describe('Login URL'),
         inputs: z.array(
           z.object({
             label: z.string().describe('Input label'),
@@ -17,7 +17,11 @@ export const get_project_custom_logins = {
           })
         ),
         created: z.string().describe('Creation timestamp'),
-        modified: z.string().nullable().describe('Modification timestamp'),
+        modified: z
+          .string()
+          .optional()
+          .nullish()
+          .describe('Modification timestamp'),
       })
     ),
   }),

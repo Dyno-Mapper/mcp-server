@@ -4,7 +4,7 @@ export const get_audit_results = {
   name: 'get_audit_results',
   description: 'Get audit results of a project',
   inputSchema: z.object({
-    projectId: z.coerce.string().describe('Project ID'),
+    projectId: z.number().describe('Project ID'),
     limit: z.coerce
       .number()
       .optional()

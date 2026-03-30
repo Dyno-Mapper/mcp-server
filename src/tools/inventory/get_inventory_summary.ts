@@ -4,7 +4,7 @@ export const get_inventory_summary = {
   name: 'get_inventory_summary',
   description: 'Get inventory summary of a project',
   inputSchema: z.object({
-    projectId: z.string().describe('Project ID'),
+    projectId: z.number().describe('Project ID'),
   }),
   outputSchema: z.object({
     subdomains: z

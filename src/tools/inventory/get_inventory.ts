@@ -4,7 +4,7 @@ export const get_inventory = {
   name: 'get_inventory',
   description: 'Get inventory of a project',
   inputSchema: z.object({
-    projectId: z.string().describe('Project ID'),
+    projectId: z.number().describe('Project ID'),
     limit: z.coerce
       .number()
       .optional()

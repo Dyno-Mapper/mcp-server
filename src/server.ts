@@ -110,7 +110,7 @@ export class DynoMapperServer {
           inputSchema: tool.inputSchema,
           outputSchema: tool.outputSchema,
         },
-        async (args, extra) => {
+        async (args: any, extra: any) => {
           const authHeader = extra.requestInfo?.headers?.authorization;
           const apiKey = Array.isArray(authHeader) ? authHeader[0] : authHeader;
 

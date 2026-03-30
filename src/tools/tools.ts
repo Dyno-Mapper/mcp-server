@@ -11,6 +11,10 @@ import { get_project_groups } from './projects/get_project_groups.js';
 import { get_project_custom_logins } from './projects/get_project_custom_logins.js';
 import { get_project_vacq_score } from './projects/get_project_vacq_score.js';
 import { get_project_sitemap_item_details } from './projects/get_project_sitemap_item_details.js';
+import { get_inventory } from './inventory/get_inventory.js';
+import { get_inventory_summary } from './inventory/get_inventory_summary.js';
+import { get_inventory_item_links } from './inventory/get_inventory_item_links.js';
+import { get_inventory_link_occurrences } from './inventory/get_inventory_link_occurrences.js';
 
 export const tools = {
   get_current_user,
@@ -26,4 +30,8 @@ export const tools = {
   get_project_custom_logins,
   get_project_vacq_score,
   get_project_sitemap_item_details,
+  get_inventory,
+  get_inventory_summary,
+  get_inventory_item_links,
+  get_inventory_link_occurrences,
 };

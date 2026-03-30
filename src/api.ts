@@ -24,6 +24,29 @@ export class ApiHelper {
     return apiKey;
   }
 
+  resolvePath(path: string, args: any): { path: string; args: any } {
+    if (!args) {
+      return { path, args };
+    }
+
+    const remainingArgs = { ...args };
+    let resolvedPath = path;
+
+    const matches = path.matchAll(/\{([^}]+)\}/g);
+    for (const match of matches) {
+      const varName = match[1];
+      if (varName in remainingArgs) {
+        resolvedPath = resolvedPath.replace(
+          match[0],
+          String(remainingArgs[varName])
+        );
+        delete remainingArgs[varName];
+      }
+    }
+
+    return { path: resolvedPath, args: remainingArgs };
+  }
+
   async handleToolRequest(
     method: string,
     path: string,
@@ -37,13 +60,18 @@ export class ApiHelper {
         headers.Authorization = this.resolveApiKey(apiKey);
       }
 
+      const { path: resolvedPath, args: finalArgs } = this.resolvePath(
+        path,
+        args
+      );
+
       const response = await this.client.request({
         method,
-        url: path,
+        url: resolvedPath,
         headers,
         [method.toLowerCase() === 'get' || method.toLowerCase() === 'delete'
           ? 'params'
-          : 'data']: args,
+          : 'data']: finalArgs,
       });
 
       if (!response?.data) {

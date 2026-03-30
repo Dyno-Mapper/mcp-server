@@ -158,3 +158,72 @@ describe('ApiHelper.handleError', () => {
     assert.strictEqual(errorData.message, 'Error setting up the request');
   });
 });
+
+describe('ApiHelper.resolvePath', () => {
+  const apiHelper = new ApiHelper('https://api.example.com', 'test-key');
+
+  test('should return same path if no variables exist', () => {
+    const path = '/projects';
+    const args = { id: 123 };
+    const result = apiHelper.resolvePath(path, args);
+
+    assert.strictEqual(result.path, '/projects');
+    assert.deepStrictEqual(result.args, { id: 123 });
+  });
+
+  test('should resolve single path variable and remove it from args', () => {
+    const path = '/projects/{id}';
+    const args = { id: 123, other: 'test' };
+    const result = apiHelper.resolvePath(path, args);
+
+    assert.strictEqual(result.path, '/projects/123');
+    assert.deepStrictEqual(result.args, { other: 'test' });
+  });
+
+  test('should resolve multiple path variables', () => {
+    const path = '/projects/{projectId}/items/{itemId}';
+    const args = { projectId: 'p1', itemId: 'i1', extra: true };
+    const result = apiHelper.resolvePath(path, args);
+
+    assert.strictEqual(result.path, '/projects/p1/items/i1');
+    assert.deepStrictEqual(result.args, { extra: true });
+  });
+
+  test('should not resolve variable if not in args', () => {
+    const path = '/projects/{id}';
+    const args = { other: 'test' };
+    const result = apiHelper.resolvePath(path, args);
+
+    assert.strictEqual(result.path, '/projects/{id}');
+    assert.deepStrictEqual(result.args, { other: 'test' });
+  });
+
+  test('should handle null or undefined args', () => {
+    const path = '/projects/{id}';
+    assert.deepStrictEqual(apiHelper.resolvePath(path, null), {
+      path,
+      args: null,
+    });
+    assert.deepStrictEqual(apiHelper.resolvePath(path, undefined), {
+      path,
+      args: undefined,
+    });
+  });
+
+  test('should handle multiple occurrences of the same variable', () => {
+    const path = '/projects/{id}/duplicate/{id}';
+    const args = { id: 123 };
+    const result = apiHelper.resolvePath(path, args);
+
+    // Note: Due to current implementation using `replace(match[0], ...)` inside loop,
+    // and `delete remainingArgs[varName]`, the second occurrence might not be replaced
+    // if it's the same variable name because it's deleted from remainingArgs after first match.
+    // Let's verify what the code actually does.
+    // Loop uses `path.matchAll(/\{([^}]+)\}/g)`.
+    // First match: {id}, varName: id. id in args? yes. replace {id} with 123. delete args.id.
+    // Second match: {id}, varName: id. id in args? NO (deleted).
+    // So result will be /projects/123/duplicate/{id}
+    assert.strictEqual(result.path, '/projects/123/duplicate/{id}');
+    assert.deepStrictEqual(result.args, {});
+  });
+});

@@ -110,9 +110,7 @@ export class DynoMapperServer {
           inputSchema: tool.inputSchema,
           outputSchema: tool.outputSchema,
           annotations: {
-            readOnlyHint:
-              tool.method.toLowerCase() === 'get' ||
-              tool.method.toLowerCase() === 'delete',
+            readOnlyHint: tool.method.toLowerCase() === 'get',
             destructiveHint: tool.method.toLowerCase() === 'delete',
             openWorldHint: true,
           },

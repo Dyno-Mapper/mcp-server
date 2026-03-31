@@ -12,7 +12,6 @@ export class ApiHelper {
       baseURL: this.baseUrl,
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json',
       },
     });
   }
@@ -58,6 +57,12 @@ export class ApiHelper {
 
       if (apiKey) {
         headers.Authorization = this.resolveApiKey(apiKey);
+      }
+
+      if (
+        !(method.toLowerCase() === 'get' || method.toLowerCase() === 'delete')
+      ) {
+        headers['Content-Type'] = 'application/json';
       }
 
       const { path: resolvedPath, args: finalArgs } = this.resolvePath(

@@ -83,6 +83,12 @@ export class DynoMapperServer {
                 description: tool.description,
                 inputSchema: tool.inputSchema,
                 outputSchema: tool.outputSchema,
+                annotations: {
+                    readOnlyHint: tool.method.toLowerCase() === 'get' ||
+                        tool.method.toLowerCase() === 'delete',
+                    destructiveHint: tool.method.toLowerCase() === 'delete',
+                    openWorldHint: true,
+                },
             }, async (args, extra) => {
                 const authHeader = extra.requestInfo?.headers?.authorization;
                 const apiKey = Array.isArray(authHeader) ? authHeader[0] : authHeader;

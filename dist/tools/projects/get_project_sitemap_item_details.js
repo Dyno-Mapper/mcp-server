@@ -11,21 +11,71 @@ export const get_project_sitemap_item_details = {
         title: z.string().describe('Item title'),
         url: z.string().describe('Item URL'),
         type: z.enum(['link', 'container']).describe('Item type'),
-        category: z.number().nullable().describe('Category ID'),
-        workflowStatus: z.string().nullable().describe('Workflow status'),
-        priority: z.number().nullable().describe('Sitemap priority'),
-        changeFrequency: z.string().describe('Sitemap change frequency'),
-        metaKeywords: z.string().nullable().describe('Meta keywords'),
-        metaDescription: z.string().nullable().describe('Meta description'),
-        tags: z.array(z.string()).describe('Item tags'),
+        category: z
+            .number()
+            .optional()
+            .nullish()
+            .default(null)
+            .describe('Category ID'),
+        workflowStatus: z
+            .string()
+            .optional()
+            .nullish()
+            .default(null)
+            .describe('Workflow status name'),
+        priority: z
+            .number()
+            .optional()
+            .nullish()
+            .default(null)
+            .describe('Item priority'),
+        changeFrequency: z.string().describe('Change frequency'),
+        metaKeywords: z
+            .string()
+            .optional()
+            .nullish()
+            .default(null)
+            .describe('Meta keywords'),
+        metaDescription: z
+            .string()
+            .optional()
+            .nullish()
+            .default(null)
+            .describe('Meta description'),
+        tags: z
+            .array(z.string().describe('Tag name'))
+            .describe('List of tags associated with the item'),
         thumbnail: z
             .object({
             title: z.string().describe('Thumbnail title'),
             sm: z.string().describe('Small thumbnail URL'),
             lg: z.string().describe('Large thumbnail URL'),
         })
-            .nullable()
-            .describe('Item thumbnails'),
+            .optional()
+            .nullish()
+            .default(null)
+            .describe('Thumbnail information'),
+        mode: z.enum(['', 'Slug', 'Static']).describe('URL mode'),
+        slug: z.string().describe('URL slug'),
+        staticUrl: z.string().describe('Static URL'),
+        backgroundColor: z
+            .string()
+            .optional()
+            .nullish()
+            .default(null)
+            .describe('Background color in hex format'),
+        foregroundColor: z
+            .string()
+            .optional()
+            .nullish()
+            .default(null)
+            .describe('Foreground color in hex format'),
+        hreflang: z
+            .array(z.object({
+            href: z.string().describe('Hreflang URL'),
+            lang: z.string().describe('Hreflang language code'),
+        }))
+            .describe('List of hreflang annotations'),
     }),
     method: 'get',
     path: '/v1/project/{projectId}/item/{itemId}',

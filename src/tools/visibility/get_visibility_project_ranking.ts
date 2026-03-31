@@ -1,0 +1,67 @@
+import { z } from 'zod';
+
+export const get_visibility_project_ranking = {
+  name: 'get_visibility_project_ranking',
+  description: 'Get keywords ranking of a project',
+  inputSchema: z.object({
+    projectId: z.number(),
+    startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    orderBy: z
+      .enum([
+        'keyword',
+        'google',
+        'bing',
+        'yahoo',
+        'volume',
+        'avg_cpc',
+        'google_increase',
+        'bing_increase',
+        'yahoo_increase',
+      ])
+      .optional(),
+    orderDir: z.enum(['asc', 'desc']).optional(),
+    search: z.string().optional(),
+    group: z.number().optional(),
+    device: z.enum(['desktop', 'tablet', 'mobile']).optional(),
+    locale: z.string().optional(),
+    page: z.number().optional(),
+    limit: z.number().optional(),
+  }),
+  outputSchema: z.object({
+    total: z.number(),
+    limit: z.number(),
+    page: z.number(),
+    pageSize: z.number(),
+    items: z.array(
+      z.object({
+        id: z.number(),
+        keyword: z.string(),
+        locale: z.string().nullable(),
+        device: z.string().nullable(),
+        enabled: z.boolean(),
+        group: z.string().nullable(),
+        linkId: z.number().nullable(),
+        endDate: z.string().nullable(),
+        startDate: z.string().nullable(),
+        googlePosition: z.number().nullable(),
+        googlePositionStart: z.number().nullable(),
+        googlePositionIncrease: z.number().nullable(),
+        googleLink: z.string().nullable(),
+        bingPosition: z.number().nullable(),
+        bingPositionStart: z.number().nullable(),
+        bingPositionIncrease: z.number().nullable(),
+        bingLink: z.string().nullable(),
+        yahooPosition: z.number().nullable(),
+        yahooPositionStart: z.number().nullable(),
+        yahooPositionIncrease: z.number().nullable(),
+        yahooLink: z.string().nullable(),
+        volume: z.number().nullable(),
+        avgCpc: z.number().nullable(),
+        created: z.string().nullable(),
+      })
+    ),
+  }),
+  method: 'get',
+  path: '/v1/visibility/{projectId}',
+};

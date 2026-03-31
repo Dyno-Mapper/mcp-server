@@ -35,6 +35,10 @@ import { get_analytics_project_events } from './analytics/get_analytics_project_
 import { get_analytics_project_pages } from './analytics/get_analytics_project_pages.js';
 import { get_analytics_sitemap_item } from './analytics/get_analytics_sitemap_item.js';
 import { get_analytics_sitemap_item_daily } from './analytics/get_analytics_sitemap_item_daily.js';
+import { get_visibility_project_ranking } from './visibility/get_visibility_project_ranking.js';
+import { get_visibility_project_score } from './visibility/get_visibility_project_score.js';
+import { get_visibility_project_groups } from './visibility/get_visibility_project_groups.js';
+import { get_visibility_keyword_ranking } from './visibility/get_visibility_keyword_ranking.js';
 
 export const tools = {
   get_current_user,
@@ -74,4 +78,8 @@ export const tools = {
   get_analytics_project_pages,
   get_analytics_sitemap_item,
   get_analytics_sitemap_item_daily,
+  get_visibility_project_ranking,
+  get_visibility_project_score,
+  get_visibility_project_groups,
+  get_visibility_keyword_ranking,
 };

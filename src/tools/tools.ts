@@ -28,6 +28,13 @@ import { get_audit_long_description } from './audit/get_audit_long_description.j
 import { get_audit_non_crawlable } from './audit/get_audit_non_crawlable.js';
 import { get_audit_non_indexable } from './audit/get_audit_non_indexable.js';
 import { get_audit_orphan_pages } from './audit/get_audit_orphan_pages.js';
+import { get_analytics_project } from './analytics/get_analytics_project.js';
+import { get_analytics_project_daily } from './analytics/get_analytics_project_daily.js';
+import { get_analytics_project_traffic_source } from './analytics/get_analytics_project_traffic_source.js';
+import { get_analytics_project_events } from './analytics/get_analytics_project_events.js';
+import { get_analytics_project_pages } from './analytics/get_analytics_project_pages.js';
+import { get_analytics_sitemap_item } from './analytics/get_analytics_sitemap_item.js';
+import { get_analytics_sitemap_item_daily } from './analytics/get_analytics_sitemap_item_daily.js';
 
 export const tools = {
   get_current_user,
@@ -60,4 +67,11 @@ export const tools = {
   get_audit_non_crawlable,
   get_audit_non_indexable,
   get_audit_orphan_pages,
+  get_analytics_project,
+  get_analytics_project_daily,
+  get_analytics_project_traffic_source,
+  get_analytics_project_events,
+  get_analytics_project_pages,
+  get_analytics_sitemap_item,
+  get_analytics_sitemap_item_daily,
 };

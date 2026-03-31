@@ -39,6 +39,18 @@ import { get_visibility_project_ranking } from './visibility/get_visibility_proj
 import { get_visibility_project_score } from './visibility/get_visibility_project_score.js';
 import { get_visibility_project_groups } from './visibility/get_visibility_project_groups.js';
 import { get_visibility_keyword_ranking } from './visibility/get_visibility_keyword_ranking.js';
+import { run_accessibility_checker } from './accessibility/run_accessibility_checker.js';
+import { get_accessibility_results } from './accessibility/get_accessibility_results.js';
+import { delete_accessibility_report } from './accessibility/delete_accessibility_report.js';
+import { get_accessibility_report_items } from './accessibility/get_accessibility_report_items.js';
+import { get_accessibility_history } from './accessibility/get_accessibility_history.js';
+import { get_accessibility_score } from './accessibility/get_accessibility_score.js';
+import { get_accessibility_report_problems } from './accessibility/get_accessibility_report_problems.js';
+import { get_accessibility_report_groups } from './accessibility/get_accessibility_report_groups.js';
+import { get_accessibility_report_item_result } from './accessibility/get_accessibility_report_item_result.js';
+import { get_accessibility_pdf_files } from './accessibility/get_accessibility_pdf_files.js';
+import { get_accessibility_pdf_guidelines } from './accessibility/get_accessibility_pdf_guidelines.js';
+import { get_accessibility_pdf_item_result } from './accessibility/get_accessibility_pdf_item_result.js';
 
 export const tools = {
   get_current_user,
@@ -82,4 +94,16 @@ export const tools = {
   get_visibility_project_score,
   get_visibility_project_groups,
   get_visibility_keyword_ranking,
+  run_accessibility_checker,
+  get_accessibility_results,
+  delete_accessibility_report,
+  get_accessibility_report_items,
+  get_accessibility_history,
+  get_accessibility_score,
+  get_accessibility_report_problems,
+  get_accessibility_report_groups,
+  get_accessibility_report_item_result,
+  get_accessibility_pdf_files,
+  get_accessibility_pdf_guidelines,
+  get_accessibility_pdf_item_result,
 };

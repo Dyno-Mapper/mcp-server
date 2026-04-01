@@ -123,7 +123,8 @@ export class DynoMapperServer {
             tool.method,
             tool.path,
             args,
-            apiKey
+            apiKey,
+            tool.multipart
           );
         }
       );

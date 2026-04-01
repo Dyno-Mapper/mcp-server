@@ -1,5 +1,8 @@
 import axios, { AxiosInstance } from 'axios';
 import { type CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import fs from 'node:fs';
+import * as pathMod from 'node:path';
+import mime from 'mime-types';
 
 export class ApiHelper {
   private client: AxiosInstance;
@@ -50,7 +53,8 @@ export class ApiHelper {
     method: string,
     path: string,
     args: any,
-    apiKey?: string
+    apiKey?: string,
+    multiPart?: boolean
   ): Promise<CallToolResult> {
     try {
       const headers: Record<string, string> = {};
@@ -70,13 +74,54 @@ export class ApiHelper {
         args
       );
 
+      let data = finalArgs;
+
+      if (multiPart) {
+        const formData = new FormData();
+        const { file, ...restArgs } = finalArgs || {};
+        if (file) {
+          if (fs.existsSync(file)) {
+            const fileBuffer = fs.readFileSync(file);
+            const fileName = pathMod.basename(file);
+            const mimeType = mime.lookup(file) || 'application/octet-stream';
+            const blob = new Blob([fileBuffer], { type: mimeType });
+            formData.append('file', blob, fileName);
+          } else {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify({
+                    error: 'File not found',
+                    message: `The specified file was not found: ${file}`,
+                  }),
+                },
+              ],
+              isError: true,
+            };
+          }
+        } else {
+          // If file property is undefined, pass the file as empty value
+          formData.append('file', '');
+        }
+        const jsonBody = JSON.stringify(restArgs);
+        const jsonBodyBlob = new Blob([jsonBody], { type: 'application/json' });
+        formData.append('body', jsonBodyBlob, 'body');
+
+        data = formData;
+        // Let axios handle the Content-Type with boundary for FormData
+        if (headers['Content-Type']) {
+          delete headers['Content-Type'];
+        }
+      }
+
       const response = await this.client.request({
         method,
         url: resolvedPath,
         headers,
         [method.toLowerCase() === 'get' || method.toLowerCase() === 'delete'
           ? 'params'
-          : 'data']: finalArgs,
+          : 'data']: data,
       });
 
       if (!response?.data) {

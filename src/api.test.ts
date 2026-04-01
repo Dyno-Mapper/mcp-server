@@ -2,6 +2,18 @@ import { test, describe, mock } from 'node:test';
 import assert from 'node:assert';
 import { ApiHelper } from './api.js';
 import axios from 'axios';
+import fs from 'node:fs';
+
+// Mock fs functions
+mock.method(fs, 'existsSync', (path: string) => {
+  if (path === '/tmp/test.txt' || path === '/tmp/test.xml') return true;
+  return false;
+});
+mock.method(fs, 'readFileSync', (path: string) => {
+  if (path === '/tmp/test.txt') return Buffer.from('test content');
+  if (path === '/tmp/test.xml') return Buffer.from('<xml>test content</xml>');
+  throw new Error('File not found');
+});
 
 // Mock axios.create to return a mock instance
 mock.method(axios, 'create', () => {
@@ -18,6 +30,7 @@ describe('ApiHelper.handleToolRequest', () => {
     const mockResponse = {
       data: { success: true, message: 'GET successful' },
       status: 200,
+      config: { headers: {} },
     };
 
     mockClient.request.mock.mockImplementationOnce(async (config: any) => {
@@ -25,7 +38,7 @@ describe('ApiHelper.handleToolRequest', () => {
       assert.strictEqual(config.url, '/test-path');
       assert.deepStrictEqual(config.params, { id: 123 });
       assert.strictEqual(config.data, undefined);
-      return mockResponse;
+      return { ...mockResponse, config };
     });
 
     const result = await apiHelper.handleToolRequest('GET', '/test-path', {
@@ -42,6 +55,7 @@ describe('ApiHelper.handleToolRequest', () => {
     const mockResponse = {
       data: { success: true, message: 'POST successful' },
       status: 201,
+      config: { headers: {} },
     };
 
     mockClient.request.mock.mockImplementationOnce(async (config: any) => {
@@ -49,7 +63,7 @@ describe('ApiHelper.handleToolRequest', () => {
       assert.strictEqual(config.url, '/test-path');
       assert.deepStrictEqual(config.data, { name: 'test' });
       assert.strictEqual(config.params, undefined);
-      return mockResponse;
+      return { ...mockResponse, config };
     });
 
     const result = await apiHelper.handleToolRequest('POST', '/test-path', {
@@ -79,6 +93,146 @@ describe('ApiHelper.handleToolRequest', () => {
     const errorData = JSON.parse((result.content[0] as any).text);
     assert.strictEqual(errorData.error, 'Not Found');
     assert.strictEqual(errorData.message, 'Item not found');
+  });
+
+  test('should handle successful POST request with multiPart: true', async () => {
+    const mockResponse = {
+      data: { success: true, id: 1 },
+      status: 201,
+      config: { headers: {} },
+    };
+
+    mockClient.request.mock.mockImplementationOnce(async (config: any) => {
+      assert.strictEqual(config.method, 'POST');
+      assert.strictEqual(config.url, '/v1/project/text');
+      // Axios sets config.data to FormData when multiPart is true
+      assert.ok(config.data instanceof FormData);
+      assert.strictEqual(config.headers['Content-Type'], undefined); // Axios should set boundary
+
+      const formData = config.data as FormData;
+      // We can't easily inspect FormData content in Node 20+, but we can check if it exists
+      // If we use node-fetch or similar, it might be easier, but here we're using native FormData/Blob
+      assert.ok(formData.has('file')); // file should always exist now
+      assert.ok(formData.has('body'));
+      const body = JSON.parse(formData.get('body') as string);
+      assert.strictEqual(body.url, 'https://example.com/urllist.txt');
+
+      return { ...mockResponse, config };
+    });
+
+    const result = await apiHelper.handleToolRequest(
+      'POST',
+      '/v1/project/{type}',
+      {
+        type: 'text',
+        url: 'https://example.com/urllist.txt',
+      },
+      undefined,
+      true
+    );
+
+    assert.strictEqual(result.isError, undefined);
+    const data = JSON.parse((result.content[0] as any).text);
+    assert.deepStrictEqual(data, mockResponse.data);
+  });
+
+  test('should handle successful POST request with multiPart: true and file', async () => {
+    const mockResponse = {
+      data: { success: true, id: 2 },
+      status: 201,
+      config: { headers: {} },
+    };
+
+    mockClient.request.mock.mockImplementationOnce(async (config: any) => {
+      assert.strictEqual(config.method, 'POST');
+      assert.strictEqual(config.url, '/v1/project/text');
+      assert.ok(config.data instanceof FormData);
+
+      const formData = config.data as FormData;
+      assert.ok(formData.has('file'));
+      assert.ok(formData.has('body'));
+
+      const file = formData.get('file') as any;
+      assert.strictEqual(file.name, 'test.txt');
+      assert.strictEqual(file.type, 'text/plain');
+
+      const body = JSON.parse(formData.get('body') as string);
+      assert.strictEqual(body.speed, 'slowest');
+
+      return { ...mockResponse, config };
+    });
+
+    const result = await apiHelper.handleToolRequest(
+      'POST',
+      '/v1/project/{type}',
+      {
+        type: 'text',
+        file: '/tmp/test.txt',
+        speed: 'slowest',
+      },
+      undefined,
+      true
+    );
+
+    assert.strictEqual(result.isError, undefined);
+    const data = JSON.parse((result.content[0] as any).text);
+    assert.deepStrictEqual(data, mockResponse.data);
+  });
+
+  test('should handle successful POST request with multiPart: true and xml file', async () => {
+    const mockResponse = {
+      data: { success: true, id: 3 },
+      status: 201,
+      config: { headers: {} },
+    };
+
+    mockClient.request.mock.mockImplementationOnce(async (config: any) => {
+      assert.strictEqual(config.method, 'POST');
+      assert.strictEqual(config.url, '/v1/project/xml');
+      assert.ok(config.data instanceof FormData);
+
+      const formData = config.data as FormData;
+      assert.ok(formData.has('file'));
+
+      const file = formData.get('file') as any;
+      assert.strictEqual(file.name, 'test.xml');
+      assert.strictEqual(file.type, 'application/xml');
+
+      return { ...mockResponse, config };
+    });
+
+    const result = await apiHelper.handleToolRequest(
+      'POST',
+      '/v1/project/{type}',
+      {
+        type: 'xml',
+        file: '/tmp/test.xml',
+      },
+      undefined,
+      true
+    );
+
+    assert.strictEqual(result.isError, undefined);
+    const data = JSON.parse((result.content[0] as any).text);
+    assert.deepStrictEqual(data, mockResponse.data);
+  });
+
+  test('should return error when multiPart: true and file property is set but file not found', async () => {
+    const result = await apiHelper.handleToolRequest(
+      'POST',
+      '/v1/project/{type}',
+      {
+        type: 'text',
+        file: '/tmp/non-existent.txt',
+      },
+      undefined,
+      true
+    );
+
+    assert.strictEqual(result.isError, true);
+    const errorData = JSON.parse((result.content[0] as any).text);
+    assert.strictEqual(errorData.error, 'File not found');
+    assert.ok(errorData.message.includes('/tmp/non-existent.txt'));
   });
 });
 

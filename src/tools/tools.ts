@@ -1,9 +1,9 @@
 import { get_current_user } from './account/get_current_user.js';
 import { get_projects } from './projects/get_projects.js';
 import { get_project_details } from './projects/get_project_details.js';
-import { get_project_job_status } from './projects/get_project_job_status.js';
-import { cancel_project_job } from './projects/cancel_project_job.js';
-import { refresh_project } from './projects/refresh_project.js';
+import { create_project_from_url } from './projects/create_project_from_url.js';
+import { get_project_url_job_status } from './projects/get_project_url_job_status.js';
+import { cancel_project_url_job } from './projects/cancel_project_url_job.js';
 import { get_project_categories } from './projects/get_project_categories.js';
 import { get_project_workflow_statuses } from './projects/get_project_workflow_statuses.js';
 import { get_project_sitemap_items } from './projects/get_project_sitemap_items.js';
@@ -63,9 +63,9 @@ export const tools = {
   get_current_user,
   get_projects,
   get_project_details,
-  get_project_job_status,
-  cancel_project_job,
-  refresh_project,
+  create_project_from_url,
+  get_project_url_job_status,
+  cancel_project_url_job,
   get_project_categories,
   get_project_workflow_statuses,
   get_project_sitemap_items,

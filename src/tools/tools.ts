@@ -11,6 +11,8 @@ import { get_project_workflow_statuses } from './projects/get_project_workflow_s
 import { get_project_sitemap_items } from './projects/get_project_sitemap_items.js';
 import { get_project_groups } from './projects/get_project_groups.js';
 import { get_project_custom_logins } from './projects/get_project_custom_logins.js';
+import { test_project_custom_login } from './projects/test_project_custom_login.js';
+import { get_project_custom_login_test_result } from './projects/get_project_custom_login_test_result.js';
 import { get_project_vacq_score } from './projects/get_project_vacq_score.js';
 import { get_project_sitemap_item_details } from './projects/get_project_sitemap_item_details.js';
 import { get_inventory } from './inventory/get_inventory.js';
@@ -75,6 +77,8 @@ export const tools = {
   get_project_sitemap_items,
   get_project_groups,
   get_project_custom_logins,
+  test_project_custom_login,
+  get_project_custom_login_test_result,
   get_project_vacq_score,
   get_project_sitemap_item_details,
   get_inventory,

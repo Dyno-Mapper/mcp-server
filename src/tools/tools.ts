@@ -53,6 +53,11 @@ import { get_accessibility_report_item_result } from './accessibility/get_access
 import { get_accessibility_pdf_files } from './accessibility/get_accessibility_pdf_files.js';
 import { get_accessibility_pdf_guidelines } from './accessibility/get_accessibility_pdf_guidelines.js';
 import { get_accessibility_pdf_item_result } from './accessibility/get_accessibility_pdf_item_result.js';
+import { get_assignments } from './assignments/get_assignments.js';
+import { get_project_assignments } from './assignments/get_project_assignments.js';
+import { get_assignments_totals } from './assignments/get_assignments_totals.js';
+import { get_project_assignments_totals } from './assignments/get_project_assignments_totals.js';
+import { get_assignment_details } from './assignments/get_assignment_details.js';
 
 export const tools = {
   get_current_user,
@@ -110,4 +115,9 @@ export const tools = {
   get_accessibility_pdf_files,
   get_accessibility_pdf_guidelines,
   get_accessibility_pdf_item_result,
+  get_assignments,
+  get_project_assignments,
+  get_assignments_totals,
+  get_project_assignments_totals,
+  get_assignment_details,
 };

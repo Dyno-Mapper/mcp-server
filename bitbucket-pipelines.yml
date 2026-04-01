@@ -1,0 +1,21 @@
+pipelines:
+  branches:
+    main:
+      - step:
+          name: Scan
+          image: shiftleft/sast-scan:latest
+          script:
+            - scan --no-error
+            - zip -r all-reports.zip reports/
+          artifacts:
+            - all-reports.zip
+      - step:
+          name: Export scan reports
+          clone:
+            enabled: false
+          script:
+            - pipe: atlassian/bitbucket-upload-file:0.7.5
+              variables:
+                BITBUCKET_USERNAME: $BITBUCKET_USERNAME
+                BITBUCKET_APP_PASSWORD: $BITBUCKET_APP_PASSWORD
+                FILENAME: 'all-reports.zip'

@@ -29,7 +29,7 @@ Add the following to your Claude Desktop configuration file (e.g., `~/Library/Ap
       "command": "npx",
       "args": ["-y", "@dynomapper/mcp-server"],
       "env": {
-        "DYNOMAPPER_API_KEY": "your_api_key_here"
+        "MCP_API_KEY": "your_api_key_here"
       }
     }
   }

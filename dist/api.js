@@ -1,4 +1,7 @@
 import axios from 'axios';
+import fs from 'node:fs';
+import * as pathMod from 'node:path';
+import mime from 'mime-types';
 export class ApiHelper {
     baseUrl;
     apiKey;
@@ -10,7 +13,6 @@ export class ApiHelper {
             baseURL: this.baseUrl,
             headers: {
                 Authorization: `Bearer ${this.apiKey}`,
-                'Content-Type': 'application/json',
             },
         });
     }
@@ -36,20 +38,63 @@ export class ApiHelper {
         }
         return { path: resolvedPath, args: remainingArgs };
     }
-    async handleToolRequest(method, path, args, apiKey) {
+    async handleToolRequest(method, path, args, apiKey, multiPart) {
         try {
             const headers = {};
             if (apiKey) {
                 headers.Authorization = this.resolveApiKey(apiKey);
             }
+            if (!(method.toLowerCase() === 'get' || method.toLowerCase() === 'delete')) {
+                headers['Content-Type'] = 'application/json';
+            }
             const { path: resolvedPath, args: finalArgs } = this.resolvePath(path, args);
+            let data = finalArgs;
+            if (multiPart) {
+                const formData = new FormData();
+                const { file, ...restArgs } = finalArgs || {};
+                if (file) {
+                    if (fs.existsSync(file)) {
+                        const fileBuffer = fs.readFileSync(file);
+                        const fileName = pathMod.basename(file);
+                        const mimeType = mime.lookup(file) || 'application/octet-stream';
+                        const blob = new Blob([fileBuffer], { type: mimeType });
+                        formData.append('file', blob, fileName);
+                    }
+                    else {
+                        return {
+                            content: [
+                                {
+                                    type: 'text',
+                                    text: JSON.stringify({
+                                        error: 'File not found',
+                                        message: `The specified file was not found: ${file}`,
+                                    }),
+                                },
+                            ],
+                            isError: true,
+                        };
+                    }
+                }
+                else {
+                    // If file property is undefined, pass the file as empty value
+                    formData.append('file', '');
+                }
+                const jsonBody = JSON.stringify(restArgs);
+                const jsonBodyBlob = new Blob([jsonBody], { type: 'application/json' });
+                formData.append('body', jsonBodyBlob, 'body');
+                data = formData;
+                // Let axios handle the Content-Type with boundary for FormData
+                if (headers['Content-Type']) {
+                    delete headers['Content-Type'];
+                }
+            }
             const response = await this.client.request({
                 method,
                 url: resolvedPath,
                 headers,
                 [method.toLowerCase() === 'get' || method.toLowerCase() === 'delete'
                     ? 'params'
-                    : 'data']: finalArgs,
+                    : 'data']: data,
             });
             if (!response?.data) {
                 return {

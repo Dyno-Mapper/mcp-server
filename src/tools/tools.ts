@@ -14,6 +14,7 @@ import { get_project_groups } from './projects/get_project_groups.js';
 import { get_project_custom_logins } from './projects/get_project_custom_logins.js';
 import { test_project_custom_login } from './projects/test_project_custom_login.js';
 import { create_project_from_file } from './projects/create_project_from_file.js';
+import { get_project_file_job_status } from './projects/get_project_file_job_status.js';
 import { get_project_custom_login_test_result } from './projects/get_project_custom_login_test_result.js';
 import { get_project_vacq_score } from './projects/get_project_vacq_score.js';
 import { get_project_sitemap_item_details } from './projects/get_project_sitemap_item_details.js';
@@ -93,6 +94,7 @@ export const tools: Record<string, Tool> = {
   get_project_custom_login_test_result:
     get_project_custom_login_test_result as any,
   create_project_from_file: create_project_from_file as any,
+  get_project_file_job_status: get_project_file_job_status as any,
   get_project_vacq_score: get_project_vacq_score as any,
   get_project_sitemap_item_details: get_project_sitemap_item_details as any,
   get_inventory: get_inventory as any,

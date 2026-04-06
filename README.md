@@ -35,22 +35,3 @@ Add the following to your Claude Desktop configuration file (e.g., `~/Library/Ap
   }
 }
 ```
-
-## Development
-
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
-2. Build the project:
-   ```bash
-   npm run build
-   ```
-3. Run locally:
-   ```bash
-   node dist/index.js
-   ```
-
-## License
-
-MIT

@@ -16,15 +16,20 @@ export const get_projects = {
         'oldest_modified',
       ])
       .optional()
+      .default('latest')
       .describe('Sort order (default: latest)'),
     filter: z
-      .enum(['scheduled', 'archived'])
+      .enum(['none', 'scheduled', 'archived'])
       .optional()
+      .default('none')
       .describe('Filter projects by status'),
     group: z
       .number()
       .optional()
-      .describe('Filter by group ID. Pass -1 to filter ungrouped projects'),
+      .default(0)
+      .describe(
+        'Filter by group ID (default: 0). Pass -1 to filter ungrouped projects'
+      ),
     limit: z
       .number()
       .min(10)

@@ -2,6 +2,15 @@
   "name": "@dynomapper/mcp-server",
   "version": "0.1.5",
   "description": "DYNO Mapper MCP Server for AI agents and Claude integrations",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "dynomapper",
+    "accessibility",
+    "sitemap",
+    "seo-audit",
+    "content-audit"
+  ],
   "type": "module",
   "main": "dist/index.js",
   "bin": {

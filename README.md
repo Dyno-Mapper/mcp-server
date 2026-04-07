@@ -1,6 +1,6 @@
 # DYNO Mapper MCP Server
 
-[![DYNO Mapper](http://localhost:21201/images/logo_dark.6761788e.png)](https://dynomapper.com)
+[![DYNO Mapper](https://d31ninron5tttf.cloudfront.net/images/logo_dark.c37f697f.png)](https://dynomapper.com)
 
 An [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server for the [DYNO Mapper Public API](https://app.dynomapper.com/developer). This server allows AI agents to interact with your DYNO Mapper projects, perform accessibility audits, manage assignments, and analyze website inventory.
 

@@ -50,6 +50,7 @@ import { get_item_comments } from './comments/get_item_comments.js';
 import { get_visibility_project_ranking } from './visibility/get_visibility_project_ranking.js';
 import { get_visibility_project_score } from './visibility/get_visibility_project_score.js';
 import { get_visibility_project_groups } from './visibility/get_visibility_project_groups.js';
+import { create_visibility_keyword_group } from './visibility/create_visibility_keyword_group.js';
 import { get_visibility_keyword_ranking } from './visibility/get_visibility_keyword_ranking.js';
 import { get_visibility_locales } from './visibility/get_visibility_locales.js';
 import { run_accessibility_checker } from './accessibility/run_accessibility_checker.js';
@@ -134,6 +135,7 @@ export const tools: Record<string, Tool> = {
   get_visibility_project_ranking: get_visibility_project_ranking as any,
   get_visibility_project_score: get_visibility_project_score as any,
   get_visibility_project_groups: get_visibility_project_groups as any,
+  create_visibility_keyword_group: create_visibility_keyword_group as any,
   get_visibility_keyword_ranking: get_visibility_keyword_ranking as any,
   get_visibility_locales: get_visibility_locales as any,
   run_accessibility_checker: run_accessibility_checker as any,

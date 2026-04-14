@@ -53,6 +53,7 @@ import { get_visibility_project_groups } from './visibility/get_visibility_proje
 import { create_visibility_keyword_group } from './visibility/create_visibility_keyword_group.js';
 import { delete_visibility_keyword_group } from './visibility/delete_visibility_keyword_group.js';
 import { create_visibility_keywords } from './visibility/create_visibility_keywords.js';
+import { update_visibility_keywords_group } from './visibility/update_visibility_keywords_group.js';
 import { get_visibility_keyword_ranking } from './visibility/get_visibility_keyword_ranking.js';
 import { get_visibility_locales } from './visibility/get_visibility_locales.js';
 import { run_accessibility_checker } from './accessibility/run_accessibility_checker.js';
@@ -140,6 +141,7 @@ export const tools: Record<string, Tool> = {
   create_visibility_keyword_group: create_visibility_keyword_group as any,
   delete_visibility_keyword_group: delete_visibility_keyword_group as any,
   create_visibility_keywords: create_visibility_keywords as any,
+  update_visibility_keywords_group: update_visibility_keywords_group as any,
   get_visibility_keyword_ranking: get_visibility_keyword_ranking as any,
   get_visibility_locales: get_visibility_locales as any,
   run_accessibility_checker: run_accessibility_checker as any,

@@ -110,6 +110,12 @@ The following tools are available through this MCP server:
 | `get_visibility_project_score` | Get keywords score of a project |
 | `get_visibility_project_groups` | Get keyword groups |
 | `get_visibility_keyword_ranking` | Get daily ranking of a keyword in a project |
+| `get_visibility_locales` | Get visibility locales |
+| `create_visibility_keyword_group` | Create a keyword group |
+| `delete_visibility_keyword_group` | Delete a keyword group |
+| `create_visibility_keywords` | Create visibility keywords |
+| `update_visibility_keywords_group` | Update keyword groups for a project keyword |
+| `update_visibility_keyword_setting` | Update settings for a project keyword |
 | `run_accessibility_checker` | Run accessibility checker on a project |
 | `get_accessibility_results` | Get accessibility results of a project |
 | `delete_accessibility_report` | Delete accessibility results of a project |

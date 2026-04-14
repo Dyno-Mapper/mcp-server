@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.7] - 2026-04-14
+### Added
+- Added visibility-related tools:
+  - `update_visibility_keyword_setting`
+  - `update_visibility_keywords_group`
+  - `create_visibility_keywords`
+  - `delete_visibility_keyword_group`
+  - `create_visibility_keyword_group`
+  - `get_visibility_locales`
+
 ## [0.1.6] - 2026-04-07
 ### Changed
 - Added keywords to the npm registry.

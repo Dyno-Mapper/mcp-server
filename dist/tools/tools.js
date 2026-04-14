@@ -49,7 +49,13 @@ import { get_item_comments } from './comments/get_item_comments.js';
 import { get_visibility_project_ranking } from './visibility/get_visibility_project_ranking.js';
 import { get_visibility_project_score } from './visibility/get_visibility_project_score.js';
 import { get_visibility_project_groups } from './visibility/get_visibility_project_groups.js';
+import { create_visibility_keyword_group } from './visibility/create_visibility_keyword_group.js';
+import { delete_visibility_keyword_group } from './visibility/delete_visibility_keyword_group.js';
+import { create_visibility_keywords } from './visibility/create_visibility_keywords.js';
+import { update_visibility_keywords_group } from './visibility/update_visibility_keywords_group.js';
+import { update_visibility_keyword_setting } from './visibility/update_visibility_keyword_setting.js';
 import { get_visibility_keyword_ranking } from './visibility/get_visibility_keyword_ranking.js';
+import { get_visibility_locales } from './visibility/get_visibility_locales.js';
 import { run_accessibility_checker } from './accessibility/run_accessibility_checker.js';
 import { get_accessibility_results } from './accessibility/get_accessibility_results.js';
 import { delete_accessibility_report } from './accessibility/delete_accessibility_report.js';
@@ -119,7 +125,13 @@ export const tools = {
     get_visibility_project_ranking: get_visibility_project_ranking,
     get_visibility_project_score: get_visibility_project_score,
     get_visibility_project_groups: get_visibility_project_groups,
+    create_visibility_keyword_group: create_visibility_keyword_group,
+    delete_visibility_keyword_group: delete_visibility_keyword_group,
+    create_visibility_keywords: create_visibility_keywords,
+    update_visibility_keywords_group: update_visibility_keywords_group,
+    update_visibility_keyword_setting: update_visibility_keyword_setting,
     get_visibility_keyword_ranking: get_visibility_keyword_ranking,
+    get_visibility_locales: get_visibility_locales,
     run_accessibility_checker: run_accessibility_checker,
     get_accessibility_results: get_accessibility_results,
     delete_accessibility_report: delete_accessibility_report,

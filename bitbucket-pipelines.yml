@@ -16,6 +16,6 @@ pipelines:
           script:
             - pipe: atlassian/bitbucket-upload-file:0.7.5
               variables:
-                BITBUCKET_USERNAME: $BITBUCKET_USERNAME
-                BITBUCKET_APP_PASSWORD: $BITBUCKET_APP_PASSWORD
+                ATLASSIAN_ACCOUNT_EMAIL: $ATLASSIAN_ACCOUNT_EMAIL
+                ATLASSIAN_API_TOKEN: $ATLASSIAN_API_TOKEN
                 FILENAME: 'all-reports.zip'

@@ -1,0 +1,10 @@
+node_modules
+dist
+.git
+.gitignore
+.ai
+.idea
+.vscode
+.env
+.env.example
+*.test.ts

@@ -2,6 +2,53 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] - 2026-10-28
+
+### Removed
+
+- The `--sse` flag, the `MCP_TRANSPORT=sse` value and the last SSE naming in the
+  codebase. Both spellings now exit non-zero with a message naming the
+  replacement, instead of starting a server whose transport no longer exists.
+
+### Changed
+
+- The HTTP transport is Streamable HTTP and stateless: every `POST` is answered by
+  its own MCP server, no `Mcp-Session-Id` is minted or accepted, and `GET`/`DELETE`
+  answer `405`. Replicas need no coordination and a redeploy drops no session.
+- `--http` (or `MCP_TRANSPORT=http`) starts the hosted endpoint at `POST /mcp`.
+  `--stdio` and the default are unchanged.
+- Hosted mode requires `Authorization: Bearer <personal access token>` on every
+  request and answers `401` with `WWW-Authenticate` when it is missing or not in
+  that form. The token is forwarded to the API unvalidated, so the API stays the
+  authority. `DYNOMAPPER_API_KEY` is now read by stdio only; hosted mode warns
+  when it is set.
+- Hosted responses are one JSON body per call. Set `MCP_JSON_RESPONSES=false` to
+  stream SSE instead.
+- Hosted mode does not register `upload_file`, and `create_project_from_file`
+  drops its `file` argument, because a hosted server cannot read the caller's
+  filesystem. `url` and `fileKey` still work.
+- A hosted call that outlives `MCP_REQUEST_TIMEOUT_MS` (25s by default) returns a
+  `Request Timeout` tool error telling the agent to narrow the query, instead of
+  letting a CDN timeout answer with no JSON-RPC body.
+- The listener reads `MCP_PORT`/`MCP_HOST` before `PORT`/`HOST`, so an MCP sidecar
+  in a shared pod does not inherit the application's port.
+
+### Added
+
+- `GET /health`, unauthenticated and unthrottled, reporting status, version and
+  uptime for load balancers and container probes.
+- A per-caller rate limit (60/min, burst 20), a request body limit (256 KB), a
+  concurrency cap (100), optional `Host` and `Origin` allowlists, and a SIGTERM
+  drain that closes in-flight transports before exit. All configurable.
+- `MCP_TRUST_PROXY`, which keys rate limiting on `CloudFront-Viewer-Address` and
+  then the last `X-Forwarded-For` entry, so one CloudFront edge does not throttle
+  unrelated callers.
+- `HOSTING.md`: the hosted contract, the full settings table, a CloudFront and
+  EKS runbook, and the three GitHub Copilot configurations.
+- `Dockerfile`, a non-root multi-stage image running `--http` with a `HEALTHCHECK`.
+- `README.md` gained one pointer line to `HOSTING.md`; it remains the stdio
+  document shown on npm.
+
 ## [0.1.8] - 2026-10-28
 
 ### Added

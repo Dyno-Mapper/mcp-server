@@ -49,12 +49,88 @@ export class ApiHelper {
     return { path: resolvedPath, args: remainingArgs };
   }
 
+  private buildFilePart(filePath: string): { blob: Blob; fileName: string } {
+    const fileBuffer = fs.readFileSync(filePath);
+    const fileName = pathMod.basename(filePath);
+    const mimeType = mime.lookup(filePath) || 'application/octet-stream';
+    return { blob: new Blob([fileBuffer], { type: mimeType }), fileName };
+  }
+
+  private fileNotFoundResult(filePath: string): CallToolResult {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            error: 'File not found',
+            message: `The specified file was not found: ${filePath}`,
+          }),
+        },
+      ],
+      isError: true,
+    };
+  }
+
+  /**
+   * Builds the request body for a multipart tool.
+   *
+   * `'fields'` sends every argument as its own form field next to the file,
+   * which is the shape an upload expects. `'file-and-body'` sends the file
+   * part next to a JSON `body` part, which is how the text and XML imports
+   * carry their options.
+   */
+  private buildMultipartBody(
+    finalArgs: any,
+    mode: 'fields' | 'file-and-body'
+  ): { data?: FormData; error?: CallToolResult } {
+    const formData = new FormData();
+
+    if (mode === 'fields') {
+      for (const [key, value] of Object.entries(finalArgs ?? {})) {
+        if (value === undefined || value === null) {
+          continue;
+        }
+
+        if (key === 'file') {
+          if (!fs.existsSync(String(value))) {
+            return { error: this.fileNotFoundResult(String(value)) };
+          }
+          const { blob, fileName } = this.buildFilePart(String(value));
+          formData.append('file', blob, fileName);
+          continue;
+        }
+
+        formData.append(key, String(value));
+      }
+
+      return { data: formData };
+    }
+
+    const { file, ...restArgs } = finalArgs || {};
+
+    if (!fs.existsSync(file)) {
+      return { error: this.fileNotFoundResult(file) };
+    }
+
+    const { blob, fileName } = this.buildFilePart(file);
+    formData.append('file', blob, fileName);
+
+    const jsonBody = JSON.stringify(restArgs);
+    formData.append(
+      'body',
+      new Blob([jsonBody], { type: 'application/json' }),
+      'body'
+    );
+
+    return { data: formData };
+  }
+
   async handleToolRequest(
     method: string,
     path: string,
     args: any,
     apiKey?: string,
-    multiPart?: boolean
+    multiPart?: boolean | 'fields'
   ): Promise<CallToolResult> {
     try {
       const headers: Record<string, string> = {};
@@ -75,44 +151,22 @@ export class ApiHelper {
       );
 
       let data = finalArgs;
+      const hasFile =
+        typeof finalArgs?.file === 'string' && finalArgs.file.length > 0;
 
-      if (multiPart) {
-        const formData = new FormData();
-        const { file, ...restArgs } = finalArgs || {};
-        if (file) {
-          if (fs.existsSync(file)) {
-            const fileBuffer = fs.readFileSync(file);
-            const fileName = pathMod.basename(file);
-            const mimeType = mime.lookup(file) || 'application/octet-stream';
-            const blob = new Blob([fileBuffer], { type: mimeType });
-            formData.append('file', blob, fileName);
-          } else {
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: JSON.stringify({
-                    error: 'File not found',
-                    message: `The specified file was not found: ${file}`,
-                  }),
-                },
-              ],
-              isError: true,
-            };
-          }
-        } else {
-          // If file property is undefined, pass the file as empty value
-          formData.append('file', '');
+      if (multiPart === 'fields' || (multiPart && hasFile)) {
+        const { data: formData, error } = this.buildMultipartBody(
+          finalArgs,
+          multiPart === 'fields' ? 'fields' : 'file-and-body'
+        );
+
+        if (error) {
+          return error;
         }
-        const jsonBody = JSON.stringify(restArgs);
-        const jsonBodyBlob = new Blob([jsonBody], { type: 'application/json' });
-        formData.append('body', jsonBodyBlob, 'body');
 
         data = formData;
         // Let axios handle the Content-Type with boundary for FormData
-        if (headers['Content-Type']) {
-          delete headers['Content-Type'];
-        }
+        delete headers['Content-Type'];
       }
 
       const response = await this.client.request({
@@ -153,8 +207,34 @@ export class ApiHelper {
     }
   }
 
+  /**
+   * Reads the rate-limit headers the API sends with a refused request.
+   *
+   * Every rejected request counts against the allowance too, so the caller
+   * has to wait the documented number of seconds rather than retry at once.
+   */
+  private rateLimitInfo(headers: any): Record<string, number> {
+    const mapping: Record<string, string> = {
+      retryAfter: 'retry-after',
+      rateLimitLimit: 'ratelimit-limit',
+      rateLimitRemaining: 'ratelimit-remaining',
+      rateLimitReset: 'ratelimit-reset',
+    };
+    const info: Record<string, number> = {};
+
+    for (const [key, header] of Object.entries(mapping)) {
+      const raw = headers?.[header];
+      const value = Number(Array.isArray(raw) ? raw[0] : raw);
+      if (Number.isFinite(value)) {
+        info[key] = value;
+      }
+    }
+
+    return info;
+  }
+
   async handleError(error: any): Promise<CallToolResult> {
-    let errorResponse: { error: string; message: string };
+    let errorResponse: { error: string; message: string } & Record<string, any>;
 
     if (error.response) {
       // The request was made and the server responded with a status code
@@ -163,6 +243,13 @@ export class ApiHelper {
         error: 'API Error',
         message: error.message || 'Unknown API error',
       };
+
+      if (error.response.status === 429) {
+        errorResponse = {
+          ...errorResponse,
+          ...this.rateLimitInfo(error.response.headers),
+        };
+      }
     } else if (error.request) {
       // The request was made but no response was received
       errorResponse = {

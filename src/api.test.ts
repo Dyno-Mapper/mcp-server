@@ -95,7 +95,7 @@ describe('ApiHelper.handleToolRequest', () => {
     assert.strictEqual(errorData.message, 'Item not found');
   });
 
-  test('should handle successful POST request with multiPart: true', async () => {
+  test('should send a JSON body for multiPart: true when no file is given', async () => {
     const mockResponse = {
       data: { success: true, id: 1 },
       status: 201,
@@ -105,17 +105,13 @@ describe('ApiHelper.handleToolRequest', () => {
     mockClient.request.mock.mockImplementationOnce(async (config: any) => {
       assert.strictEqual(config.method, 'POST');
       assert.strictEqual(config.url, '/v1/project/text');
-      // Axios sets config.data to FormData when multiPart is true
-      assert.ok(config.data instanceof FormData);
-      assert.strictEqual(config.headers['Content-Type'], undefined); // Axios should set boundary
-
-      const formData = config.data as FormData;
-      // We can't easily inspect FormData content in Node 20+, but we can check if it exists
-      // If we use node-fetch or similar, it might be easier, but here we're using native FormData/Blob
-      assert.ok(formData.has('file')); // file should always exist now
-      assert.ok(formData.has('body'));
-      const body = JSON.parse(formData.get('body') as string);
-      assert.strictEqual(body.url, 'https://example.com/urllist.txt');
+      // No file means one source only, so the request goes out as JSON
+      // instead of multipart: a file part plus a body source is refused.
+      assert.ok(!(config.data instanceof FormData));
+      assert.deepStrictEqual(config.data, {
+        url: 'https://example.com/urllist.txt',
+      });
+      assert.strictEqual(config.headers['Content-Type'], 'application/json');
 
       return { ...mockResponse, config };
     });
@@ -134,6 +130,86 @@ describe('ApiHelper.handleToolRequest', () => {
     assert.strictEqual(result.isError, undefined);
     const data = JSON.parse((result.content[0] as any).text);
     assert.deepStrictEqual(data, mockResponse.data);
+  });
+
+  test('should send a JSON body when only a fileKey is given', async () => {
+    const mockResponse = {
+      data: { success: true, id: 2 },
+      status: 201,
+      config: { headers: {} },
+    };
+
+    mockClient.request.mock.mockImplementationOnce(async (config: any) => {
+      assert.ok(!(config.data instanceof FormData));
+      assert.deepStrictEqual(config.data, {
+        fileKey: 'uploads/api/project_text/b2/file.txt',
+      });
+      return { ...mockResponse, config };
+    });
+
+    const result = await apiHelper.handleToolRequest(
+      'POST',
+      '/v1/project/{type}',
+      { type: 'text', fileKey: 'uploads/api/project_text/b2/file.txt' },
+      undefined,
+      true
+    );
+
+    assert.strictEqual(result.isError, undefined);
+  });
+
+  test('should send each argument as a form field for multiPart: fields', async () => {
+    const mockResponse = {
+      data: { key: 'uploads/api/project_text/b2/file.txt' },
+      status: 201,
+      config: { headers: {} },
+    };
+
+    mockClient.request.mock.mockImplementationOnce(async (config: any) => {
+      assert.strictEqual(config.method, 'POST');
+      assert.strictEqual(config.url, '/v1/files');
+      assert.ok(config.data instanceof FormData);
+
+      const formData = config.data as FormData;
+      assert.strictEqual(formData.get('purpose'), 'project_text');
+      assert.ok(formData.has('file'));
+      // An upload carries fields next to the file, not a JSON body part.
+      assert.ok(!formData.has('body'));
+
+      const file = formData.get('file') as any;
+      assert.strictEqual(file.name, 'test.txt');
+      assert.strictEqual(file.type, 'text/plain');
+      assert.strictEqual(config.headers['Content-Type'], undefined);
+
+      return { ...mockResponse, config };
+    });
+
+    const result = await apiHelper.handleToolRequest(
+      'POST',
+      '/v1/files',
+      { purpose: 'project_text', file: '/tmp/test.txt' },
+      undefined,
+      'fields'
+    );
+
+    assert.strictEqual(result.isError, undefined);
+    const data = JSON.parse((result.content[0] as any).text);
+    assert.deepStrictEqual(data, mockResponse.data);
+  });
+
+  test('should return an error when multiPart: fields has a missing file', async () => {
+    const result = await apiHelper.handleToolRequest(
+      'POST',
+      '/v1/files',
+      { purpose: 'project_text', file: '/tmp/non-existent.txt' },
+      undefined,
+      'fields'
+    );
+
+    assert.strictEqual(result.isError, true);
+    const errorData = JSON.parse((result.content[0] as any).text);
+    assert.strictEqual(errorData.error, 'File not found');
+    assert.ok(errorData.message.includes('/tmp/non-existent.txt'));
   });
 
   test('should handle successful POST request with multiPart: true and file', async () => {
@@ -156,7 +232,7 @@ describe('ApiHelper.handleToolRequest', () => {
       assert.strictEqual(file.name, 'test.txt');
       assert.strictEqual(file.type, 'text/plain');
 
-      const body = JSON.parse(formData.get('body') as string);
+      const body = JSON.parse(await (formData.get('body') as File).text());
       assert.strictEqual(body.speed, 'slowest');
 
       return { ...mockResponse, config };
@@ -275,6 +351,51 @@ describe('ApiHelper.handleError', () => {
     const errorData = JSON.parse((result.content[0] as any).text);
     assert.strictEqual(errorData.error, 'API Error');
     assert.strictEqual(errorData.message, 'Network response was not ok');
+  });
+
+  test('should surface rate-limit headers on a 429', async () => {
+    const mockError = {
+      response: {
+        data: {
+          statusCode: 429,
+          error: 'Too Many Requests',
+          message: 'Rate limit exceeded',
+          code: 'rate_limit_exceeded',
+        },
+        status: 429,
+        headers: {
+          'retry-after': '12',
+          'ratelimit-limit': '60',
+          'ratelimit-remaining': '0',
+          'ratelimit-reset': '12',
+        },
+      },
+    };
+
+    const result = await apiHelper.handleError(mockError);
+
+    assert.strictEqual(result.isError, true);
+    const errorData = JSON.parse((result.content[0] as any).text);
+    assert.strictEqual(errorData.code, 'rate_limit_exceeded');
+    assert.strictEqual(errorData.retryAfter, 12);
+    assert.strictEqual(errorData.rateLimitLimit, 60);
+    assert.strictEqual(errorData.rateLimitRemaining, 0);
+    assert.strictEqual(errorData.rateLimitReset, 12);
+  });
+
+  test('should leave other error statuses without rate-limit fields', async () => {
+    const mockError = {
+      response: {
+        data: { statusCode: 404, error: 'Not Found', message: 'Missing' },
+        status: 404,
+        headers: { 'retry-after': '12' },
+      },
+    };
+
+    const result = await apiHelper.handleError(mockError);
+
+    const errorData = JSON.parse((result.content[0] as any).text);
+    assert.strictEqual(errorData.retryAfter, undefined);
   });
 
   test('should handle axios request error (no response)', async () => {

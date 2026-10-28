@@ -6,16 +6,20 @@ import mime from 'mime-types';
 
 export class ApiHelper {
   private client: AxiosInstance;
+  private readonly timeoutMs?: number;
 
   constructor(
     readonly baseUrl: string,
-    readonly apiKey: string
+    readonly apiKey: string,
+    options: { timeoutMs?: number } = {}
   ) {
+    this.timeoutMs = options.timeoutMs;
     this.client = axios.create({
       baseURL: this.baseUrl,
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
       },
+      ...(options.timeoutMs ? { timeout: options.timeoutMs } : {}),
     });
   }
 
@@ -235,6 +239,27 @@ export class ApiHelper {
 
   async handleError(error: any): Promise<CallToolResult> {
     let errorResponse: { error: string; message: string } & Record<string, any>;
+
+    // The hosted transport caps a call below CloudFront's response timeout, so
+    // a slow endpoint has to become advice the agent can act on rather than a
+    // 504 from the CDN with no JSON-RPC body.
+    if (error?.code === 'ECONNABORTED' || error?.code === 'ETIMEDOUT') {
+      const seconds = Math.round((this.timeoutMs ?? 0) / 1000);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              error: 'Request Timeout',
+              message:
+                `The DYNO Mapper API did not answer within ${seconds} seconds. ` +
+                'Narrow the query — a smaller page size, a single project, or a shorter date range — and try again.',
+            }),
+          },
+        ],
+        isError: true,
+      };
+    }
 
     if (error.response) {
       // The request was made and the server responded with a status code

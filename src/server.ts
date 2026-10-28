@@ -1,125 +1,128 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { createMcpExpressApp } from '@modelcontextprotocol/sdk/server/express.js';
-import { readFileSync } from 'node:fs';
 import { tools } from './tools/tools.js';
 import { ApiHelper } from './api.js';
+import { packageVersion } from './version.js';
 
-function packageVersion(): string {
-  try {
-    const packageJson = JSON.parse(
-      readFileSync(new URL('../package.json', import.meta.url), 'utf8')
-    );
-    return packageJson.version ?? '0.0.0';
-  } catch {
-    return '0.0.0';
-  }
+export interface DynoMapperServerOptions {
+  /** API base URL. Defaults to `DYNOMAPPER_API_URL`, then the public API. */
+  baseUrl?: string;
+  /** Token used when a tool call arrives without one. stdio only. */
+  apiKey?: string;
+  /** Deadline for one API call, used by the hosted transport. */
+  requestTimeoutMs?: number;
 }
 
-export class DynoMapperServer {
-  private readonly server: McpServer;
-  private apiHelper: ApiHelper;
+export interface CreateServerOptions {
+  /** Omit tools that only work against the local filesystem. */
+  hosted?: boolean;
+}
 
-  constructor() {
+/**
+ * Tools that cannot work without the caller's filesystem.
+ *
+ * A hosted server's paths are the pod's, not the caller's, so `upload_file`
+ * is not registered and `create_project_from_file` drops its `file` argument.
+ * Its `url` and `fileKey` sources still work.
+ */
+const HOSTED_SKIPPED_TOOLS = new Set(['upload_file']);
+
+const HOSTED_OMITTED_ARGS: Record<string, string[]> = {
+  create_project_from_file: ['file'],
+};
+
+/**
+ * Descriptions that would otherwise mention an argument hosted mode removes.
+ *
+ * Kept next to the omissions so the two cannot drift apart: a tool that loses
+ * an argument also loses the sentences telling an agent to send it.
+ */
+const HOSTED_DESCRIPTIONS: Record<string, string> = {
+  create_project_from_file:
+    'Create a project from a text file or an XML sitemap, imported rather than crawled: ' +
+    "`type: 'text'` imports a plain-text list of URLs, `type: 'xml'` an XML sitemap. " +
+    'Send exactly one source — `fileKey` or `url`. This server is hosted, so it cannot read a local file, ' +
+    'and `upload_file` is not available; a `fileKey` must have been minted on a stdio install of this server, ' +
+    'against the same account. A project created from a `fileKey` cannot be refreshed with `refresh_project_file`, ' +
+    'because no source URL is kept — send a `url` when a refresh may be needed later. ' +
+    'The import is queued: poll `get_project_file_job_status` with the same `type` until `finished` is true, ' +
+    'then read the project with `get_project_details`. Cancel it with `cancel_project_file_job`.',
+};
+
+export class DynoMapperServer {
+  private readonly apiHelper: ApiHelper;
+
+  constructor(options: DynoMapperServerOptions = {}) {
     const apiKey =
-      process.env.DYNOMAPPER_API_KEY ||
-      process.env.MCP_API_KEY ||
+      options.apiKey ??
+      process.env.DYNOMAPPER_API_KEY ??
+      process.env.MCP_API_KEY ??
       process.env.API_KEY;
 
     this.apiHelper = new ApiHelper(
-      process.env.DYNOMAPPER_API_URL || 'https://api.dynomapper.com',
-      String(apiKey)
+      options.baseUrl ??
+        process.env.DYNOMAPPER_API_URL ??
+        'https://api.dynomapper.com',
+      String(apiKey),
+      { timeoutMs: options.requestTimeoutMs }
     );
-
-    this.server = this.createServer();
-    this.setupHandlers(this.server);
-
-    this.server.server.onerror = (error) => console.error('[MCP Error]', error);
-
-    process.on('SIGINT', async () => {
-      await this.server.close();
-      process.exit(0);
-    });
   }
 
+  /** Serves MCP over stdio, the transport an MCP client launches. */
   async run() {
+    const server = this.createServer();
     const transport = new StdioServerTransport();
-    await this.server.connect(transport);
+    await server.connect(transport);
+
+    process.on('SIGINT', async () => {
+      await server.close();
+      process.exit(0);
+    });
+
     console.error('DYNO Mapper MCP server running on stdio');
   }
 
-  async runSSE(port: number = 3000) {
-    const app = createMcpExpressApp();
-    const servers = new Map<string, McpServer>();
-    const transports = new Map<string, StreamableHTTPServerTransport>();
-
-    app.all('/mcp', async (req, res) => {
-      const sessionId =
-        (Array.isArray(req.headers['mcp-session-id'])
-          ? req.headers['mcp-session-id'][0]
-          : req.headers['mcp-session-id']) || '';
-
-      let server: McpServer | undefined;
-      let transport: StreamableHTTPServerTransport | undefined;
-
-      if (sessionId) {
-        server = servers.get(sessionId);
-        transport = transports.get(sessionId);
-      }
-
-      if (!server) {
-        server = this.createServer();
-        this.setupHandlers(server);
-        server.server.onerror = (error) => console.error('[MCP Error]', error);
-
-        const newTransport = new StreamableHTTPServerTransport({
-          sessionIdGenerator: () => crypto.randomUUID().toString(),
-          onsessioninitialized: (newId) => {
-            transports.set(newId, newTransport);
-            servers.set(newId, server!);
-            console.log(`Session ${newId} initialized`);
-          },
-          onsessionclosed: (id) => {
-            transports.delete(id);
-            servers.get(id)?.close();
-            servers.delete(id);
-            console.log(`Session ${id} closed`);
-          },
-        });
-
-        await server.connect(newTransport);
-        transport = newTransport;
-      }
-
-      if (!transport) {
-        throw new Error('MCP transport not initialized');
-      }
-
-      try {
-        await transport.handleRequest(req, res, req.body);
-      } catch (error) {
-        console.error('[MCP SSE Error]', error);
-        if (!res.headersSent) {
-          res.status(500).send('Internal Server Error');
-        }
-      }
+  /**
+   * Builds one MCP server with every tool registered.
+   *
+   * The hosted transport calls this once per request, so it must not assume
+   * anything carries over from a previous one.
+   */
+  createServer(options: CreateServerOptions = {}): McpServer {
+    const server = new McpServer({
+      name: '@dynomapper/mcp-server',
+      version: packageVersion(),
+      description: 'DYNO Mapper MCP Server',
     });
 
-    app.listen(port, () => {
-      console.error(
-        `DYNO Mapper MCP server running on http://localhost:${port}/mcp`
-      );
-    });
+    this.setupHandlers(server, options);
+    server.server.onerror = (error) => console.error('[MCP Error]', error);
+
+    return server;
   }
 
-  private setupHandlers(server: McpServer) {
+  private setupHandlers(server: McpServer, options: CreateServerOptions) {
     for (const tool of Object.values(tools)) {
+      if (options.hosted && HOSTED_SKIPPED_TOOLS.has(tool.name)) {
+        continue;
+      }
+
+      const omitted = options.hosted
+        ? (HOSTED_OMITTED_ARGS[tool.name] ?? [])
+        : [];
+      const inputSchema = omitted.length
+        ? tool.inputSchema.omit(
+            Object.fromEntries(omitted.map((name) => [name, true])) as any
+          )
+        : tool.inputSchema;
+
       server.registerTool(
         tool.name,
         {
-          description: tool.description,
-          inputSchema: tool.inputSchema,
+          description:
+            (options.hosted && HOSTED_DESCRIPTIONS[tool.name]) ||
+            tool.description,
+          inputSchema,
           outputSchema: tool.outputSchema,
           annotations: {
             readOnlyHint: tool.method.toLowerCase() === 'get',
@@ -141,13 +144,5 @@ export class DynoMapperServer {
         }
       );
     }
-  }
-
-  private createServer() {
-    return new McpServer({
-      name: '@dynomapper/mcp-server',
-      version: packageVersion(),
-      description: 'DYNO Mapper MCP Server',
-    });
   }
 }

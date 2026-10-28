@@ -27,7 +27,8 @@
     "dev": "tsx src/index.ts",
     "test": "vp test",
     "check": "vp check",
-    "lint": "vp lint"
+    "lint": "vp lint",
+    "prepare": "husky"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",
@@ -41,6 +42,7 @@
     "@types/express": "^5.0.6",
     "@types/mime-types": "^3.0.1",
     "@types/node": "^24.19.2",
+    "husky": "^9.1.7",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite-plus": "^1.4.0"

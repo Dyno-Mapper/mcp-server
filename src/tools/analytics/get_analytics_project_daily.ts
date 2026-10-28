@@ -2,51 +2,88 @@ import { z } from 'zod';
 
 export const get_analytics_project_daily = {
   name: 'get_analytics_project_daily',
-  description: 'Get analytics daily data',
+  description:
+    'One row of traffic figures per stored day for a project, taken from the Google Analytics 4 properties linked to the project and ordered oldest first. Use it to chart a trend; `get_analytics_project` returns the same metrics totalled over the whole range. Both dates are required and the range includes both ends. Days without collected data are absent rather than zero-filled, and the rows come back as stored without merging, so a day with figures from more than one property appears more than once: add those rows up yourself if you need one figure per day.',
   inputSchema: z.object({
-    projectId: z.number().describe('The ID of the project'),
+    projectId: z
+      .number()
+      .describe('The ID of the project, as returned by `get_projects`'),
     startDate: z.iso
       .date()
-      .describe('The start date for the analytics (YYYY-MM-DD)'),
+      .describe(
+        'First calendar day of the range, in `YYYY-MM-DD` form. Required, with no default. Inclusive: traffic recorded for this day is included'
+      ),
     endDate: z.iso
       .date()
-      .describe('The end date for the analytics (YYYY-MM-DD)'),
+      .describe(
+        'Last calendar day of the range, in `YYYY-MM-DD` form. Required, with no default. Inclusive. An `endDate` earlier than `startDate` is not rejected; it simply matches no rows'
+      ),
   }),
   outputSchema: z.object({
     data: z
       .array(
         z.object({
-          date: z.string().describe('The date for the analytics (YYYY-MM-DD)'),
+          date: z
+            .string()
+            .describe('Calendar day the row covers, in `YYYY-MM-DD` form'),
           activeUsers: z
             .number()
-            .describe('Number of active users on this day'),
-          newUsers: z.number().describe('Number of new users on this day'),
-          sessions: z.number().describe('Number of sessions on this day'),
+            .describe(
+              'Distinct users Google Analytics counted as active: a user is active once they have an engaged session'
+            ),
+          newUsers: z
+            .number()
+            .describe(
+              'Users Google Analytics saw for the first time on that day'
+            ),
+          sessions: z
+            .number()
+            .describe(
+              'Sessions Google Analytics counted. A visit is one session however many pages it covers'
+            ),
           engagedSessions: z
             .number()
-            .describe('Number of engaged sessions on this day'),
+            .describe(
+              'Sessions Google Analytics classes as engaged: those lasting longer than 10 seconds, containing a conversion, or viewing two or more pages'
+            ),
           averageSessionDuration: z
             .number()
             .describe(
-              'The average duration of each session in seconds on this day'
+              'Mean length of a session in seconds for that day, as Google Analytics recorded it'
             ),
-          conversions: z.number().describe('Number of conversions on this day'),
+          conversions: z
+            .number()
+            .describe(
+              'Conversion events: events the property marks as conversions, key events in newer Google Analytics wording'
+            ),
           sessionConversionRate: z
             .number()
-            .describe('The conversion rate of sessions on this day'),
-          eventCount: z.number().describe('Total number of events on this day'),
+            .describe(
+              'Share of the sessions on that day in which a user converted, as Google Analytics recorded it'
+            ),
+          eventCount: z
+            .number()
+            .describe('Events recorded on that day, under every event name'),
           totalRevenue: z
             .number()
-            .describe('Total revenue generated on this day'),
+            .describe(
+              'Revenue from purchases, subscriptions and advertising, in the currency of each property. The currency code is not returned'
+            ),
           engagementRate: z
             .number()
-            .describe('The engagement rate of sessions on this day'),
+            .describe(
+              'Engaged sessions divided by sessions, between 0 and 1, and 0 when there are no sessions. Computed by DYNO Mapper from the summed sessions rather than read from Google Analytics'
+            ),
           bounceRate: z
             .number()
-            .describe('The bounce rate of sessions on this day'),
+            .describe(
+              'Sessions that were not engaged, divided by all sessions, between 0 and 1: the exact complement of `engagementRate`, and computed by DYNO Mapper for the same reason'
+            ),
         })
       )
-      .describe('An array of daily analytics data'),
+      .describe(
+        'The days of the range that have collected figures, oldest first'
+      ),
   }),
   method: 'get',
   path: '/v1/analytics/{projectId}/daily',

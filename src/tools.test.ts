@@ -1,5 +1,4 @@
-import { test, describe } from 'node:test';
-import assert from 'node:assert';
+import { describe, expect, test } from 'vite-plus/test';
 import { readFileSync } from 'node:fs';
 import { z } from 'zod';
 import { tools } from './tools/tools.js';
@@ -67,7 +66,6 @@ function strictness(schema: any, specSchema: any, path = ''): string[] {
   if (!schema.properties || !specSchema.properties) return problems;
 
   const schemaProps = Object.keys(schema.properties);
-  const specProps = Object.keys(specSchema.properties);
 
   for (const key of schemaProps) {
     const toolField = schema.properties[key];
@@ -108,11 +106,10 @@ function strictness(schema: any, specSchema: any, path = ''): string[] {
 describe('tool registry', () => {
   test('every tool is keyed by its own name', () => {
     for (const [key, tool] of Object.entries(tools)) {
-      assert.strictEqual(
+      expect(
         (tool as any).name,
-        key,
         `tool registered as "${key}" declares name "${(tool as any).name}"`
-      );
+      ).toBe(key);
     }
   });
 
@@ -126,7 +123,7 @@ describe('tool registry', () => {
       'submit_accessibility_login_input',
       'upload_file',
     ]) {
-      assert.ok(name in tools, `missing tool ${name}`);
+      expect(name in tools, `missing tool ${name}`).toBe(true);
     }
   });
 
@@ -141,7 +138,7 @@ describe('tool registry', () => {
       }
     }
 
-    assert.deepStrictEqual(missing, []);
+    expect(missing).toEqual([]);
   });
 
   test('no tool output schema is stricter than the documented response', () => {
@@ -163,7 +160,7 @@ describe('tool registry', () => {
       }
     }
 
-    assert.deepStrictEqual(problems, []);
+    expect(problems).toEqual([]);
   });
 
   test('every documented operation is reachable through a tool', () => {
@@ -186,7 +183,7 @@ describe('tool registry', () => {
     }
 
     const uncovered = [...documented].filter((op) => !covered.has(op));
-    assert.deepStrictEqual(uncovered, []);
+    expect(uncovered).toEqual([]);
   });
 
   test('descriptions never reference an API path', () => {
@@ -214,6 +211,6 @@ describe('tool registry', () => {
       }
     }
 
-    assert.deepStrictEqual(offenders, []);
+    expect(offenders).toEqual([]);
   });
 });

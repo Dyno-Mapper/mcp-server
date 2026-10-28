@@ -55,6 +55,13 @@ Add the following to your Claude Desktop configuration file:
 }
 ```
 
+### Streamable HTTP
+
+To host this server for agents that cannot launch a process, such as GitHub's
+Copilot coding agent, run it over Streamable HTTP instead. See
+[HOSTING.md](https://github.com/Dyno-Mapper/mcp-server/blob/main/HOSTING.md) for
+the hosted contract, its settings, and the CloudFront and Copilot configuration.
+
 ## Available Tools
 
 The following tools are available through this MCP server:

@@ -2,6 +2,17 @@ pipelines:
   branches:
     main:
       - step:
+          name: Check, test and build
+          image: node:24
+          caches:
+            - node
+          script:
+            - export HUSKY=0
+            - npm ci
+            - npm run check
+            - npm test
+            - npm run build
+      - step:
           name: Scan
           image: shiftleft/sast-scan:latest
           script:

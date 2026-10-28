@@ -2,8 +2,18 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { createMcpExpressApp } from '@modelcontextprotocol/sdk/server/express.js';
+import { readFileSync } from 'node:fs';
 import { tools } from './tools/tools.js';
 import { ApiHelper } from './api.js';
+function packageVersion() {
+    try {
+        const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+        return packageJson.version ?? '0.0.0';
+    }
+    catch {
+        return '0.0.0';
+    }
+}
 export class DynoMapperServer {
     server;
     apiHelper;
@@ -98,7 +108,7 @@ export class DynoMapperServer {
     createServer() {
         return new McpServer({
             name: '@dynomapper/mcp-server',
-            version: '0.1.0',
+            version: packageVersion(),
             description: 'DYNO Mapper MCP Server',
         });
     }

@@ -1,6 +1,6 @@
 {
   "name": "@dynomapper/mcp-server",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "DYNO Mapper MCP Server for AI agents and Claude integrations",
   "keywords": [
     "mcp",

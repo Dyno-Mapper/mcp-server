@@ -19,6 +19,10 @@ import { refresh_project_file } from './projects/refresh_project_file.js';
 import { cancel_project_file_refresh } from './projects/cancel_project_file_refresh.js';
 import { get_project_custom_login_test_result } from './projects/get_project_custom_login_test_result.js';
 import { get_project_vacq_score } from './projects/get_project_vacq_score.js';
+import { get_project_dacq_score } from './projects/get_project_dacq_score.js';
+import { get_project_login_inputs } from './projects/get_project_login_inputs.js';
+import { submit_project_login_input } from './projects/submit_project_login_input.js';
+import { create_project_from_sharepoint } from './projects/create_project_from_sharepoint.js';
 import { get_project_sitemap_item_details } from './projects/get_project_sitemap_item_details.js';
 import { get_inventory } from './inventory/get_inventory.js';
 import { get_inventory_summary } from './inventory/get_inventory_summary.js';
@@ -68,6 +72,9 @@ import { get_accessibility_report_item_result } from './accessibility/get_access
 import { get_accessibility_pdf_files } from './accessibility/get_accessibility_pdf_files.js';
 import { get_accessibility_pdf_guidelines } from './accessibility/get_accessibility_pdf_guidelines.js';
 import { get_accessibility_pdf_item_result } from './accessibility/get_accessibility_pdf_item_result.js';
+import { get_accessibility_login_inputs } from './accessibility/get_accessibility_login_inputs.js';
+import { submit_accessibility_login_input } from './accessibility/submit_accessibility_login_input.js';
+import { upload_file } from './files/upload_file.js';
 import { get_assignments } from './assignments/get_assignments.js';
 import { get_project_assignments } from './assignments/get_project_assignments.js';
 import { get_assignments_totals } from './assignments/get_assignments_totals.js';
@@ -95,6 +102,10 @@ export const tools = {
     refresh_project_file: refresh_project_file,
     cancel_project_file_refresh: cancel_project_file_refresh,
     get_project_vacq_score: get_project_vacq_score,
+    get_project_dacq_score: get_project_dacq_score,
+    get_project_login_inputs: get_project_login_inputs,
+    submit_project_login_input: submit_project_login_input,
+    create_project_from_sharepoint: create_project_from_sharepoint,
     get_project_sitemap_item_details: get_project_sitemap_item_details,
     get_inventory: get_inventory,
     get_inventory_summary: get_inventory_summary,
@@ -144,6 +155,9 @@ export const tools = {
     get_accessibility_pdf_files: get_accessibility_pdf_files,
     get_accessibility_pdf_guidelines: get_accessibility_pdf_guidelines,
     get_accessibility_pdf_item_result: get_accessibility_pdf_item_result,
+    get_accessibility_login_inputs: get_accessibility_login_inputs,
+    submit_accessibility_login_input: submit_accessibility_login_input,
+    upload_file: upload_file,
     get_assignments: get_assignments,
     get_project_assignments: get_project_assignments,
     get_assignments_totals: get_assignments_totals,

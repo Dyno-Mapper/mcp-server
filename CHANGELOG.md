@@ -35,6 +35,11 @@ All notable changes to this project will be documented in this file.
   now points at the equivalent tool instead of an API endpoint.
 - The server reports the package version in its MCP server metadata instead of a hard-coded
   `0.1.0`.
+- The toolchain moved to TypeScript 7 (the native compiler), Vite+ 1.4 and Vitest, and every
+  dependency was updated, `dotenv` 17 → 18 included. Nothing in the published tool surface
+  changed.
+- `dist/` is no longer committed. `npm run build` produces it, and `prepublishOnly` still builds
+  before publishing, so the tarball is unaffected.
 
 ## [0.1.7] - 2026-04-14
 

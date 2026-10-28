@@ -191,3 +191,20 @@ different prompt.
 > `create_project_from_sharepoint` takes the Microsoft account's username and password as tool
 > arguments. They are forwarded to the crawler and never stored, but tool arguments appear in the
 > conversation and in client-side logs.
+
+## Development
+
+Requires Node.js `^22.18.0 || ^24.11.0 || >=26.0.0`: Vite+ and Vitest both refuse older runtimes.
+
+```bash
+npm install      # also installs the git hooks
+npm run build    # tsc -> dist, the only thing that ships
+npm run dev      # run the server from source
+npm test         # vitest
+npm run check    # format, lint and type-check the whole tree
+```
+
+`npm run check` is the gate CI runs. Oxfmt formats, Oxlint lints with its type-aware rules, and
+tsgolint type-checks every file, tests included. `npm run format` applies formatting in place.
+
+A pre-commit hook runs `vp check --fix` on staged files. Set `HUSKY=0` to skip it.

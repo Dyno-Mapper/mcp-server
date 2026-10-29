@@ -12,8 +12,10 @@
     "dev": "npm run dev -w @dynomapper/mcp-server",
     "dev:http": "npm run dev -w @dynomapper/mcp-http",
     "test": "npm run test -ws --if-present",
-    "check": "npm run check -ws --if-present",
+    "check": "npm run check -ws --if-present && vp check vite.config.ts scripts",
     "format": "vp fmt .",
+    "verify": "npm run check && npm test && npm run build && npm run check:artifact",
+    "check:artifact": "node scripts/check-artifact.mjs",
     "prepare": "husky"
   },
   "devDependencies": {

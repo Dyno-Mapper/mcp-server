@@ -1,10 +1,9 @@
 import { afterEach, describe, expect, test } from 'vite-plus/test';
 import { createServer as createHttpServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
+import { DynoMapperServer } from '@dynomapper/mcp-core';
 import { readHttpConfig, type HttpConfig } from './config.js';
-import { createHostedApp } from './http.js';
-import { DynoMapperServer } from './server.js';
-import { resolveTransport } from './cli.js';
+import { createHostedApp } from './app.js';
 
 const USER = {
   id: 7,
@@ -437,33 +436,5 @@ describe('readHttpConfig', () => {
     expect(() => readHttpConfig({ MCP_JSON_RESPONSES: 'maybe' })).toThrow(
       'MCP_JSON_RESPONSES'
     );
-  });
-});
-
-describe('resolveTransport', () => {
-  test('defaults to stdio', () => {
-    expect(resolveTransport([], {})).toBe('stdio');
-    expect(resolveTransport([], { MCP_TRANSPORT: 'stdio' })).toBe('stdio');
-    expect(resolveTransport(['--http'], {})).toBe('http');
-    expect(resolveTransport([], { MCP_TRANSPORT: 'http' })).toBe('http');
-  });
-
-  test('refuses the removed SSE spelling with the replacement', () => {
-    expect(() => resolveTransport(['--sse'], {})).toThrow('removed in 0.2.0');
-    expect(() => resolveTransport([], { MCP_TRANSPORT: 'sse' })).toThrow(
-      'removed in 0.2.0'
-    );
-  });
-
-  test('refuses an unknown transport, an unknown flag and a conflict', () => {
-    expect(() => resolveTransport([], { MCP_TRANSPORT: 'websocket' })).toThrow(
-      'MCP_TRANSPORT'
-    );
-    expect(() => resolveTransport(['--port', '3000'], {})).toThrow(
-      'Unknown option'
-    );
-    expect(() =>
-      resolveTransport(['--stdio'], { MCP_TRANSPORT: 'http' })
-    ).toThrow('conflicts');
   });
 });

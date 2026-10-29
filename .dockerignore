@@ -1,5 +1,6 @@
 node_modules
-dist
+**/node_modules
+**/dist
 .git
 .gitignore
 .ai
@@ -7,4 +8,11 @@ dist
 .vscode
 .env
 .env.example
-*.test.ts
+# Tests never enter the image: the build stage only needs sources and configs.
+**/*.test.ts
+# Not read by the image build; HOSTING.md is for whoever runs it.
+HOSTING.md
+CHANGELOG.md
+bitbucket-pipelines.yml
+slscan.*
+scripts

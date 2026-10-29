@@ -8,6 +8,8 @@
     "packages/*"
   ],
   "scripts": {
+    "build": "npm run build -w @dynomapper/mcp-server",
+    "dev": "npm run dev -w @dynomapper/mcp-server",
     "test": "npm run test -ws --if-present",
     "check": "npm run check -ws --if-present",
     "format": "vp fmt .",

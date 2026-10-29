@@ -1,0 +1,41 @@
+{
+  "name": "@dynomapper/mcp-server",
+  "version": "0.3.0",
+  "description": "DYNO Mapper MCP Server for AI agents and Claude integrations",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "dynomapper",
+    "accessibility",
+    "sitemap",
+    "seo-audit",
+    "content-audit"
+  ],
+  "type": "module",
+  "bin": {
+    "dynomapper-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vp pack",
+    "dev": "tsx src/index.ts",
+    "test": "vp test",
+    "check": "vp check",
+    "prepack": "npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "axios": "^1.21.0",
+    "dotenv": "^18.0.9",
+    "mime-types": "^3.0.2",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@dynomapper/mcp-core": "*"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

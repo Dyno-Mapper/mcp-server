@@ -1,5 +1,4 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { tools } from './tools/tools.js';
 import { ApiHelper } from './api.js';
 import { packageVersion } from './version.js';
@@ -68,25 +67,12 @@ export class DynoMapperServer {
     );
   }
 
-  /** Serves MCP over stdio, the transport an MCP client launches. */
-  async run() {
-    const server = this.createServer();
-    const transport = new StdioServerTransport();
-    await server.connect(transport);
-
-    process.on('SIGINT', async () => {
-      await server.close();
-      process.exit(0);
-    });
-
-    console.error('DYNO Mapper MCP server running on stdio');
-  }
-
   /**
    * Builds one MCP server with every tool registered.
    *
-   * The hosted transport calls this once per request, so it must not assume
-   * anything carries over from a previous one.
+   * It knows nothing about a transport: `packages/stdio` connects it to a
+   * StdioServerTransport and exits, while `packages/http` calls this once per
+   * request — so it must not assume anything carries over between calls.
    */
   createServer(options: CreateServerOptions = {}): McpServer {
     const server = new McpServer({

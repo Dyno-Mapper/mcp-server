@@ -1,6 +1,0 @@
-.env.example
-bitbucket-pipelines.yml
-slscan.*
-resource/
-.junie/
-*.test.*

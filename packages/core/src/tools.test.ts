@@ -3,8 +3,10 @@ import { readFileSync } from 'node:fs';
 import { z } from 'zod';
 import { tools } from './tools/tools.js';
 
+// The published API spec is a repository-level fixture, shared with the source
+// it documents rather than copied into the package.
 const spec = JSON.parse(
-  readFileSync(new URL('../resource/api.json', import.meta.url), 'utf8')
+  readFileSync(new URL('../../../resource/api.json', import.meta.url), 'utf8')
 ) as any;
 
 interface SpecOp {

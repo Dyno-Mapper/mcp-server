@@ -1,53 +1,23 @@
 {
-  "name": "@dynomapper/mcp-server",
-  "version": "0.2.0",
-  "description": "DYNO Mapper MCP Server for AI agents and Claude integrations",
-  "keywords": [
-    "mcp",
-    "model-context-protocol",
-    "dynomapper",
-    "accessibility",
-    "sitemap",
-    "seo-audit",
-    "content-audit"
-  ],
+  "name": "dynomapper-mcp",
+  "version": "0.3.0",
+  "private": true,
+  "description": "The DYNO Mapper MCP servers: stdio for npm, Streamable HTTP for containers.",
   "type": "module",
-  "main": "dist/index.js",
-  "bin": {
-    "dynomapper-mcp": "dist/index.js"
-  },
-  "files": [
-    "dist"
+  "workspaces": [
+    "packages/*"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "watch": "tsc -p tsconfig.build.json --watch",
-    "prepublishOnly": "npm run build",
+    "test": "npm run test -ws --if-present",
+    "check": "npm run check -ws --if-present",
     "format": "vp fmt .",
-    "dev": "tsx src/index.ts",
-    "test": "vp test",
-    "check": "vp check",
-    "lint": "vp lint",
     "prepare": "husky"
   },
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.32.2",
-    "axios": "^1.21.0",
-    "dotenv": "^18.0.9",
-    "express": "^5.3.0",
-    "mime-types": "^3.0.2",
-    "zod": "^4.6.7"
-  },
   "devDependencies": {
-    "@types/express": "^5.0.6",
-    "@types/mime-types": "^3.0.1",
     "@types/node": "^24.19.2",
     "husky": "^9.1.7",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite-plus": "^1.4.0"
-  },
-  "publishConfig": {
-    "access": "public"
   }
 }

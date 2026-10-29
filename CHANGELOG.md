@@ -2,7 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.2.0] - 2026-10-28
+## [0.2.0] - 2026-10-29
+
+### Breaking
+
+- The package is one artifact of two. `@dynomapper/mcp-server` now serves stdio
+  and nothing else, and the Streamable HTTP server ships as the container image
+  built from this repository. `--http` and `MCP_TRANSPORT=http` on the npm
+  binary exit non-zero with a message naming the image, instead of starting a
+  server the package no longer contains.
+- The source tree is an npm workspace: `packages/core` (server, tools, API
+  client), `packages/stdio` (the published package) and `packages/http` (the
+  image). `dist/index.js` is now a single bundled file rather than the tsc
+  output of the whole tree; the bin name and the published package name are
+  unchanged.
+- `MCP_TRANSPORT` no longer selects a transport. The stdio binary accepts
+  `stdio`, the image accepts `http`, and either binary refuses the other's value
+  with a pointer to the artifact that serves it. `--sse` and
+  `MCP_TRANSPORT=sse` are refused with the SSE-removal error.
 
 ### Removed
 
@@ -15,8 +32,10 @@ All notable changes to this project will be documented in this file.
 - The HTTP transport is Streamable HTTP and stateless: every `POST` is answered by
   its own MCP server, no `Mcp-Session-Id` is minted or accepted, and `GET`/`DELETE`
   answer `405`. Replicas need no coordination and a redeploy drops no session.
-- `--http` (or `MCP_TRANSPORT=http`) starts the hosted endpoint at `POST /mcp`.
-  `--stdio` and the default are unchanged.
+- The hosted image serves the endpoint at `POST /mcp`; `--http` and
+  `MCP_TRANSPORT=http` are accepted there as no-ops, so an existing deployment
+  command keeps working. `--stdio` is refused, because quietly serving HTTP to
+  something that asked for stdio is how a debug session starts.
 - Hosted mode requires `Authorization: Bearer <personal access token>` on every
   request and answers `401` with `WWW-Authenticate` when it is missing or not in
   that form. The token is forwarded to the API unvalidated, so the API stays the
@@ -32,6 +51,9 @@ All notable changes to this project will be documented in this file.
   letting a CDN timeout answer with no JSON-RPC body.
 - The listener reads `MCP_PORT`/`MCP_HOST` before `PORT`/`HOST`, so an MCP sidecar
   in a shared pod does not inherit the application's port.
+- The version is authored once in the root `package.json` and compiled into each
+  bundle at build time; `serverInfo.name` and `/health` keep reporting
+  `@dynomapper/mcp-server`, so nothing client-visible changes.
 
 ### Added
 
@@ -45,9 +67,16 @@ All notable changes to this project will be documented in this file.
   unrelated callers.
 - `HOSTING.md`: the hosted contract, the full settings table, a CloudFront and
   EKS runbook, and the three GitHub Copilot configurations.
-- `Dockerfile`, a non-root multi-stage image running `--http` with a `HEALTHCHECK`.
-- `README.md` gained one pointer line to `HOSTING.md`; it remains the stdio
-  document shown on npm.
+- `Dockerfile`, a non-root multi-stage image running the hosted server with a
+  `HEALTHCHECK`.
+- `README.md` now describes both artifacts; `packages/stdio/README.md` remains
+  the document shown on npm.
+- `npm run check:artifact`: asserts that the npm tarball contains no hosted
+  code, that every bare import in the stdio bundle is a declared dependency,
+  that core is not a published dependency, and that the version was compiled
+  into both bundles.
+- An image build and the artifact check in CI, so a broken image or a leaky
+  tarball fails the branch rather than the release.
 
 ## [0.1.8] - 2026-10-28
 

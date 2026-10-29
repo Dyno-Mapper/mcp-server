@@ -1,6 +1,7 @@
 # Hosting the DYNO Mapper MCP server
 
-`README.md` documents the stdio server an MCP client launches. This file
+`packages/stdio/README.md` documents the stdio server an MCP client launches.
+This file
 documents the hosted alternative: **Streamable HTTP** at `POST /mcp`, for
 agents that cannot launch a process — GitHub's Copilot coding agent among them.
 
@@ -18,7 +19,7 @@ docker run --rm -p 3000:3000 dynomapper-mcp
 
 # Or from a checkout
 npm run build
-MCP_HOST=0.0.0.0 node dist/index.js --http
+MCP_HOST=0.0.0.0 node packages/http/dist/index.js
 ```
 
 Check it:
@@ -28,9 +29,13 @@ curl -s http://127.0.0.1:3000/health
 # {"status":"ok","name":"@dynomapper/mcp-server","version":"0.2.0","uptimeSeconds":3}
 ```
 
-`--sse` and `MCP_TRANSPORT=sse` are gone. Both now exit non-zero with the
-replacement, rather than quietly serving something else. `--help` lists the
-flags.
+The image serves Streamable HTTP and nothing else, so there is no transport to
+select. `--http` is still accepted as a no-op, which keeps an existing
+deployment command working; `--stdio` is refused with a pointer to the npm
+package, because quietly serving HTTP to something that asked for stdio is how
+a debug session starts. `MCP_TRANSPORT=http` is likewise accepted and
+`MCP_TRANSPORT=stdio` refused. `--sse` and `MCP_TRANSPORT=sse` are refused with
+the SSE-removal error. `--help` lists the flags and the hosted settings.
 
 ## The endpoint
 
@@ -56,8 +61,8 @@ curl -s -X POST http://127.0.0.1:3000/mcp \
 
 Every caller authenticates with their own personal access token, so the API's
 rate limit applies to their account rather than to the host's. The server keeps
-no token: `DYNOMAPPER_API_KEY` is read by stdio mode only, and hosted mode warns
-at startup when it is set.
+no token: `DYNOMAPPER_API_KEY` is read by the stdio server only, and this one
+warns at startup when it is set.
 
 ### Errors
 
@@ -88,7 +93,7 @@ Hosted mode drops the two things that only work against a local filesystem:
 - `create_project_from_file` loses its `file` argument; `url` and `fileKey`
   remain.
 
-Everything else is identical to stdio.
+Everything else is identical to the stdio server in `packages/stdio`.
 
 ## Configuration
 
@@ -105,7 +110,6 @@ Everything else is identical to stdio.
 | `MCP_MAX_CONCURRENCY`    | `100`       | Requests in flight before `503`.                                                                                                                                                                             |
 | `MCP_REQUEST_TIMEOUT_MS` | `25000`     | Deadline for one DYNO Mapper API call. Hosted mode only.                                                                                                                                                     |
 | `MCP_JSON_RESPONSES`     | `true`      | `false` answers with an SSE stream instead of one JSON body.                                                                                                                                                 |
-| `MCP_TRANSPORT`          | `stdio`     | `stdio` or `http`; `--http`/`--stdio` win when they disagree.                                                                                                                                                |
 
 `MCP_`-prefixed names win over the generic ones, which matters when a shared pod
 injects `PORT` for the application container.

@@ -15,8 +15,9 @@
     "test": "npm run test -ws --if-present",
     "check": "npm run check -ws --if-present && vp check vite.config.ts scripts",
     "format": "vp fmt .",
-    "verify": "npm run check && npm run check:secrets && npm test && npm run build && npm run check:artifact",
+    "verify": "npm run check && npm run check:secrets && npm run check:changelogs && npm test && npm run build && npm run check:artifact",
     "check:artifact": "node scripts/check-artifact.mjs",
+    "check:changelogs": "node scripts/check-changelogs.mjs",
     "check:secrets": "node scripts/check-secrets.mjs",
     "prepare": "husky"
   },

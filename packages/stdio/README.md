@@ -226,6 +226,12 @@ different prompt.
 > arguments. They are forwarded to the crawler and never stored, but tool arguments appear in the
 > conversation and in client-side logs.
 
+## Changelog
+
+The version history ships with the package as `CHANGELOG.md`. The repository's
+own changelog also covers the container image, CI and deployment, which are not
+part of this package.
+
 ## License
 
 Apache-2.0. See [LICENSE](LICENSE).

@@ -45,7 +45,15 @@ packages/stdio  stdio entrypoint + bin, published to npm
 packages/http   Streamable HTTP app, config, host/auth/rate-limit guards, image
 Dockerfile      builds only packages/http
 HOSTING.md      the hosted contract: endpoint, settings, CDN deployment, Copilot
+CHANGELOG.md    the repository changelog; the npm package keeps its own
 ```
+
+## Changelog
+
+Changes are recorded twice: [CHANGELOG.md](CHANGELOG.md) for the repository —
+image, CI, hosting, packaging — and
+[packages/stdio/CHANGELOG.md](packages/stdio/CHANGELOG.md) for what a consumer of
+the npm package sees. Each release points from one to the other.
 
 ## Development
 
@@ -59,8 +67,9 @@ npm run dev:http    # hosted server from source (http://127.0.0.1:3000/mcp)
 npm test            # vitest, every workspace
 npm run check       # format, lint and type-check every workspace
 npm run build       # both single-file bundles
-npm run check:artifact  # assert what the npm tarball and the image bundle contain
-npm run check:secrets   # fail on a credential in any file git would commit
+npm run check:artifact   # assert what the npm tarball and the image bundle contain
+npm run check:changelogs # assert the two changelogs and the manifests agree
+npm run check:secrets    # fail on a credential in any file git would commit
 npm run verify      # all of the above, in CI order
 ```
 
@@ -72,6 +81,25 @@ files — set `HUSKY=0` to skip it.
 `npm run check:artifact` is not ceremony: it is what proves the npm tarball has
 no hosted code in it, that every bare import in the stdio bundle is a declared
 dependency, and that the version was compiled in rather than left unresolvable.
+
+### Releasing
+
+A release is one version, carried by four manifests. Bump `version` in the root
+`package.json` and in each workspace manifest, run `npm install` so the lockfile
+follows, then write the release up twice:
+
+- [packages/stdio/CHANGELOG.md](packages/stdio/CHANGELOG.md) — what changed for
+  someone installing the package: tools, arguments, transports, configuration,
+  packaging. It ships in the tarball and stands alone, so nothing about the
+  image, CI, hosting or this file belongs in it.
+- [CHANGELOG.md](CHANGELOG.md) — everything else: the image, hosting, CI,
+  packaging, docs. It opens with a pointer to the package entry for the same
+  version.
+
+`npm run check:changelogs` fails when the manifests disagree, when either file
+is missing the release or dates it differently, or when a hosted setting has
+appeared in the package changelog. `npm run check:artifact` fails when the
+tarball stops carrying it.
 
 ## License
 

@@ -9,9 +9,10 @@ pipelines:
           script:
             - export HUSKY=0
             - npm ci
-            # Runs the static checks, the tests, both bundles, then the
-            # artifact guard: the npm tarball must be stdio-only, and every
-            # bare import in its bundle must be a declared dependency.
+            # Runs the static checks, the secret scan, the changelog check, the
+            # tests, both bundles, then the artifact guard: the npm tarball must
+            # be stdio-only, and every bare import in its bundle must be a
+            # declared dependency.
             - npm run verify
       - step:
           name: Build the hosted image

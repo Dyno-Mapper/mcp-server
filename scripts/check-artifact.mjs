@@ -133,7 +133,7 @@ const packed = JSON.parse(
 )[0];
 
 const paths = packed.files.map((file) => file.path);
-const allowed = /^(dist\/|package\.json$|README\.md$|LICENSE$)/;
+const allowed = /^(dist\/|package\.json$|README\.md$|LICENSE$|CHANGELOG\.md$)/;
 
 for (const path of paths) {
   check(
@@ -157,6 +157,10 @@ check(
 check(
   paths.includes('LICENSE'),
   'the npm tarball ships no LICENSE: a published package must carry its license text'
+);
+check(
+  paths.includes('CHANGELOG.md'),
+  'the npm tarball ships no CHANGELOG.md: the version history must travel with the package'
 );
 
 // --- Report ---------------------------------------------------------------

@@ -11,9 +11,9 @@ node_modules
 .env*
 # Tests never enter the image: the build stage only needs sources and configs.
 **/*.test.ts
-# Not read by the image build; HOSTING.md is for whoever runs it.
+# Not read by the image build: HOSTING.md and both changelogs are for readers.
 HOSTING.md
-CHANGELOG.md
+**/CHANGELOG.md
 bitbucket-pipelines.yml
 slscan.*
 scripts

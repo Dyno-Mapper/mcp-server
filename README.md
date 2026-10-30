@@ -44,7 +44,7 @@ packages/core   MCP server, tool registry, API client, transport-selection rule
 packages/stdio  stdio entrypoint + bin, published to npm
 packages/http   Streamable HTTP app, config, host/auth/rate-limit guards, image
 Dockerfile      builds only packages/http
-HOSTING.md      the hosted contract: endpoint, settings, CloudFront, Copilot
+HOSTING.md      the hosted contract: endpoint, settings, CDN deployment, Copilot
 ```
 
 ## Development
@@ -60,6 +60,7 @@ npm test            # vitest, every workspace
 npm run check       # format, lint and type-check every workspace
 npm run build       # both single-file bundles
 npm run check:artifact  # assert what the npm tarball and the image bundle contain
+npm run check:secrets   # fail on a credential in any file git would commit
 npm run verify      # all of the above, in CI order
 ```
 
@@ -71,3 +72,7 @@ files — set `HUSKY=0` to skip it.
 `npm run check:artifact` is not ceremony: it is what proves the npm tarball has
 no hosted code in it, that every bare import in the stdio bundle is a declared
 dependency, and that the version was compiled in rather than left unresolvable.
+
+## License
+
+Apache-2.0. See [LICENSE](LICENSE).

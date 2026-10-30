@@ -154,6 +154,10 @@ check(
   !paths.some((path) => path.endsWith('.test.js') || path.includes('.test.')),
   'the npm tarball ships test files'
 );
+check(
+  paths.includes('LICENSE'),
+  'the npm tarball ships no LICENSE: a published package must carry its license text'
+);
 
 // --- Report ---------------------------------------------------------------
 

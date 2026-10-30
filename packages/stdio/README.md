@@ -225,3 +225,7 @@ different prompt.
 > `create_project_from_sharepoint` takes the Microsoft account's username and password as tool
 > arguments. They are forwarded to the crawler and never stored, but tool arguments appear in the
 > conversation and in client-side logs.
+
+## License
+
+Apache-2.0. See [LICENSE](LICENSE).

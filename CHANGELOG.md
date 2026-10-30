@@ -59,6 +59,12 @@ All notable changes to this project will be documented in this file.
   browser-hosted client cannot tell a CORS failure from a missing document.
   Anything but `GET` answers `405` with `Allow: GET`, and both paths stay behind
   the `Host` guard.
+- `.gitignore` and `.dockerignore` cover `.env.*`, not just `.env`, so a token
+  in `.env.local`, `.env.production` or any other variant cannot be committed
+  or copied into the image. `.env.example` stays tracked: it holds placeholders.
+- `HOSTING.md` describes the CDN and orchestrator requirements without naming
+  the deployment this repository is served from. The operational advice is
+  unchanged; the topology is generic.
 
 ### Added
 
@@ -68,10 +74,10 @@ All notable changes to this project will be documented in this file.
   concurrency cap (100), optional `Host` and `Origin` allowlists, and a SIGTERM
   drain that closes in-flight transports before exit. All configurable.
 - `MCP_TRUST_PROXY`, which keys rate limiting on `CloudFront-Viewer-Address` and
-  then the last `X-Forwarded-For` entry, so one CloudFront edge does not throttle
+  then the last `X-Forwarded-For` entry, so one CDN edge does not throttle
   unrelated callers.
-- `HOSTING.md`: the hosted contract, the full settings table, a CloudFront and
-  EKS runbook, and the three GitHub Copilot configurations.
+- `HOSTING.md`: the hosted contract, the full settings table, a CDN and
+  orchestrator runbook, and the three GitHub Copilot configurations.
 - `Dockerfile`, a non-root multi-stage image running the hosted server with a
   `HEALTHCHECK`.
 - `README.md` now describes both artifacts; `packages/stdio/README.md` remains
@@ -103,6 +109,16 @@ All notable changes to this project will be documented in this file.
   which keeps a loopback listener working with no configuration.
 - `MCP_AUTHORIZATION_SERVER` (default `https://api.dynomapper.com`), the issuer
   advertised in the protected-resource document.
+- `LICENSE`, Apache-2.0. The package already declined to be anonymous — it
+  publishes with `access: public` — but without a license a public repository
+  defaults to all-rights-reserved, which is the opposite of what publishing it
+  means. A copy ships inside the npm tarball, and `check:artifact` fails if it
+  stops doing so.
+- `npm run check:secrets`, which fails the build when a credential-shaped value
+  appears in any file git would commit. It reads tracked files and untracked
+  ones that are not ignored, so a stray `.env.local` is caught before `git add
+  -A` is, and it reports a hit redacted rather than printing the secret into a
+  CI log.
 
 ## [0.1.8] - 2026-10-28
 

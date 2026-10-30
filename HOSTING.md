@@ -132,7 +132,7 @@ forwarded unchanged.
 
 Set `MCP_PUBLIC_URL` in a deployment. Without it the advertised URLs are derived
 from the request `Host`, which is only as right as the forwarded headers behind
-CloudFront.
+your CDN.
 
 The authorization server is operated separately from this endpoint. This
 service only tells a client where it is; whether that server wants a
@@ -158,7 +158,7 @@ Everything else is identical to the stdio server in `packages/stdio`.
 | `MCP_HOST` / `HOST`        | `127.0.0.1`                  | Listener interface. A container sets `0.0.0.0`.                                                                                                                                                                            |
 | `MCP_ALLOWED_HOSTS`        | —                            | Comma-separated `Host` allowlist. Unset, a loopback listener accepts only localhost names; a public one is not checked at all.                                                                                             |
 | `MCP_ALLOWED_ORIGINS`      | —                            | Comma-separated `Origin` allowlist. Unset, `Origin` is not checked. A request without `Origin` is always allowed. This rejects foreign origins; it does not turn on CORS, which only the well-known metadata routes speak. |
-| `MCP_TRUST_PROXY`          | `false`                      | Read the caller IP from `CloudFront-Viewer-Address`, then the last `X-Forwarded-For` entry.                                                                                                                                |
+| `MCP_TRUST_PROXY`          | `false`                      | Read the caller IP from the CDN's viewer-address header when present, then the last `X-Forwarded-For` entry.                                                                                                               |
 | `MCP_RATE_LIMIT`           | `60`                         | Sustained requests per minute per caller.                                                                                                                                                                                  |
 | `MCP_RATE_BURST`           | `20`                         | Burst allowance per caller.                                                                                                                                                                                                |
 | `MCP_MAX_BODY_BYTES`       | `262144`                     | Largest accepted request body.                                                                                                                                                                                             |
@@ -171,47 +171,48 @@ Everything else is identical to the stdio server in `packages/stdio`.
 `MCP_`-prefixed names win over the generic ones, which matters when a shared pod
 injects `PORT` for the application container.
 
-## Deploying behind CloudFront
+## Deploying behind a CDN
 
-A working topology for EKS is CloudFront → VPC origin → internal NLB → pod.
-CloudFront needs configuring; the defaults break MCP in ways that look like
-server bugs:
+A working topology is CDN → load balancer → container. The CDN needs
+configuring; its defaults break MCP in ways that look like server bugs:
 
-- **Origin request policy: forward everything.** CloudFront removes `Accept`,
-  `Authorization` and `Host` unless the policy forwards them; `AllViewer`
-  forwards all viewer headers, including the viewer `Host`. Without it you get
-  `406`, then `401`, then a `403` from the host allowlist. Also add
-  `CloudFront-Viewer-Address` to the policy so rate limiting keys on the viewer.
-- **Cache policy: `CachingDisabled`.** Not for speed — an origin `503` is
-  otherwise cached for the error-caching minimum TTL (10 seconds) and served to
-  callers who would have succeeded a moment later.
-- **Origin response timeout: raise it.** Default 30s, maximum 120s, and it
-  measures the gap between response packets, not just time to first byte. The
-  server's own `MCP_REQUEST_TIMEOUT_MS` (25s) is deliberately inside it, so a
-  slow call ends as a tool error the agent can read instead of a `504`.
+- **Forward the headers.** The CDN drops `Accept`, `Authorization` and `Host`
+  unless it is told to pass them through, and it must pass the viewer `Host`
+  rather than its own. Without that you get `406`, then `401`, then a `403` from
+  the host allowlist. Forward the viewer-address header too, so rate limiting
+  keys on the caller instead of the CDN edge.
+- **Disable caching on the endpoint.** Not for speed — an origin `503`
+  otherwise sits in the CDN's error cache for its minimum TTL, typically ten
+  seconds, and is served to callers who would have succeeded a moment later.
+- **Raise the origin response timeout.** A common default is 30s with a 120s
+  ceiling, and it measures the gap between response packets, not just time to
+  first byte. The server's own `MCP_REQUEST_TIMEOUT_MS` (25s) is deliberately
+  inside it, so a slow call ends as a tool error the agent can read instead of a
+  `504`.
 - **No custom error responses for 4xx.** A configured page replaces the
-  JSON-RPC body. Only `400`, `403`, `404`, `405`, `414`, `416` and `5xx` are
-  replaceable at all; `401` and `429` pass through untouched.
-- **VPC origin caveats:** an internal NLB is supported as a VPC origin, but an
-  NLB with a **TLS listener is not** — CloudFront reaches it over plain HTTP
-  inside your VPC. The NLB needs a security group allowing the
-  `com.amazonaws.global.cloudfront.origin-facing` managed prefix list, and
-  inbound NACLs are not evaluated.
-- **Set `MCP_ALLOWED_HOSTS`** to the public name (`mcp.dynomapper.com`) since
-  the viewer `Host` is what arrives, and `MCP_TRUST_PROXY=true` so callers are
-  limited individually rather than per CloudFront edge.
+  JSON-RPC body. Only some statuses are replaceable at all; `401` and `429`
+  pass through untouched.
+- **Terminate TLS at the CDN.** A CDN usually reaches a private origin over
+  plain HTTP, so an origin load balancer with a **TLS listener will not work**
+  behind one. Restrict origin ingress to the CDN's published egress ranges —
+  most publish them, some as a managed prefix list — and check whether your
+  network layer evaluates inbound ACLs at all.
+- **Set `MCP_ALLOWED_HOSTS`** to the public name since the viewer `Host` is what
+  arrives, and `MCP_TRUST_PROXY=true` so callers are limited individually
+  rather than per CDN edge.
 
-### On Kubernetes
+### In a container orchestrator
 
-The container is a sidecar in the application pod, so:
+The container is usually run beside the application it serves, so:
 
-- Give it its own `MCP_PORT` — the pod's `PORT` may already belong to the app.
+- Give it its own `MCP_PORT` — the generic `PORT` may already be claimed by the
+  process it shares a container group with.
 - Probe `/health` for readiness and liveness; it needs no token, and it ignores
-  `MCP_ALLOWED_HOSTS` because a probe addresses the pod by its own address
+  `MCP_ALLOWED_HOSTS` because a probe addresses the container by its own address
   rather than the public name.
 - Do not mount a PAT. Requests carry their own; a `DYNOMAPPER_API_KEY` inherited
-  from the app's environment is ignored with a warning.
-- Keep `terminationGracePeriodSeconds` at 30 or more. SIGTERM stops accepting,
+  from a shared environment is ignored with a warning.
+- Keep the termination grace period at 30s or more. SIGTERM stops accepting,
   drains in-flight calls for up to 10s, then exits.
 - Replicas need no coordination: no session state exists to share.
 
@@ -283,9 +284,9 @@ not understand `${input:...}`. Use an environment variable instead:
 | Symptom                                                             | Cause                                                                                                                                                            |
 | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `406 Not Acceptable`                                                | `Accept` did not reach the server, or omitted `text/event-stream`.                                                                                               |
-| `401` despite a configured header                                   | CloudFront dropped `Authorization`; forward it in the origin request policy.                                                                                     |
+| `401` despite a configured header                                   | The CDN dropped `Authorization`; forward it in its origin request policy.                                                                                        |
 | `403 Invalid Host`                                                  | Viewer `Host` not forwarded, or missing from `MCP_ALLOWED_HOSTS`.                                                                                                |
-| `504` from the CDN                                                  | CloudFront's response timeout is below the call's duration; raise it to 120s.                                                                                    |
+| `504` from the CDN                                                  | The CDN's response timeout is below the call's duration; raise it to 120s.                                                                                       |
 | A tool always says "File not found"                                 | A local path was sent. Hosted mode cannot read the caller's filesystem.                                                                                          |
 | `503` under load                                                    | `MCP_MAX_CONCURRENCY` reached; the load is real, not a session leak — there are none.                                                                            |
 | Client reports a JSON parse error where a token should be requested | It guessed `/register` on this origin, so it never found the protected-resource document. Check `MCP_PUBLIC_URL` and that the URL in the challenge is reachable. |

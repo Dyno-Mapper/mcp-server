@@ -6,8 +6,9 @@ node_modules
 .ai
 .idea
 .vscode
-.env
-.env.example
+# No secret reaches the image. The glob also covers .env.local and friends,
+# which is why .env.example is matched here too: nothing in the image reads it.
+.env*
 # Tests never enter the image: the build stage only needs sources and configs.
 **/*.test.ts
 # Not read by the image build; HOSTING.md is for whoever runs it.

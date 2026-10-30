@@ -487,12 +487,14 @@ describe('hosted request guards', () => {
   });
 
   test('answers a health probe whose Host is the pod address', async () => {
-    // A load balancer or Kubernetes probe addresses the pod directly, so the
-    // public allowlist must not apply to /health.
+    // A load balancer or orchestrator probe addresses the container directly,
+    // so the public allowlist must not apply to /health. The address is
+    // TEST-NET-1, reserved for documentation, so it cannot be mistaken for a
+    // real one.
     const app = await harness({ allowedHosts: ['mcp.example.com'] });
 
     const response = await fetch(`${app.url}/health`, {
-      headers: { host: '10.0.4.17:3000' },
+      headers: { host: '192.0.2.17:3000' },
     });
 
     expect(response.status).toBe(200);

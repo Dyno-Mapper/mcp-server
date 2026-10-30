@@ -18,6 +18,9 @@ yarn-error.log*
 .docker/
 
 .env
+.env.*
+# The example file is documentation, not a secret: it holds placeholders only.
+!.env.example
 
 /dist
 packages/*/dist

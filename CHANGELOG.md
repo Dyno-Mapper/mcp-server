@@ -145,7 +145,6 @@ the repository change behind it.
 
 ## Earlier releases
 
-0.1.1–0.1.7 were npm releases; 0.1.8 was written up but never published, so its
-changes first shipped in 0.2.0. Their entries live in
+0.1.1–0.1.7 were npm releases. Their entries live in
 [packages/stdio/CHANGELOG.md](packages/stdio/CHANGELOG.md); repository-side
 history for those versions is in git.

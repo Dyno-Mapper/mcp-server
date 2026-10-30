@@ -317,6 +317,34 @@ describe('protected-resource metadata', () => {
     expect((await response.json()).error).toBe('invalid_request');
   });
 
+  test('answers the CORS preflight a browser discovery makes', async () => {
+    // The SDK sends `MCP-Protocol-Version` when it reads the document, so a
+    // browser preflights before the GET ever leaves the page. A 405 here is a
+    // blocked request, and the client falls back to guessing `<origin>/register`.
+    const app = await harness();
+
+    for (const path of PATHS) {
+      const response = await fetch(`${app.url}${path}`, {
+        method: 'OPTIONS',
+        headers: {
+          origin: 'http://127.0.0.1:6274',
+          'access-control-request-method': 'GET',
+          'access-control-request-headers': 'mcp-protocol-version',
+        },
+      });
+
+      expect(response.status).toBe(204);
+      expect(response.headers.get('access-control-allow-origin')).toBe('*');
+      expect(response.headers.get('access-control-allow-methods')).toContain(
+        'GET'
+      );
+      // Echoed, so a client that sends another discovery header is not refused.
+      expect(
+        response.headers.get('access-control-allow-headers')?.toLowerCase()
+      ).toContain('mcp-protocol-version');
+    }
+  });
+
   test('stays behind the Host guard, and is still readable by a browser', async () => {
     const app = await harness({ allowedHosts: ['mcp.example.com'] });
 

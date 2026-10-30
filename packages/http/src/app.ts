@@ -363,6 +363,31 @@ export function createHostedApp(options: HostedAppOptions): HostedApp {
     next();
   });
 
+  // A browser client that reads this document sends `MCP-Protocol-Version`,
+  // as RFC 9728 discovery in the MCP SDK does, and a request header outside the
+  // CORS safelist makes the browser send a preflight first. Answering that
+  // preflight with the 405 below is indistinguishable from a network failure:
+  // the `GET` is never sent, the client concludes the document does not exist,
+  // and it falls back to treating this origin as its authorization server —
+  // the dead end on `<origin>/register` the document exists to prevent. The
+  // preflight carries no credential and this document is public, so the
+  // requested headers are echoed rather than pinned to a list that a later
+  // client would outgrow, and it is answered ahead of the Host guard so a
+  // rejected deployment still fails on a readable `403` rather than on CORS.
+  app.options(METADATA_PATHS, (req: Request, res: Response) => {
+    const requested = firstHeader(
+      req.headers['access-control-request-headers']
+    );
+
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'GET');
+    if (requested) {
+      res.set('Access-Control-Allow-Headers', requested);
+    }
+    res.set('Access-Control-Max-Age', '600');
+    res.status(204).end();
+  });
+
   app.use(hostGuard(config, log));
 
   app.get(METADATA_PATHS, (req: Request, res: Response) => {

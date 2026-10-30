@@ -55,18 +55,39 @@ Add the following to your Claude Desktop configuration file:
 }
 ```
 
-### Streamable HTTP
+### Hosted MCP Server
 
-This package speaks stdio, the transport an MCP client launches. For agents that
-cannot start a process — GitHub's Copilot coding agent among them — there is a
-separate hosted server, distributed as a container image rather than through
-npm. See
-[HOSTING.md](https://github.com/Dyno-Mapper/mcp-server/blob/main/HOSTING.md) for
-the endpoint, its settings, and the CloudFront and Copilot configuration.
+For MCP clients that cannot launch a process — GitHub's Copilot coding agent
+among them — the DYNO Mapper tools are available at
+`https://mcp.dynomapper.com/mcp` over Streamable HTTP, except the ones that need
+a local file. It needs no installation and keeps no session: every request
+authenticates with your personal access token in an `Authorization` header.
 
-`--http` and `MCP_TRANSPORT=http` are refused here, with a pointer to that
-image, so a misconfigured client fails loudly instead of speaking the wrong
-protocol.
+Point the client at that URL and pass the token:
+
+```json
+{
+  "mcpServers": {
+    "dynomapper": {
+      "type": "http",
+      "url": "https://mcp.dynomapper.com/mcp",
+      "headers": {
+        "Authorization": "Bearer your_personal_access_token_here"
+      }
+    }
+  }
+}
+```
+
+For Claude Code:
+
+```bash
+claude mcp add --transport http dynomapper https://mcp.dynomapper.com/mcp \
+  --header "Authorization: Bearer your_personal_access_token_here"
+```
+
+`--http` and `MCP_TRANSPORT=http` are refused by this package, which speaks
+stdio only; point a client that needs HTTP at the URL above instead.
 
 ## Available Tools
 

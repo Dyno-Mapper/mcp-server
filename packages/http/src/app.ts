@@ -8,6 +8,13 @@ import express, {
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { effectiveAllowedHosts, type HttpConfig } from './config.js';
+import { bearerChallenge, bearerToken, isExpiredJwt } from './bearer.js';
+import { firstHeader } from './headers.js';
+import {
+  METADATA_PATHS,
+  protectedResourceMetadata,
+  publicOrigin,
+} from './protected-resource.js';
 
 export interface HostedAppOptions {
   config: HttpConfig;
@@ -26,8 +33,6 @@ export interface HostedApp {
   /** Closes every transport that is still open. */
   close: () => Promise<void>;
 }
-
-const BEARER = /^Bearer\s+(\S+)$/i;
 
 /** JSON-RPC error body, so a client sees a protocol error rather than HTML. */
 function sendJsonRpcError(
@@ -74,10 +79,6 @@ function callerIp(req: Request, config: HttpConfig): string {
     .filter((entry) => entry.length > 0);
 
   return entries.at(-1) ?? req.socket.remoteAddress ?? 'unknown';
-}
-
-function firstHeader(value: string | string[] | undefined): string | undefined {
-  return Array.isArray(value) ? value[0] : value;
 }
 
 /**
@@ -141,25 +142,51 @@ function originGuard(config: HttpConfig) {
 }
 
 /**
- * Requires a DYNO Mapper personal access token on every request.
+ * Requires a DYNO Mapper token on every request.
  *
- * The token is forwarded to the API as-is by the tool handlers; this guard
- * only makes its absence a 401 instead of a tool error.
+ * The token is forwarded to the API as-is by the tool handlers, so this guard
+ * decides only what must be decided before an API call: a token has to be
+ * present, and a visibly expired one is refused here rather than after the body
+ * has been buffered. Both answers carry a challenge that names the
+ * protected-resource document (RFC 9728 §5.1), which is what tells a client
+ * where to obtain a token instead of leaving it to guess `<origin>/register`.
  */
-function authGuard(req: Request, res: Response, next: NextFunction) {
-  const header = firstHeader(req.headers.authorization);
-  if (!header || !BEARER.test(header.trim())) {
-    sendJsonRpcError(
-      res,
-      401,
-      -32001,
-      'Unauthorized: send an Authorization header of the form "Bearer <personal access token>"',
-      { 'WWW-Authenticate': 'Bearer realm="dynomapper-mcp"' }
-    );
-    return;
-  }
+function authGuard(config: HttpConfig) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const origin = publicOrigin(req, config);
+    const token = bearerToken(req.headers.authorization);
 
-  next();
+    if (!token) {
+      sendJsonRpcError(
+        res,
+        401,
+        -32001,
+        'Unauthorized: send an Authorization header of the form "Bearer <access token>"',
+        { 'WWW-Authenticate': bearerChallenge({ origin }) }
+      );
+      return;
+    }
+
+    if (isExpiredJwt(token)) {
+      sendJsonRpcError(
+        res,
+        401,
+        -32001,
+        'Unauthorized: the access token has expired. Obtain a new one from the ' +
+          'authorization server named in the protected-resource metadata, or ' +
+          'send a personal access token.',
+        {
+          'WWW-Authenticate': bearerChallenge({
+            origin,
+            error: 'invalid_token',
+          }),
+        }
+      );
+      return;
+    }
+
+    next();
+  };
 }
 
 interface Bucket {
@@ -300,6 +327,16 @@ export function createHostedApp(options: HostedAppOptions): HostedApp {
   const app = express();
   app.disable('x-powered-by');
 
+  // A deployment that names its hosts is public, and a public deployment that
+  // does not state its origin publishes whatever the forwarded headers happen to
+  // say. The documents are still served; they just point at the wrong URL.
+  if (config.publicUrl === '' && config.allowedHosts.length > 0) {
+    log(
+      '[http] warning: MCP_PUBLIC_URL is unset while MCP_ALLOWED_HOSTS names ' +
+        'public hosts, so the OAuth metadata URLs are derived from each request'
+    );
+  }
+
   app.use(requestLogger(log));
 
   // Before the Host guard, because a load balancer or Kubernetes probe sends
@@ -315,9 +352,49 @@ export function createHostedApp(options: HostedAppOptions): HostedApp {
     });
   });
 
+  // RFC 9728. Public by nature — a client reads it before it holds any
+  // credential — so the CORS origin is `*`, and it is set ahead of the Host
+  // guard so even a rejection here is readable by a browser rather than an
+  // opaque CORS failure. Without this document a client that gets a 401 falls
+  // back to guessing `<origin>/register` and reports the 404 as a JSON parse
+  // error.
+  app.use(METADATA_PATHS, (_req, res, next) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    next();
+  });
+
   app.use(hostGuard(config, log));
 
-  app.all('/mcp', originGuard(config), authGuard);
+  app.get(METADATA_PATHS, (req: Request, res: Response) => {
+    const origin = publicOrigin(req, config);
+    if (!origin) {
+      sendJsonRpcError(
+        res,
+        500,
+        -32603,
+        'Cannot determine the public origin of this endpoint; set MCP_PUBLIC_URL'
+      );
+      return;
+    }
+
+    // Cached briefly: the document changes when a deployment does, not when a
+    // request arrives.
+    res
+      .set('Cache-Control', 'public, max-age=300')
+      .json(protectedResourceMetadata(origin, config));
+  });
+
+  app.all(METADATA_PATHS, (req: Request, res: Response) => {
+    res
+      .set('Allow', 'GET')
+      .status(405)
+      .json({
+        error: 'invalid_request',
+        error_description: `Protected-resource metadata is read with GET, not ${req.method}.`,
+      });
+  });
+
+  app.all('/mcp', originGuard(config), authGuard(config));
 
   app.post(
     '/mcp',

@@ -28,7 +28,28 @@ export interface HttpConfig {
   requestTimeoutMs: number;
   /** Answer a POST with one `application/json` body instead of an SSE stream. */
   jsonResponses: boolean;
+  /**
+   * The origin this deployment answers at, without a trailing slash.
+   *
+   * Empty means every advertised URL is derived from the request instead, which
+   * is right for a loopback listener and only as right as the forwarded headers
+   * behind a proxy. It is what the protected-resource document calls the
+   * resource, and what the `WWW-Authenticate` challenge points at.
+   */
+  publicUrl: string;
+  /**
+   * Issuer of the authorization server that issues tokens for this endpoint.
+   *
+   * Published as `authorization_servers` in the protected-resource document, so
+   * it must match that server's own `issuer` exactly: clients fetch
+   * `<issuer>/.well-known/oauth-authorization-server` and expect the document to
+   * agree.
+   */
+  authorizationServer: string;
 }
+
+/** Where tokens for this endpoint are issued. */
+export const DEFAULT_AUTHORIZATION_SERVER = 'https://api.dynomapper.com';
 
 const LOOPBACK_HOSTS = ['localhost', '127.0.0.1', '[::1]'];
 
@@ -97,6 +118,54 @@ function readBool(
   throw new Error(`${name} must be true or false, got "${raw}"`);
 }
 
+/**
+ * Reads an absolute http(s) URL, without its trailing slash.
+ *
+ * `originOnly` is for the address this deployment answers at: a path there
+ * would make every advertised URL a guess about where the endpoint is mounted,
+ * so it is refused rather than silently truncated.
+ */
+function readUrl(
+  env: NodeJS.ProcessEnv,
+  name: string,
+  fallback: string,
+  originOnly = false
+): string {
+  const raw = env[name];
+  if (raw === undefined || raw.trim() === '') {
+    return fallback;
+  }
+
+  let url: URL;
+  try {
+    url = new URL(raw.trim());
+  } catch {
+    throw new Error(`${name} must be an absolute http(s) URL, got "${raw}"`);
+  }
+
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new Error(`${name} must be an http or https URL, got "${raw}"`);
+  }
+
+  if (url.search !== '' || url.hash !== '') {
+    throw new Error(
+      `${name} must not carry a query or a fragment, got "${raw}"`
+    );
+  }
+
+  if (url.username !== '' || url.password !== '') {
+    throw new Error(`${name} must not carry credentials, got "${raw}"`);
+  }
+
+  if (originOnly && url.pathname !== '/') {
+    throw new Error(
+      `${name} must be an origin such as https://mcp.example.com, got "${raw}"`
+    );
+  }
+
+  return originOnly ? url.origin : url.href.replace(/\/+$/, '');
+}
+
 export function readHttpConfig(
   env: NodeJS.ProcessEnv = process.env
 ): HttpConfig {
@@ -114,6 +183,12 @@ export function readHttpConfig(
     // tool error the agent can read rather than a 504 it cannot.
     requestTimeoutMs: readInt(env, ['MCP_REQUEST_TIMEOUT_MS'], 25_000),
     jsonResponses: readBool(env, 'MCP_JSON_RESPONSES', true),
+    publicUrl: readUrl(env, 'MCP_PUBLIC_URL', '', true),
+    authorizationServer: readUrl(
+      env,
+      'MCP_AUTHORIZATION_SERVER',
+      DEFAULT_AUTHORIZATION_SERVER
+    ),
   };
 }
 

@@ -32,6 +32,29 @@ const INITIALIZE = {
   },
 };
 
+/** A call that actually reaches the API, so a forwarded token is visible. */
+const CURRENT_USER = {
+  jsonrpc: '2.0',
+  id: 2,
+  method: 'tools/call',
+  params: { name: 'get_current_user', arguments: {} },
+};
+
+/**
+ * A JWT-shaped token. The signature is never checked by the endpoint — the API
+ * is the authority — so a literal stands in for one.
+ */
+function jwt(claims: Record<string, unknown>): string {
+  const encode = (value: unknown) =>
+    Buffer.from(JSON.stringify(value)).toString('base64url');
+
+  return `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode(claims)}.signature`;
+}
+
+function expiresIn(seconds: number): string {
+  return jwt({ exp: Math.floor(Date.now() / 1000) + seconds });
+}
+
 function config(overrides: Partial<HttpConfig> = {}): HttpConfig {
   return {
     port: 0,
@@ -45,6 +68,8 @@ function config(overrides: Partial<HttpConfig> = {}): HttpConfig {
     maxConcurrency: 100,
     requestTimeoutMs: 5_000,
     jsonResponses: true,
+    publicUrl: '',
+    authorizationServer: 'https://api.dynomapper.com',
     ...overrides,
   };
 }
@@ -192,7 +217,11 @@ describe('hosted MCP endpoint', () => {
     });
 
     expect(response.status).toBe(401);
-    expect(response.headers.get('www-authenticate')).toContain('Bearer');
+    const challenge = response.headers.get('www-authenticate') ?? '';
+    expect(challenge).toContain('Bearer');
+    expect(challenge).toContain(
+      `resource_metadata="${app.url}/.well-known/oauth-protected-resource"`
+    );
     const body = await response.json();
     expect(body.error.code).toBe(-32001);
     expect(app.stub.authorizations).toEqual([]);
@@ -231,6 +260,114 @@ describe('hosted MCP endpoint', () => {
     const body = await response.json();
     expect(body.status).toBe('ok');
     expect(body.version).toBe('test');
+  });
+});
+
+describe('protected-resource metadata', () => {
+  const PATHS = [
+    '/.well-known/oauth-protected-resource',
+    '/.well-known/oauth-protected-resource/mcp',
+  ];
+
+  test('describes the endpoint and where its tokens are issued', async () => {
+    const app = await harness();
+
+    for (const path of PATHS) {
+      const response = await fetch(`${app.url}${path}`);
+
+      expect(response.status).toBe(200);
+      // Public by nature: the document is read before a client holds a token.
+      expect(response.headers.get('access-control-allow-origin')).toBe('*');
+      expect(response.headers.get('cache-control')).toContain('max-age');
+      expect(await response.json()).toEqual({
+        resource: app.url,
+        authorization_servers: ['https://api.dynomapper.com'],
+        bearer_methods_supported: ['header'],
+      });
+    }
+  });
+
+  test('states MCP_PUBLIC_URL instead of the request Host', async () => {
+    const app = await harness({ publicUrl: 'https://mcp.example.com' });
+
+    const body = await (await fetch(`${app.url}${PATHS[0]}`)).json();
+
+    expect(body.resource).toBe('https://mcp.example.com');
+  });
+
+  test('follows MCP_AUTHORIZATION_SERVER where a deployment points elsewhere', async () => {
+    const app = await harness({
+      authorizationServer: 'https://api.staging.example.com',
+    });
+
+    const body = await (await fetch(`${app.url}${PATHS[0]}`)).json();
+
+    expect(body.authorization_servers).toEqual([
+      'https://api.staging.example.com',
+    ]);
+  });
+
+  test('answers 405 to anything but GET', async () => {
+    const app = await harness();
+
+    const response = await fetch(`${app.url}${PATHS[0]}`, { method: 'POST' });
+
+    expect(response.status).toBe(405);
+    expect(response.headers.get('allow')).toBe('GET');
+    expect((await response.json()).error).toBe('invalid_request');
+  });
+
+  test('stays behind the Host guard, and is still readable by a browser', async () => {
+    const app = await harness({ allowedHosts: ['mcp.example.com'] });
+
+    const response = await fetch(`${app.url}${PATHS[0]}`);
+
+    expect(response.status).toBe(403);
+    expect(response.headers.get('access-control-allow-origin')).toBe('*');
+  });
+});
+
+describe('expired tokens', () => {
+  test('refuses a JWT whose exp has passed before reaching the API', async () => {
+    const app = await harness();
+
+    const response = await app.rpc(INITIALIZE, {
+      authorization: `Bearer ${expiresIn(-60)}`,
+    });
+
+    expect(response.status).toBe(401);
+    const challenge = response.headers.get('www-authenticate') ?? '';
+    expect(challenge).toContain('error="invalid_token"');
+    expect(challenge).toContain('resource_metadata=');
+    expect((await response.json()).error.code).toBe(-32001);
+    expect(app.stub.authorizations).toEqual([]);
+  });
+
+  test('forwards a JWT that has not expired', async () => {
+    const app = await harness();
+    const token = expiresIn(600);
+
+    const response = await app.rpc(CURRENT_USER, {
+      authorization: `Bearer ${token}`,
+    });
+
+    expect(response.status).toBe(200);
+    expect((await response.json()).result.isError).toBeFalsy();
+    expect(app.stub.authorizations).toEqual([`Bearer ${token}`]);
+  });
+
+  test('forwards a token it cannot read, leaving judgement to the API', async () => {
+    const app = await harness();
+
+    for (const token of ['a.b.c', 'a.b', 'not.a.jwt.token']) {
+      const response = await app.rpc(CURRENT_USER, {
+        authorization: `Bearer ${token}`,
+      });
+
+      expect(response.status).toBe(200);
+    }
+
+    expect(app.stub.authorizations).toHaveLength(3);
   });
 });
 

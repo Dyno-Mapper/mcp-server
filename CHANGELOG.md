@@ -54,6 +54,11 @@ All notable changes to this project will be documented in this file.
 - The version is authored once in the root `package.json` and compiled into each
   bundle at build time; `serverInfo.name` and `/health` keep reporting
   `@dynomapper/mcp-server`, so nothing client-visible changes.
+- The well-known routes answer `Access-Control-Allow-Origin: *`. They are public
+  documents read before a client holds any credential, and without the header a
+  browser-hosted client cannot tell a CORS failure from a missing document.
+  Anything but `GET` answers `405` with `Allow: GET`, and both paths stay behind
+  the `Host` guard.
 
 ### Added
 
@@ -77,6 +82,27 @@ All notable changes to this project will be documented in this file.
   into both bundles.
 - An image build and the artifact check in CI, so a broken image or a leaky
   tarball fails the branch rather than the release.
+- The hosted endpoint publishes OAuth 2.0 Protected Resource Metadata
+  (RFC 9728) at `/.well-known/oauth-protected-resource`, and at the
+  path-inserted form `/.well-known/oauth-protected-resource/mcp` that the MCP SDK
+  asks for first. The document names the endpoint as the resource, the DYNO
+  Mapper API as its authorization server, and the `Authorization` header as the
+  only bearer method. It carries no scopes, because there are none to ask for.
+- `WWW-Authenticate` names that document with `resource_metadata="…"`. This is
+  the difference between a client authorizing itself and a client guessing
+  `<origin>/register`, receiving an HTML `404` and reporting the whole thing as
+  `Invalid OAuth error response: Unexpected token '<'`.
+- An expired JWT is refused with `401` and `error="invalid_token"` before the
+  request body is read or the API is called, so a client refreshes instead of an
+  agent seeing a tool call fail for a reason it cannot interpret. Signatures are
+  still not verified anywhere in this process: reading `exp` can only reject a
+  token early, never accept one. A personal access token is opaque and forwarded
+  unchanged.
+- `MCP_PUBLIC_URL`, which states the origin a deployment answers at so advertised
+  URLs do not depend on forwarded headers. Unset, they are derived per request,
+  which keeps a loopback listener working with no configuration.
+- `MCP_AUTHORIZATION_SERVER` (default `https://api.dynomapper.com`), the issuer
+  advertised in the protected-resource document.
 
 ## [0.1.8] - 2026-10-28
 

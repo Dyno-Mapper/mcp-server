@@ -19,6 +19,12 @@ Both are thin wrappers around [packages/core](packages/core), which owns the MCP
 server, the tool registry and the API client. Core is never published: each
 server compiles it into its own single-file bundle.
 
+The image is an OAuth 2.0 protected resource as well as a bearer-token endpoint:
+it publishes RFC 9728 metadata at `/.well-known/oauth-protected-resource`, so an
+MCP client can obtain a token from the DYNO Mapper API instead of asking the
+caller to paste one, and it still accepts a personal access token in a header.
+See [HOSTING.md](HOSTING.md#oauth-and-personal-access-tokens).
+
 ## Which one do I need?
 
 - **An MCP client that launches a process** — Claude Desktop, Claude Code, an

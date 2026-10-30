@@ -225,32 +225,3 @@ different prompt.
 > `create_project_from_sharepoint` takes the Microsoft account's username and password as tool
 > arguments. They are forwarded to the crawler and never stored, but tool arguments appear in the
 > conversation and in client-side logs.
-
-## Development
-
-Requires Node.js `^22.18.0 || ^24.11.0 || >=26.0.0`: Vite+ and Vitest both refuse older runtimes.
-
-This package is one workspace of the repository that publishes it; the tools
-themselves live in `packages/core` and are compiled into this package's bundle.
-From the repository root:
-
-```bash
-npm install      # links the workspaces and installs the git hooks
-npm run build    # bundles stdio and the hosted server
-npm run dev      # run this server from source over stdio
-npm test         # vitest, every workspace
-npm run check    # format, lint and type-check every workspace
-npm run verify   # check, test, build, then assert what the artifacts contain
-```
-
-`npm run check` is the static gate CI runs. Oxfmt formats, Oxlint lints with
-its type-aware rules, and tsgolint type-checks every file, tests included.
-`npm run format` applies formatting in place.
-
-A pre-commit hook runs `vp check --fix` on staged files. Set `HUSKY=0` to skip it.
-
-The bundle is produced by `vp pack` (tsdown): `packages/core` is inlined, its
-third-party imports stay external, and the version is compiled in from the root
-manifest. `dist/index.js` is a single executable file, which is why the bin,
-the tarball contents and the injected version are asserted by
-`npm run check:artifact` rather than assumed.

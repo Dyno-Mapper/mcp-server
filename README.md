@@ -58,7 +58,8 @@ the npm package sees. Each release points from one to the other.
 ## Development
 
 Requires Node.js `^22.18.0 || ^24.11.0 || >=26.0.0`: Vite+ and Vitest both
-refuse older runtimes.
+refuse older runtimes. CI and the container image run 26 LTS — `node:26` and
+`node:26-alpine` — and `@types/node` follows at 26.
 
 ```bash
 npm install         # links the workspaces and installs the git hooks

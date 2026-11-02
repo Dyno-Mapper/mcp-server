@@ -6,7 +6,7 @@
 
 # Build stage: the whole workspace, because the http bundle inlines core from
 # source and the lockfile covers every workspace.
-FROM node:24-alpine AS build
+FROM node:26-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/core/package.json packages/core/package.json
@@ -20,7 +20,7 @@ COPY packages ./packages
 RUN npm run build -w @dynomapper/mcp-http
 
 # Runtime stage: the http bundle plus the dependencies its bare imports need.
-FROM node:24-alpine AS runtime
+FROM node:26-alpine AS runtime
 ENV NODE_ENV=production \
     MCP_HOST=0.0.0.0 \
     MCP_PORT=3000

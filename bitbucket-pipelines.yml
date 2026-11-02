@@ -3,7 +3,7 @@ pipelines:
     main:
       - step:
           name: Check, test and build
-          image: node:24
+          image: node:26
           caches:
             - node
           script:

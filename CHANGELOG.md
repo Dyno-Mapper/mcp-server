@@ -81,6 +81,10 @@ the repository change behind it.
   consumer-facing changelog lives at `packages/stdio/CHANGELOG.md` and ships in
   its tarball; the 0.1.x history stays whole there, and this file no longer
   restates it.
+- The image and CI run Node.js 26 LTS: `node:26-alpine` in both Dockerfile
+  stages, `node:26` in the pipeline, and `@types/node` at 26 so the types match
+  the runtime that ships. The npm package is untouched — it is bundled
+  JavaScript with no `engines` pin and still runs on the ranges README lists.
 
 ### Added
 

@@ -115,7 +115,7 @@ describe('tool registry', () => {
     }
   });
 
-  test('registers the tools added for the new endpoints', () => {
+  test('registers the latest tools', () => {
     for (const name of [
       'get_project_dacq_score',
       'get_project_login_inputs',
@@ -124,6 +124,33 @@ describe('tool registry', () => {
       'get_accessibility_login_inputs',
       'submit_accessibility_login_input',
       'upload_file',
+      'create_project_category',
+      'update_project_category',
+      'delete_project_category',
+      'move_project_category',
+      'create_project_workflow_status',
+      'update_project_workflow_status',
+      'delete_project_workflow_status',
+      'move_project_workflow_status',
+      'create_project_sitemap_item',
+      'bulk_update_project_sitemap_items',
+      'update_project_sitemap_item',
+      'delete_project_sitemap_item',
+      'bulk_delete_project_sitemap_items',
+      'move_project_sitemap_item',
+      'bulk_move_project_sitemap_items',
+      'duplicate_project_sitemap_item',
+      'sort_project_sitemap_items',
+      'get_project_sitemap_undo',
+      'undo_project_sitemap_edit',
+      'get_project_sitemap_redo',
+      'redo_project_sitemap_edit',
+      'get_project_sitemap_item_content',
+      'replace_project_sitemap_item_content',
+      'get_all_project_comments',
+      'create_item_comment',
+      'update_item_comment',
+      'delete_item_comment',
     ]) {
       expect(name in tools, `missing tool ${name}`).toBe(true);
     }
@@ -188,8 +215,10 @@ describe('tool registry', () => {
     expect(uncovered).toEqual([]);
   });
 
-  test('descriptions never reference an API path', () => {
+  test('descriptions describe tools rather than API routes', () => {
     const offenders: string[] = [];
+    const routeSyntax =
+      /\b(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+\/|\bendpoint\b/i;
 
     for (const tool of Object.values(tools) as any[]) {
       const inputJson = JSON.stringify(
@@ -206,7 +235,7 @@ describe('tool registry', () => {
       );
 
       for (const text of [tool.description, inputJson, outputJson]) {
-        if (/\/v1\//.test(text)) {
+        if (/\/v1\//.test(text) || routeSyntax.test(text)) {
           offenders.push(tool.name);
           break;
         }

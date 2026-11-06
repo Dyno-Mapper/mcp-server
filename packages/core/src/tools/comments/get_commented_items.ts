@@ -3,7 +3,12 @@ import { z } from 'zod';
 export const get_commented_items = {
   name: 'get_commented_items',
   description:
-    'List the sitemap items of a project that carry at least one published comment, most recently commented first. One row describes one sitemap item, a page or a container that groups items, not one comment, and an item nobody has commented on is never listed, so an empty `items` array means no commented item matched `search` or that `page` is past the last one. Paging is `page` (1-based, default 1) and `limit` (default 20, silently capped at 100). Nothing is queued: the call reads stored comments and answers immediately. Use `get_item_comments` to read the comments on one of these items.',
+    'List commented items. ' +
+    'Lists the sitemap items of a project that carry at least one published comment, most recently commented first. ' +
+    'One row describes one item, not one comment; an item nobody has commented on is never listed, so an empty `items` array means no item matched `search` or that `page` is past the last one. ' +
+    'An item deleted from the sitemap is not listed even if comments remain, and `lastActivity` comes from published comments only, so the date is one a reader can see. ' +
+    '`id` is the sitemap item id that `get_project_sitemap_items` reports and `get_item_comments` expects; `comments` is the published-comment count. ' +
+    'Paging is `page` (1-based, default 1) and `limit` (default 20, capped at 100); `total` counts every matching item.',
   inputSchema: z.object({
     projectId: z
       .number()
@@ -19,9 +24,11 @@ export const get_commented_items = {
       ),
     page: z.coerce
       .number()
+      .int()
+      .positive()
       .optional()
       .describe(
-        '1-based number of the page to return. Defaults to 1, the first page. The value is not range-checked, so pass a whole number of 1 or more'
+        '1-based number of the page to return. Defaults to 1, the first page.'
       ),
     search: z
       .string()
@@ -78,11 +85,10 @@ export const get_commented_items = {
             ),
           url: z
             .string()
+            .nullable()
             .optional()
-            .nullish()
-            .default(null)
             .describe(
-              'URL the item stands for. Null, or absent, when the item has no URL of its own: a container may have none'
+              'URL the item stands for. Null when the item has no URL of its own: a container may have none'
             ),
           comments: z
             .number()
@@ -91,8 +97,9 @@ export const get_commented_items = {
             ),
           lastActivity: z.iso
             .datetime()
+            .nullable()
             .describe(
-              'ISO 8601 date and time, in UTC, when the newest comment on the item was written. This is what the default order sorts on'
+              'ISO 8601 date and time, in UTC, when the newest published comment on the item was written. This is what the default order sorts on. Null only in the database edge case where no published comment carries a date'
             ),
         })
       )

@@ -182,6 +182,28 @@ export class ApiHelper {
           : 'data']: data,
       });
 
+      // A successful `204` carries no body, and neither does a `200` that the
+      // API answers with nothing. That is a success with an empty object, not
+      // the error the generic empty-response branch below reports.
+      const emptySuccess =
+        response?.status === 204 ||
+        response?.data === '' ||
+        response?.data == null;
+
+      if (emptySuccess) {
+        const data = {};
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(data),
+            },
+          ],
+          structuredContent: data,
+        };
+      }
+
       if (!response?.data) {
         return {
           content: [

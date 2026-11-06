@@ -93,6 +93,24 @@ describe('ApiHelper.handleToolRequest', () => {
     expect(data).toEqual(mockResponse.data);
   });
 
+  test('should treat a 204 response as an empty success', async () => {
+    mockClient.request.mockImplementationOnce(async (config: any) => {
+      expect(config.method).toBe('DELETE');
+      expect(config.url).toBe('/comments/1/2/3');
+      return { data: '', status: 204, config };
+    });
+
+    const result = await apiHelper.handleToolRequest(
+      'DELETE',
+      '/comments/1/2/3',
+      {}
+    );
+
+    expect(result.isError).toBeUndefined();
+    expect(result.structuredContent).toEqual({});
+    expect(JSON.parse((result.content[0] as any).text)).toEqual({});
+  });
+
   test('should handle request errors via handleError', async () => {
     const mockError = {
       response: {

@@ -8,7 +8,15 @@ import { cancel_project_url_job } from './projects/cancel_project_url_job.js';
 import { refresh_project_url } from './projects/refresh_project_url.js';
 import { cancel_project_url_refresh } from './projects/cancel_project_url_refresh.js';
 import { get_project_categories } from './projects/get_project_categories.js';
+import { create_project_category } from './projects/create_project_category.js';
+import { update_project_category } from './projects/update_project_category.js';
+import { delete_project_category } from './projects/delete_project_category.js';
+import { move_project_category } from './projects/move_project_category.js';
 import { get_project_workflow_statuses } from './projects/get_project_workflow_statuses.js';
+import { create_project_workflow_status } from './projects/create_project_workflow_status.js';
+import { update_project_workflow_status } from './projects/update_project_workflow_status.js';
+import { delete_project_workflow_status } from './projects/delete_project_workflow_status.js';
+import { move_project_workflow_status } from './projects/move_project_workflow_status.js';
 import { get_project_sitemap_items } from './projects/get_project_sitemap_items.js';
 import { get_project_groups } from './projects/get_project_groups.js';
 import { get_project_custom_logins } from './projects/get_project_custom_logins.js';
@@ -25,6 +33,21 @@ import { get_project_login_inputs } from './projects/get_project_login_inputs.js
 import { submit_project_login_input } from './projects/submit_project_login_input.js';
 import { create_project_from_sharepoint } from './projects/create_project_from_sharepoint.js';
 import { get_project_sitemap_item_details } from './projects/get_project_sitemap_item_details.js';
+import { create_project_sitemap_item } from './sitemap/create_project_sitemap_item.js';
+import { bulk_update_project_sitemap_items } from './sitemap/bulk_update_project_sitemap_items.js';
+import { update_project_sitemap_item } from './sitemap/update_project_sitemap_item.js';
+import { delete_project_sitemap_item } from './sitemap/delete_project_sitemap_item.js';
+import { bulk_delete_project_sitemap_items } from './sitemap/bulk_delete_project_sitemap_items.js';
+import { move_project_sitemap_item } from './sitemap/move_project_sitemap_item.js';
+import { bulk_move_project_sitemap_items } from './sitemap/bulk_move_project_sitemap_items.js';
+import { duplicate_project_sitemap_item } from './sitemap/duplicate_project_sitemap_item.js';
+import { sort_project_sitemap_items } from './sitemap/sort_project_sitemap_items.js';
+import { get_project_sitemap_undo } from './sitemap/get_project_sitemap_undo.js';
+import { undo_project_sitemap_edit } from './sitemap/undo_project_sitemap_edit.js';
+import { get_project_sitemap_redo } from './sitemap/get_project_sitemap_redo.js';
+import { redo_project_sitemap_edit } from './sitemap/redo_project_sitemap_edit.js';
+import { get_project_sitemap_item_content } from './sitemap/get_project_sitemap_item_content.js';
+import { replace_project_sitemap_item_content } from './sitemap/replace_project_sitemap_item_content.js';
 import { get_inventory } from './inventory/get_inventory.js';
 import { get_inventory_summary } from './inventory/get_inventory_summary.js';
 import { get_inventory_item_links } from './inventory/get_inventory_item_links.js';
@@ -50,7 +73,11 @@ import { get_analytics_project_pages } from './analytics/get_analytics_project_p
 import { get_analytics_sitemap_item } from './analytics/get_analytics_sitemap_item.js';
 import { get_analytics_sitemap_item_daily } from './analytics/get_analytics_sitemap_item_daily.js';
 import { get_commented_items } from './comments/get_commented_items.js';
+import { get_all_project_comments } from './comments/get_all_project_comments.js';
 import { get_item_comments } from './comments/get_item_comments.js';
+import { create_item_comment } from './comments/create_item_comment.js';
+import { update_item_comment } from './comments/update_item_comment.js';
+import { delete_item_comment } from './comments/delete_item_comment.js';
 import { get_visibility_project_ranking } from './visibility/get_visibility_project_ranking.js';
 import { get_visibility_project_score } from './visibility/get_visibility_project_score.js';
 import { get_visibility_project_groups } from './visibility/get_visibility_project_groups.js';
@@ -108,7 +135,15 @@ export const tools: Record<string, Tool> = {
   refresh_project_url: refresh_project_url as any,
   cancel_project_url_refresh: cancel_project_url_refresh as any,
   get_project_categories: get_project_categories as any,
+  create_project_category: create_project_category as any,
+  update_project_category: update_project_category as any,
+  delete_project_category: delete_project_category as any,
+  move_project_category: move_project_category as any,
   get_project_workflow_statuses: get_project_workflow_statuses as any,
+  create_project_workflow_status: create_project_workflow_status as any,
+  update_project_workflow_status: update_project_workflow_status as any,
+  delete_project_workflow_status: delete_project_workflow_status as any,
+  move_project_workflow_status: move_project_workflow_status as any,
   get_project_sitemap_items: get_project_sitemap_items as any,
   get_project_groups: get_project_groups as any,
   get_project_custom_logins: get_project_custom_logins as any,
@@ -126,6 +161,22 @@ export const tools: Record<string, Tool> = {
   submit_project_login_input: submit_project_login_input as any,
   create_project_from_sharepoint: create_project_from_sharepoint as any,
   get_project_sitemap_item_details: get_project_sitemap_item_details as any,
+  create_project_sitemap_item: create_project_sitemap_item as any,
+  bulk_update_project_sitemap_items: bulk_update_project_sitemap_items as any,
+  update_project_sitemap_item: update_project_sitemap_item as any,
+  delete_project_sitemap_item: delete_project_sitemap_item as any,
+  bulk_delete_project_sitemap_items: bulk_delete_project_sitemap_items as any,
+  move_project_sitemap_item: move_project_sitemap_item as any,
+  bulk_move_project_sitemap_items: bulk_move_project_sitemap_items as any,
+  duplicate_project_sitemap_item: duplicate_project_sitemap_item as any,
+  sort_project_sitemap_items: sort_project_sitemap_items as any,
+  get_project_sitemap_undo: get_project_sitemap_undo as any,
+  undo_project_sitemap_edit: undo_project_sitemap_edit as any,
+  get_project_sitemap_redo: get_project_sitemap_redo as any,
+  redo_project_sitemap_edit: redo_project_sitemap_edit as any,
+  get_project_sitemap_item_content: get_project_sitemap_item_content as any,
+  replace_project_sitemap_item_content:
+    replace_project_sitemap_item_content as any,
   get_inventory: get_inventory as any,
   get_inventory_summary: get_inventory_summary as any,
   get_inventory_item_links: get_inventory_item_links as any,
@@ -152,7 +203,11 @@ export const tools: Record<string, Tool> = {
   get_analytics_sitemap_item: get_analytics_sitemap_item as any,
   get_analytics_sitemap_item_daily: get_analytics_sitemap_item_daily as any,
   get_commented_items: get_commented_items as any,
+  get_all_project_comments: get_all_project_comments as any,
   get_item_comments: get_item_comments as any,
+  create_item_comment: create_item_comment as any,
+  update_item_comment: update_item_comment as any,
+  delete_item_comment: delete_item_comment as any,
   get_visibility_project_ranking: get_visibility_project_ranking as any,
   get_visibility_project_score: get_visibility_project_score as any,
   get_visibility_project_groups: get_visibility_project_groups as any,

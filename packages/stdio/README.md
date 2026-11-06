@@ -7,6 +7,9 @@ An [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server for th
 ## Features
 
 - **Project Management**: Create, list, and manage sitemap projects.
+- **Sitemap Editing**: Add, edit, move, duplicate, sort, and delete pages and containers, with undo and redo.
+- **Content Blocks**: Read and replace the content blocks of a sitemap page.
+- **Comments**: Read a project's comment feed and post, edit, or delete comments.
 - **Accessibility Auditing**: Run and retrieve accessibility reports (WCAG 2.1/2.2).
 - **Inventory & Audit**: Get detailed site inventory and SEO audit results.
 - **Analytics Integration**: Access project-level and page-level analytics.
@@ -112,8 +115,31 @@ The following tools are available through this MCP server:
 | `cancel_project_file_refresh`          | Cancel project refresh job created from text or xml file                          |
 | `get_project_sitemap_items`            | Get the sitemap items of a project                                                |
 | `get_project_sitemap_item_details`     | Get the details of a specific sitemap item in a project                           |
+| `create_project_sitemap_item`          | Add a page or container to the sitemap                                            |
+| `bulk_update_project_sitemap_items`    | Assign a category, status, tags or colours to several items                       |
+| `update_project_sitemap_item`          | Edit a page or container                                                          |
+| `delete_project_sitemap_item`          | Delete an item and its subtree                                                    |
+| `bulk_delete_project_sitemap_items`    | Delete several items in one call                                                  |
+| `move_project_sitemap_item`            | Reparent or reposition an item                                                    |
+| `bulk_move_project_sitemap_items`      | Move several items in one call                                                    |
+| `duplicate_project_sitemap_item`       | Copy an item and its direct children                                              |
+| `sort_project_sitemap_items`           | Sort the children of a container                                                  |
+| `get_project_sitemap_undo`             | Inspect the next undo                                                             |
+| `undo_project_sitemap_edit`            | Undo the last sitemap edit                                                        |
+| `get_project_sitemap_redo`             | Inspect the next redo                                                             |
+| `redo_project_sitemap_edit`            | Redo the last undone edit                                                         |
+| `get_project_sitemap_item_content`     | List an item's content blocks                                                     |
+| `replace_project_sitemap_item_content` | Replace an item's content blocks                                                  |
 | `get_project_categories`               | Get the list of project categories                                                |
+| `create_project_category`              | Create or restore a category                                                      |
+| `update_project_category`              | Rename or recolour a category                                                     |
+| `delete_project_category`              | Delete a category, or hide a shared one                                           |
+| `move_project_category`                | Move a category among its siblings                                                |
 | `get_project_workflow_statuses`        | Get the list of project workflow statuses                                         |
+| `create_project_workflow_status`       | Create or restore a workflow status                                               |
+| `update_project_workflow_status`       | Rename or recolour a workflow status                                              |
+| `delete_project_workflow_status`       | Delete a workflow status, or hide a built-in one                                  |
+| `move_project_workflow_status`         | Move a workflow status among its siblings                                         |
 | `get_project_groups`                   | Get the list of project groups                                                    |
 | `get_project_custom_logins`            | Get the list of custom login definitions                                          |
 | `test_project_custom_login`            | Test custom login                                                                 |
@@ -147,7 +173,11 @@ The following tools are available through this MCP server:
 | `get_analytics_sitemap_item`           | Get analytics of a sitemap item                                                   |
 | `get_analytics_sitemap_item_daily`     | Get analytics daily data of a sitemap item                                        |
 | `get_commented_items`                  | Get commented items for a project                                                 |
+| `get_all_project_comments`             | Get every comment in a project                                                    |
 | `get_item_comments`                    | Get item comments                                                                 |
+| `create_item_comment`                  | Comment on an item                                                                |
+| `update_item_comment`                  | Edit a comment                                                                    |
+| `delete_item_comment`                  | Delete a comment                                                                  |
 | `get_visibility_project_ranking`       | Get keywords ranking of a project                                                 |
 | `get_visibility_project_score`         | Get keywords score of a project                                                   |
 | `get_visibility_project_groups`        | Get keyword groups                                                                |
@@ -225,6 +255,22 @@ different prompt.
 > `create_project_from_sharepoint` takes the Microsoft account's username and password as tool
 > arguments. They are forwarded to the crawler and never stored, but tool arguments appear in the
 > conversation and in client-side logs.
+
+### Edit a sitemap
+
+1. Read the tree with `get_project_sitemap_items`; pass `parentId` to start at one item. Read
+   `get_project_sitemap_item_details` for the metadata of the item you are about to change.
+2. `create_project_sitemap_item` adds a page or container, `update_project_sitemap_item` edits one,
+   and `move_project_sitemap_item` or `bulk_move_project_sitemap_items` reparents or repositions it.
+3. Read `get_project_categories` and `get_project_workflow_statuses` before assigning them with
+   `bulk_update_project_sitemap_items`, which also sets tags and colours across a selection.
+4. `replace_project_sitemap_item_content` replaces the content blocks of a page;
+   `duplicate_project_sitemap_item` copies an item, and `sort_project_sitemap_items` orders a
+   container's children.
+5. Deletes are reversible: `delete_project_sitemap_item` and
+   `bulk_delete_project_sitemap_items` remove a subtree, and `undo_project_sitemap_edit` restores
+   it. Inspect the next step with `get_project_sitemap_undo`, and replay an undone step with
+   `redo_project_sitemap_edit` after checking `get_project_sitemap_redo`.
 
 ## Changelog
 

@@ -8,6 +8,41 @@ each release here points at the entry for that version.
 Versions are shared: the root manifest, every workspace and both changelogs
 carry one version per release, and `npm run check:changelogs` enforces it.
 
+## [0.3.0] - 2026-11-06
+
+The public API reference gained 27 operations and changed six. This release
+brings the tool registry up to it, covering sitemap editing, content blocks,
+category and workflow-status maintenance, the project-wide comment feed and
+comment writes. What a package consumer sees is in
+[packages/stdio/CHANGELOG.md](packages/stdio/CHANGELOG.md); this file records
+the repository change behind it.
+
+### Added
+
+- 27 tools under `packages/core/src/tools/`, registered in `tools.ts`:
+  - eight for category and workflow-status maintenance, in `projects/`;
+  - fifteen for sitemap editing, in a new `sitemap/` directory;
+  - four for the project-wide comment feed and comment writes, in `comments/`.
+- Shared Zod output schemas in `packages/core/src/tools/schemas/` for
+  categories, workflow statuses, sitemap items, content blocks, history steps
+  and comments. The item, comment and category reads now use them too, so a
+  documented response has one description in the source.
+- `resource/api.json` now documents the operations these tools cover.
+- `tools.test.ts` registers the new names and rejects `endpoint` and
+  `GET /path` syntax in tool descriptions, so a description cannot drift back
+  into API terms.
+- `api.test.ts` covers a `204 No Content` success.
+
+### Changed
+
+- Six existing tools follow the changed operations: the two category and
+  workflow-status reads, the two sitemap item reads, `get_commented_items` and
+  `get_item_comments`. See the package changelog for the contract changes.
+- `ApiHelper` treats an empty successful body as `{}` rather than a "No data
+  received" error. A delete that the API answers with `204` now reports success.
+- `packages/stdio/README.md` lists the new tools and describes an "Edit a
+  sitemap" workflow.
+
 ## [0.2.0] - 2026-10-29
 
 The first release that ships two artifacts: `@dynomapper/mcp-server` on npm and

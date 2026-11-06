@@ -5,6 +5,59 @@ Notable changes to `@dynomapper/mcp-server`, the stdio server published to npm.
 The version tracks the release it ships with. `0.1.0` was the first publish and
 predates this file.
 
+## [0.3.0] - 2026-11-06
+
+Brings the tools up to the updated public API reference: 27 operations are new
+and six that already had tools changed shape.
+
+### Breaking
+
+- `get_item_comments` no longer takes `orderBy` or `orderDir`. It takes `page`,
+  `limit`, `order` and `search`, and its response is paged, with `total`,
+  `limit`, `page`, `pageSize` and `itemId` alongside `items`. `order: 'asc'` is
+  the default and still reads oldest first.
+- `get_project_workflow_statuses` reports `parentKey` instead of `parentId`, and
+  a status `id` may be a string, because a built-in status uses its key as its
+  id. Code that assumed a numeric id needs a string branch.
+- `get_project_sitemap_items` reads `parentId` as the root of a subtree: the
+  item itself comes first, followed by everything published beneath it, rather
+  than only its direct children.
+- `get_project_categories` and `get_project_workflow_statuses` report
+  `editable`, and `get_project_sitemap_items` reports `contentCount`.
+
+### Added
+
+- Sitemap editing tools:
+  - `create_project_sitemap_item`, `update_project_sitemap_item`,
+    `delete_project_sitemap_item` — add, edit and delete one page or container.
+  - `bulk_update_project_sitemap_items`, `bulk_delete_project_sitemap_items`,
+    `bulk_move_project_sitemap_items` — assign attributes, delete or move up to
+    500 items in one call.
+  - `move_project_sitemap_item`, `duplicate_project_sitemap_item`,
+    `sort_project_sitemap_items` — reparent, copy and order items.
+  - `get_project_sitemap_undo`, `undo_project_sitemap_edit`,
+    `get_project_sitemap_redo`, `redo_project_sitemap_edit` — inspect and walk
+    the project's shared edit history.
+  - `get_project_sitemap_item_content`, `replace_project_sitemap_item_content` —
+    read and replace a page's content blocks.
+- Category and workflow-status maintenance:
+  `create_project_category`, `update_project_category`, `delete_project_category`,
+  `move_project_category`, `create_project_workflow_status`,
+  `update_project_workflow_status`, `delete_project_workflow_status`,
+  `move_project_workflow_status`.
+- Comment tools: `get_all_project_comments`, `create_item_comment`,
+  `update_item_comment`, `delete_item_comment`.
+- A successful response with no body, such as a `204` delete, now answers `{}`
+  instead of a "No data received from the API" tool error.
+
+### Changed
+
+- `get_commented_items` reports a nullable `lastActivity` and validates `page`
+  as a positive whole number.
+- `get_project_sitemap_item_details` reports a nullable `url`, matching the
+  documented response for a container.
+- Tool descriptions name the tool to call next rather than an API route.
+
 ## [0.2.0] - 2026-10-29
 
 First npm release since 0.1.7, carrying the tools and contract changes made in

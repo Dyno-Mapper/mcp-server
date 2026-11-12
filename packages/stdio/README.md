@@ -92,6 +92,11 @@ claude mcp add --transport http dynomapper https://mcp.dynomapper.com/mcp \
 `--http` and `MCP_TRANSPORT=http` are refused by this package, which speaks
 stdio only; point a client that needs HTTP at the URL above instead.
 
+### First call
+
+`get_current_user` is the cheapest way to prove a token works: it reads no
+project and needs no id, and it answers the account the token belongs to.
+
 ## Available Tools
 
 The following tools are available through this MCP server:
@@ -103,6 +108,7 @@ The following tools are available through this MCP server:
 | `get_project_details`                  | Get the details of a project                                                      |
 | `create_project_from_url`              | Create a Project from URL                                                         |
 | `create_project_from_sharepoint`       | Create a private Project from a SharePoint team site                              |
+| `create_project_from_scratch`          | Create an empty project to build by hand                                          |
 | `create_project_from_file`             | Create a Project from a text or xml file, or from a key returned by `upload_file` |
 | `upload_file`                          | Upload a text or XML source and get the key an import accepts                     |
 | `get_project_url_job_status`           | Get Project job status created by URL                                             |
@@ -116,7 +122,7 @@ The following tools are available through this MCP server:
 | `get_project_sitemap_items`            | Get the sitemap items of a project                                                |
 | `get_project_sitemap_item_details`     | Get the details of a specific sitemap item in a project                           |
 | `create_project_sitemap_item`          | Add a page or container to the sitemap                                            |
-| `bulk_update_project_sitemap_items`    | Assign a category, status, tags or colours to several items                       |
+| `bulk_update_project_sitemap_items`    | Assign a category, status, tags or colors to several items                        |
 | `update_project_sitemap_item`          | Edit a page or container                                                          |
 | `delete_project_sitemap_item`          | Delete an item and its subtree                                                    |
 | `bulk_delete_project_sitemap_items`    | Delete several items in one call                                                  |
@@ -208,7 +214,7 @@ The following tools are available through this MCP server:
 | `get_project_assignments_totals`       | Get assignment totals by project                                                  |
 | `get_assignment_details`               | Get an assignment by id                                                           |
 
-The tool descriptions follow the [public API reference](resource/api.json) checked into this
+The tool descriptions follow the [public API reference](../../resource/api.json) checked into this
 repository. Every tool description names the tools you need next instead of API endpoints, so the
 two stay usable side by side.
 
@@ -235,6 +241,20 @@ Most tools stand alone. These sequences do not, and the calls only make sense in
 
 Keys are account-scoped and not consumed, so one upload can back several imports. A project created
 from a file or a key cannot be refreshed — send a `url` when you need `refresh_project_file` later.
+
+### Create a project by hand
+
+1. `create_project_from_scratch` publishes an empty project and answers its id. `title` is
+   optional; without it the project is called `Untitled Project`. There is no job to poll: the
+   project is complete when the call returns.
+2. The project starts with one root item, `Home` at `https://www.example.com`. Rename and
+   re-address it with `update_project_sitemap_item`; editing the root's URL also rewrites the
+   project's domain.
+3. Add pages and containers with `create_project_sitemap_item`, and order them with
+   `move_project_sitemap_item` or `sort_project_sitemap_items`.
+4. Fill a page with `replace_project_sitemap_item_content`, and read it back with
+   `get_project_sitemap_item_content`.
+5. Read the finished project with `get_project_details` and `get_project_sitemap_items`.
 
 ### Answer a sign-in prompt
 
@@ -263,7 +283,7 @@ different prompt.
 2. `create_project_sitemap_item` adds a page or container, `update_project_sitemap_item` edits one,
    and `move_project_sitemap_item` or `bulk_move_project_sitemap_items` reparents or repositions it.
 3. Read `get_project_categories` and `get_project_workflow_statuses` before assigning them with
-   `bulk_update_project_sitemap_items`, which also sets tags and colours across a selection.
+   `bulk_update_project_sitemap_items`, which also sets tags and colors across a selection.
 4. `replace_project_sitemap_item_content` replaces the content blocks of a page;
    `duplicate_project_sitemap_item` copies an item, and `sort_project_sitemap_items` orders a
    container's children.

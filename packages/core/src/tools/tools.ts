@@ -32,6 +32,7 @@ import { get_project_dacq_score } from './projects/get_project_dacq_score.js';
 import { get_project_login_inputs } from './projects/get_project_login_inputs.js';
 import { submit_project_login_input } from './projects/submit_project_login_input.js';
 import { create_project_from_sharepoint } from './projects/create_project_from_sharepoint.js';
+import { create_project_from_scratch } from './projects/create_project_from_scratch.js';
 import { get_project_sitemap_item_details } from './projects/get_project_sitemap_item_details.js';
 import { create_project_sitemap_item } from './sitemap/create_project_sitemap_item.js';
 import { bulk_update_project_sitemap_items } from './sitemap/bulk_update_project_sitemap_items.js';
@@ -160,6 +161,7 @@ export const tools: Record<string, Tool> = {
   get_project_login_inputs: get_project_login_inputs as any,
   submit_project_login_input: submit_project_login_input as any,
   create_project_from_sharepoint: create_project_from_sharepoint as any,
+  create_project_from_scratch: create_project_from_scratch as any,
   get_project_sitemap_item_details: get_project_sitemap_item_details as any,
   create_project_sitemap_item: create_project_sitemap_item as any,
   bulk_update_project_sitemap_items: bulk_update_project_sitemap_items as any,

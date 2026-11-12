@@ -121,6 +121,7 @@ describe('tool registry', () => {
       'get_project_login_inputs',
       'submit_project_login_input',
       'create_project_from_sharepoint',
+      'create_project_from_scratch',
       'get_accessibility_login_inputs',
       'submit_accessibility_login_input',
       'upload_file',

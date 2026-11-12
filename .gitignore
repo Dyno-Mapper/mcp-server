@@ -16,6 +16,7 @@ yarn-error.log*
 .ai/
 .junie/
 .docker/
+.tmp-handover/
 
 .env
 .env.*

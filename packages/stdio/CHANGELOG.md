@@ -5,6 +5,27 @@ Notable changes to `@dynomapper/mcp-server`, the stdio server published to npm.
 The version tracks the release it ships with. `0.1.0` was the first publish and
 predates this file.
 
+## [0.4.0] - 2026-11-12
+
+The public API gained one operation and a documentation style guide. This
+release adds the tool for the new operation and aligns every tool description
+with that style. No tool, argument or response shape changed.
+
+### Added
+
+- `create_project_from_scratch` — create an empty, published project and build
+  its sitemap by hand. `title` is optional and defaults to `Untitled Project`;
+  the call returns the new project `id`, and there is no job to poll.
+- The README lists the tool, describes a "Create a project by hand" workflow,
+  and names `get_current_user` as the first call.
+
+### Changed
+
+- Tool descriptions and schema fields now use `ID` in prose, American spelling,
+  third-person voice and effect-first field text, following the API reference's
+  documentation style. The fifteen crawl settings describe their effect and
+  default instead of the application's settings screen. No contract changed.
+
 ## [0.3.0] - 2026-11-06
 
 Brings the tools up to the updated public API reference: 27 operations are new

@@ -1,6 +1,6 @@
 {
   "name": "@dynomapper/mcp-core",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "Shared MCP server, API client and tool registry for the DYNO Mapper servers.",
   "license": "Apache-2.0",

@@ -8,6 +8,41 @@ each release here points at the entry for that version.
 Versions are shared: the root manifest, every workspace and both changelogs
 carry one version per release, and `npm run check:changelogs` enforces it.
 
+## [0.4.0] - 2026-11-12
+
+The public API reference gained one operation, `POST /v1/project/scratch`, and
+adopted a documentation style guide. This release adds the tool for the new
+operation and brings every tool description up to that house style. What a
+package consumer sees is in
+[packages/stdio/CHANGELOG.md](packages/stdio/CHANGELOG.md); this file records
+the repository change behind it.
+
+### Added
+
+- `create_project_from_scratch`, registered in `tools.ts`, for
+  `POST /v1/project/scratch`: an empty, published project with an optional
+  title, a `Home` root at `https://www.example.com`, and no job to poll.
+- `packages/stdio/README.md` lists the tool, describes a "Create a project by
+  hand" workflow, names `get_current_user` as the first call, and points its
+  API reference link at `resource/api.json`.
+- `tools.test.ts` enforces the house style's checkable rules — `ID` in prose,
+  American spelling, no `this endpoint`, `simply`, `via`, `e.g.`, spaced
+  hyphens or settings-screen `ON`/`OFF` — across tool descriptions, input and
+  output schemas, and the package README.
+
+### Changed
+
+- Every tool description and schema field follows `dynomapper-public-api`'s
+  `docs/style-guide.md` (R1–R10): third-person reference voice, no definitions
+  of standard web terms, and field descriptions that lead with the effect and
+  end with the default.
+- The fifteen crawl settings describe what each flag changes rather than the
+  application's settings screen: `ignoreTrailingSlash` now says it collapses
+  `/about` and `/about/`, `url` accepts `http` as well as `https`, and
+  `uniquePageTitle` says a matching title is dropped rather than duplicated.
+- `resource/api.json` now documents the scratch operation and the reference's
+  terminology and guide changes.
+
 ## [0.3.0] - 2026-11-06
 
 The public API reference gained 27 operations and changed six. This release

@@ -3,11 +3,11 @@ import { z } from 'zod';
 export const get_project_assignments = {
   name: 'get_project_assignments',
   description:
-    'List assignments in a project: the same rows, filters, defaults and paging as `get_assignments`, scoped to one project instead of the whole account. An id that is not in the account fails with `project_not_found` and one the caller may not read fails with `unauthorized_access`, both before any assignment is read; a project that simply has nothing matching is not an error and answers an empty `items` array with `total` 0. Assignee scoping still applies inside the project, so a caller without account-wide visibility sees only their own assignments there. Confirm the project is visible with `get_project_details`.',
+    'List assignments in a project: the same rows, filters, defaults and paging as `get_assignments`, scoped to one project instead of the whole account. An id that is not in the account fails with `project_not_found` and one the caller may not read fails with `unauthorized_access`, both before any assignment is read; a project that has nothing matching is not an error and answers an empty `items` array with `total` 0. Assignee scoping still applies inside the project, so a caller without account-wide visibility sees only their own assignments there. Confirm the project is visible with `get_project_details`.',
   inputSchema: z.object({
     projectId: z.coerce
       .number()
-      .describe('Id of the project, from `get_projects`.'),
+      .describe('ID of the project, from `get_projects`.'),
     page: z.coerce
       .number()
       .min(1)
@@ -41,13 +41,13 @@ export const get_project_assignments = {
       .number()
       .optional()
       .describe(
-        'Id of a page category to filter by, from `get_project_categories`. Matched against the page the assignment is attached to, so an assignment covering the whole project never matches. Omit it to include every category.'
+        'ID of a page category to filter by, from `get_project_categories`. Matched against the page the assignment is attached to, so an assignment covering the whole project never matches. Omit it to include every category.'
       ),
     workflow: z
       .string()
       .optional()
       .describe(
-        'Id of a workflow status to filter by, from `get_project_workflow_statuses`, sent as the string form of the id, for example "12" rather than 12. Matched against the page the assignment is attached to, so an assignment covering the whole project never matches.'
+        'ID of a workflow status to filter by, from `get_project_workflow_statuses`, sent as the string form of the id, for example "12" rather than 12. Matched against the page the assignment is attached to, so an assignment covering the whole project never matches.'
       ),
     tags: z
       .string()
@@ -128,17 +128,17 @@ export const get_project_assignments = {
     total: z
       .number()
       .describe(
-        'Number of assignments matching the filters across every page, before paging. Paginate on this figure: it does not change as you walk the pages.'
+        'Number of assignments matching the filters across every page, before paging. Paginate on this figure: it does not change as the pages are walked.'
       ),
     limit: z
       .number()
       .describe(
-        'Maximum number of assignments this page returns; the `limit` you asked for, or its default of 20.'
+        'Maximum number of assignments this page returns; the requested `limit`, or its default of 20.'
       ),
     page: z
       .number()
       .describe(
-        'Page number these items belong to; the `page` you asked for, or 1.'
+        'Page number these items belong to; the requested `page`, or 1.'
       ),
     pageSize: z
       .number()
@@ -151,12 +151,12 @@ export const get_project_assignments = {
           id: z
             .number()
             .describe(
-              'Id of the assignment. Use it with `get_assignment_details`, the only tool that returns one assignment on its own.'
+              'ID of the assignment. Use it with `get_assignment_details`, the only tool that returns one assignment on its own.'
             ),
           projectId: z
             .number()
             .describe(
-              'Id of the project the assignment belongs to. Read the project with `get_project_details`.'
+              'ID of the project the assignment belongs to. Read the project with `get_project_details`.'
             ),
           itemId: z
             .number()
@@ -164,7 +164,7 @@ export const get_project_assignments = {
             .nullish()
             .default(null)
             .describe(
-              'Id of the inventory page the assignment is attached to. `null` for an assignment that covers the project as a whole instead of one page: the stored value is `0`, reported here as `null`.'
+              'ID of the inventory page the assignment is attached to. `null` for an assignment that covers the project as a whole instead of one page: the stored value is `0`, reported here as `null`.'
             ),
           title: z
             .string()

@@ -14,7 +14,7 @@ export const get_visibility_project_groups = {
           id: z
             .number()
             .describe(
-              'Id of the group. Send it as `groupId` to `update_visibility_keywords_group`, as `group` when adding keywords, and as the `group` filter of `get_visibility_project_ranking`.'
+              'ID of the group. Send it as `groupId` to `update_visibility_keywords_group`, as `group` when adding keywords, and as the `group` filter of `get_visibility_project_ranking`.'
             ),
           name: z
             .string()

@@ -20,7 +20,7 @@ const scoreSchema = z
     visibilityRawScore: z
       .number()
       .describe(
-        'Unnormalised visibility: for each keyword, `(100 - (rank - 1)) / 100` multiplied by its search volume, summed. A keyword ranked first contributes its whole volume, one ranked 100th contributes almost nothing; a top-ten keyword with no recorded volume is counted as volume 1.'
+        'Unnormalized visibility: for each keyword, `(100 - (rank - 1)) / 100` multiplied by its search volume, summed. A keyword ranked first contributes its whole volume, one ranked 100th contributes almost nothing; a top-ten keyword with no recorded volume is counted as volume 1.'
       ),
     visibilityRawScore0: z
       .number()
@@ -148,7 +148,7 @@ const scoreSchema = z
 export const get_visibility_project_score = {
   name: 'get_visibility_project_score',
   description:
-    'Summarises the project’s tracked keywords over `startDate` to `endDate` as one block of numbers per search engine, for a scorecard or a trend line rather than a table of keywords. Field names follow two conventions: a trailing `0` is the value at the start of the window, and `Inc` is current minus start, so a positive `…Inc` always means movement in the good direction. Only actively tracked keywords are counted, and there are no filter parameters: every locale, device and group is included. A project whose keywords have never been checked returns zeros rather than nulls. For the individual rows behind these numbers use `get_visibility_project_ranking` with the same two dates.',
+    'Summarizes the project’s tracked keywords over `startDate` to `endDate` as one block of numbers per search engine, for a scorecard or a trend line rather than a table of keywords. Field names follow two conventions: a trailing `0` is the value at the start of the window, and `Inc` is current minus start, so a positive `…Inc` always means movement in the good direction. Only actively tracked keywords are counted, and there are no filter parameters: every locale, device and group is included. A project whose keywords have never been checked returns zeros rather than nulls. For the individual rows behind these numbers use `get_visibility_project_ranking` with the same two dates.',
   inputSchema: z.object({
     projectId: z.number().describe('Numeric project id, from `get_projects`.'),
     startDate: z.iso

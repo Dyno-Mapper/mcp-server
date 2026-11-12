@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const get_analytics_project_pages = {
   name: 'get_analytics_project_pages',
   description:
-    'A paged table of the pages that had traffic, one row per page, from the Google Analytics 4 properties linked to the project. Rows are keyed by page URL after normalisation, host lowercased with a leading `www.` dropped, path and query lowercased and trailing slash trimmed, so the same page reached by differently written URLs collapses into one row. Both dates are required and the range includes both ends. `total` is the number of distinct pages matching `filter`, and the sort defaults to `active_users` descending. A page with no traffic in the range is simply not in the table.',
+    'A paged table of the pages that had traffic, one row per page, from the Google Analytics 4 properties linked to the project. Rows are keyed by page URL after normalization, host lowercased with a leading `www.` dropped, path and query lowercased and trailing slash trimmed, so the same page reached by differently written URLs collapses into one row. Both dates are required and the range includes both ends. `total` is the number of distinct pages matching `filter`, and the sort defaults to `active_users` descending. A page with no traffic in the range is not in the table.',
   inputSchema: z.object({
     projectId: z
       .number()
@@ -16,7 +16,7 @@ export const get_analytics_project_pages = {
     endDate: z.iso
       .date()
       .describe(
-        'Last calendar day of the range, in `YYYY-MM-DD` form. Required, with no default. Inclusive. An `endDate` earlier than `startDate` is not rejected; it simply matches no rows'
+        'Last calendar day of the range, in `YYYY-MM-DD` form. Required, with no default. Inclusive. An `endDate` earlier than `startDate` is not rejected; it matches no rows'
       ),
     filter: z
       .string()
@@ -89,7 +89,7 @@ export const get_analytics_project_pages = {
           pageLocation: z
             .string()
             .describe(
-              'URL of the page as Google Analytics recorded it, with scheme, host, path and query. Rows group URLs that normalise alike, so this is one of the spellings that merged into the row'
+              'URL of the page as Google Analytics recorded it, with scheme, host, path and query. Rows group URLs that normalize alike, so this is one of the spellings that merged into the row'
             ),
           activeUsers: z
             .number()

@@ -13,7 +13,7 @@ export const delete_project_category = {
     categoryId: z.number().describe(CATEGORY_ID_DESCRIPTION),
   }),
   outputSchema: z.object({
-    id: z.number().describe('Id of the category that was removed.'),
+    id: z.number().describe('ID of the category that was removed.'),
   }),
   method: 'delete',
   path: '/v1/project/category/{categoryId}',

@@ -11,13 +11,13 @@ export const cancel_project_url_refresh = {
     id: z.coerce
       .number()
       .describe(
-        'Id of the project whose outstanding refresh to cancel, as returned by `create_project_from_url`.'
+        'ID of the project whose outstanding refresh to cancel, as returned by `create_project_from_url`.'
       ),
   }),
   outputSchema: z.object({
     id: z.coerce
       .number()
-      .describe('Id of the project whose refresh was cancelled.'),
+      .describe('ID of the project whose refresh was canceled.'),
   }),
   method: 'delete',
   path: '/v1/project/url/{id}/refresh',

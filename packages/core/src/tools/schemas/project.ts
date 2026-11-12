@@ -7,10 +7,10 @@ import { z } from 'zod';
  * equivalent tool instead, so these strings are written in tool terms.
  */
 export const PROJECT_ID_DESCRIPTION =
-  'Id of the project, as `get_projects` reports it.';
+  'ID of the project, as `get_projects` reports it.';
 
 export const CATEGORY_ID_DESCRIPTION =
-  'Id of the category, as `get_project_categories` reports it.';
+  'ID of the category, as `get_project_categories` reports it.';
 
 export const WORKFLOW_STATUS_KEY_DESCRIPTION =
   'Key of the status, exactly as `get_project_workflow_statuses` reports it. A built-in status uses a plain word such as `publish`; one the account created may be keyed `wfs#12`, which the `key` argument takes as `wfs%2312`, because a bare `#` starts a fragment.';
@@ -29,7 +29,7 @@ export const categorySchema = z.object({
     .string()
     .nullable()
     .describe(
-      'Colour the application paints the category with, when one is set. Null when the category has no colour.'
+      'Color the application paints the category with, when one is set. Null when the category has no color.'
     ),
   editable: z
     .boolean()
@@ -63,7 +63,7 @@ export const workflowStatusSchema = z.object({
     .string()
     .nullable()
     .describe(
-      'Colour the application paints the status with. Null when the status has no colour.'
+      'Color the application paints the status with. Null when the status has no color.'
     ),
   editable: z
     .boolean()

@@ -29,14 +29,14 @@ export const create_visibility_keywords = {
       .number()
       .optional()
       .describe(
-        'Id of an existing group, from `get_visibility_project_groups`, to file the new keywords under. Omitted means no group; the group must belong to the same account, and an id from another account fails with 500 rather than being ignored.'
+        'ID of an existing group, from `get_visibility_project_groups`, to file the new keywords under. Omitted means no group; the group must belong to the same account, and an id from another account fails with 500 rather than being ignored.'
       ),
   }),
   outputSchema: z.object({
     ids: z
       .array(z.number())
       .describe(
-        'Ids of the tracked keywords, one per entry of `keywords` and in the same order, so the first id belongs to the first keyword sent. These are the `id` values of `get_visibility_project_ranking` and the ids that `update_visibility_keywords_group` and `update_visibility_keyword_setting` expect.'
+        'IDs of the tracked keywords, one per entry of `keywords` and in the same order, so the first id belongs to the first keyword sent. These are the `id` values of `get_visibility_project_ranking` and the ids that `update_visibility_keywords_group` and `update_visibility_keyword_setting` expect.'
       ),
   }),
   method: 'post',

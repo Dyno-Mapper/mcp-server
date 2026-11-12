@@ -7,11 +7,11 @@ export const submit_accessibility_login_input = {
     'Omit `value` — the tool then sends an empty object — when the prompt already carries the value the run needs, such as an authenticator approval where the run reports the number to match; the input is marked complete and the value the run filled in is left as it is. ' +
     'Re-read `get_accessibility_login_inputs` if the prompt has expired, or start a new run with `run_accessibility_checker`; the run is still waiting while `get_accessibility_results` shows it unfinished.',
   inputSchema: z.object({
-    projectId: z.number().describe('Id of the project the run belongs to.'),
+    projectId: z.number().describe('ID of the project the run belongs to.'),
     reportId: z
       .number()
       .describe(
-        'Id of the accessibility run — the `id` from `get_accessibility_results`, or the `id` that `run_accessibility_checker` returned.'
+        'ID of the accessibility run — the `id` from `get_accessibility_results`, or the `id` that `run_accessibility_checker` returned.'
       ),
     inputId: z
       .number()

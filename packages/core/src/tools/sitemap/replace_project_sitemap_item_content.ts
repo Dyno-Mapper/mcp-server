@@ -28,7 +28,7 @@ export const replace_project_sitemap_item_content = {
             .nullable()
             .optional()
             .describe(
-              'Id of a block this item already holds, as a read returned it. The block is rewritten in place with this content, these settings and this position. Leave it out — or send `null` or `0` — to add a new block.'
+              'ID of a block this item already holds, as a read returned it. The block is rewritten in place with this content, these settings and this position. Leave it out — or send `null` or `0` — to add a new block.'
             ),
           type: z
             .enum(['richtext', 'text', 'link', 'image', 'file', 'video'])
@@ -39,13 +39,13 @@ export const replace_project_sitemap_item_content = {
             .string()
             .optional()
             .describe(
-              'Body of the block, interpreted as the read describes it. HTML sent for a `richtext` block, or for a custom `video` embed, is sanitised before it is stored. Omitted means empty. The ceilings are 1 MB for `richtext`, 256 KB for `text` and 64 KB for the other four.'
+              'Body of the block, interpreted as the read describes it. HTML sent for a `richtext` block or a custom `video` embed is sanitized before storage, and omitting the field means empty. The ceilings are 1 MB for `richtext`, 256 KB for `text` and 64 KB for the other four.'
             ),
           properties: z
             .record(z.string(), z.unknown())
             .optional()
             .describe(
-              'The keys the block’s type reads: `link` reads `url`, `text` and `newTab`; `image` reads `imageUrl`, or `custom: 1` with `url` and `alt`; `file` reads `url` and `name`; `video` reads `url` and `text`, or `custom: 1` with the embed in `content`; `richtext` and `text` read none. A key the type does not read is kept as stored. An address that reaches an `href` or a `src` must be absolute `http(s)`; a protocol-relative `//` address is accepted, and a `link` may be a `mailto:` address. Omitted means no keys, which leaves a `link`, `image`, `file` or non-custom `video` with nothing to render.'
+              'The keys the block’s type reads: `link` reads `url`, `text` and `newTab`; `image` reads `imageUrl`, or `custom: 1` with `url` and `alt`; `file` reads `url` and `name`; `video` reads `url` and `text`, or `custom: 1` with the embed in `content`; `richtext` and `text` read none. A key the type does not read is kept as stored, and an address that reaches an `href` or `src` must be absolute `http(s)`; a protocol-relative `//` address is accepted, and a `link` may be a `mailto:` address. Omitted means no keys, which leaves a `link`, `image`, `file` or non-custom `video` with nothing to render.'
             ),
           settings: z
             .object({
@@ -65,7 +65,7 @@ export const replace_project_sitemap_item_content = {
                 .string()
                 .optional()
                 .describe(
-                  'Id for the wrapper element. Omitted means empty; ignored when there is no wrapper.'
+                  'ID for the wrapper element. Omitted means empty; ignored when there is no wrapper.'
                 ),
             })
             .optional()
@@ -75,7 +75,7 @@ export const replace_project_sitemap_item_content = {
         })
       )
       .describe(
-        'Every block the item should end up with, in the order the page should show them. The set is replaced wholesale: a block whose id is sent is rewritten, a block without an id is added, and a stored block that is not in the array is deleted. Send an empty array to remove every block. At most 500 blocks, and 5 MB across the request.'
+        'Every block the item should end up with, in the order the page should show them. The set is replaced wholesale — a block whose id is sent is rewritten, one without an id is added, and a stored block omitted from the array is deleted — with at most 500 blocks and 5 MB across the request.'
       ),
   }),
   outputSchema: contentBlocksSchema,

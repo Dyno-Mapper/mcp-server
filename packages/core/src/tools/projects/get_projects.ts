@@ -98,7 +98,7 @@ export const get_projects = {
         items: z
           .number()
           .describe(
-            'Item count stored on the project row — the figure the project list of the application shows. It is a saved count rather than one taken for this call, so it is not guaranteed to match the pages and folders currently in the sitemap.'
+            'Item count stored on the project row — the figure the project list of the application shows. It is a saved count rather than one taken for this call, so it is not guaranteed to match the pages and folders in the sitemap.'
           ),
         isPublic: z
           .boolean()
@@ -136,7 +136,7 @@ export const get_projects = {
           .string()
           .nullish()
           .describe(
-            'Colour the application paints that group with. Null when the project is in no group, or when the group has no colour set.'
+            'Color the application paints that group with. Null when the project is in no group, or when the group has no color set.'
           ),
         logoUrl: z
           .string()

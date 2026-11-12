@@ -3,16 +3,16 @@ import { z } from 'zod';
 export const get_accessibility_report_problems = {
   name: 'get_accessibility_report_problems',
   description:
-    'Summarise one accessibility run by guideline group: one row per group with how many problems it produced and how many pages it touched. ' +
+    'Summarize one accessibility run by guideline group: one row per group with how many problems it produced and how many pages it touched. ' +
     'Rows are keyed by the group name trimmed to its numbered prefix, so the subgroups under one guideline — the WCAG guidelines `1.1` to `4.1` — are summed into a single row; use `get_accessibility_report_groups` when the subgroup breakdown is needed instead. ' +
     'Counts are relative to the run’s page total, `totalPages`, which includes pages with no problem at all. ' +
     'Only groups that produced at least one problem appear, so a run that found nothing answers an empty array. A run of another project, or an id that is not a run, answers `500` rather than `404`.',
   inputSchema: z.object({
-    projectId: z.number().describe('Id of the project the run belongs to.'),
+    projectId: z.number().describe('ID of the project the run belongs to.'),
     reportId: z
       .number()
       .describe(
-        'Id of the accessibility run — the `id` from `get_accessibility_results`, or the `id` that `run_accessibility_checker` returned.'
+        'ID of the accessibility run — the `id` from `get_accessibility_results`, or the `id` that `run_accessibility_checker` returned.'
       ),
   }),
   outputSchema: z.object({

@@ -5,13 +5,13 @@ export const get_project_dacq_score = {
   description:
     'Get the DACQ (Discoverability, Accessibility, Content Quality) score of a private SharePoint project. ' +
     'DACQ replaces VACQ for projects that are not publicly reachable: with no search visibility to measure, the total is built from Discoverability, Accessibility and Content Quality instead. ' +
-    'The average is null until all three pillars are measured; Discoverability comes from the crawl, and Accessibility needs a completed accessibility run, which you start with `run_accessibility_checker`. ' +
+    'The average is null until all three pillars are measured; Discoverability comes from the crawl, and Accessibility needs a completed accessibility run, started with `run_accessibility_checker`. ' +
     'A project that is not a private SharePoint project, and a project that has not been crawled yet, answers every field as null rather than failing.',
   inputSchema: z.object({
     projectId: z
       .number()
       .describe(
-        'Id of the project, as returned by `create_project_from_url` or `create_project_from_sharepoint`.'
+        'ID of the project, as returned by `create_project_from_url` or `create_project_from_sharepoint`.'
       ),
   }),
   outputSchema: z.object({

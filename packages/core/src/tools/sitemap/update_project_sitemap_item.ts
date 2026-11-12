@@ -9,7 +9,7 @@ export const update_project_sitemap_item = {
   name: 'update_project_sitemap_item',
   description:
     'Update a sitemap item. ' +
-    'Changes the fields an item carries. Only the keys you send are written, so this is safe to use for a rename as well as for a full edit; `url: null` turns the item into a container and `category: null` or `workflowStatus: null` clears them. ' +
+    'Changes the fields an item carries. Only the fields sent are written, so this is safe to use for a rename as well as for a full edit; `url: null` turns the item into a container and `category: null` or `workflowStatus: null` clears them. ' +
     'Sending `url` re-derives the item’s type, and editing the root’s URL also rewrites the project’s domain. ' +
     '`pathMode` sets the address scheme, with `slug` or `staticUrl`; sending it again retries an address that was not saved, and `linkPathSaved` reports whether it was. ' +
     'The write is one undo step, reversible with `undo_project_sitemap_edit`. ' +
@@ -37,7 +37,7 @@ export const update_project_sitemap_item = {
       .nullable()
       .optional()
       .describe(
-        'Id of the category to assign, from `get_project_categories`. `null` clears it. An id this account cannot see is rejected with `unknown_category`; categories are never created implicitly.'
+        'ID of the category to assign, from `get_project_categories`. `null` clears it. An id this account cannot see is rejected with `unknown_category`; categories are never created implicitly.'
       ),
     workflowStatus: z
       .string()
@@ -85,14 +85,14 @@ export const update_project_sitemap_item = {
       .nullable()
       .optional()
       .describe(
-        'Background colour the application paints the item with in the sitemap. `null` restores the default.'
+        'Background color the application paints the item with in the sitemap. `null` restores the default.'
       ),
     foregroundColor: z
       .string()
       .nullable()
       .optional()
       .describe(
-        'Text colour the application paints the item with in the sitemap. `null` restores the default.'
+        'Text color the application paints the item with in the sitemap. `null` restores the default.'
       ),
     tags: z
       .array(z.string().min(1))

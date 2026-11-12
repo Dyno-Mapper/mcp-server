@@ -50,7 +50,7 @@ export const get_audit_client_error = {
           id: z
             .number()
             .describe(
-              'Id of the record the run holds for this URL. Identify the row by `url` rather than by this id.'
+              'ID of the record the run holds for this URL. Identify the row by `url` rather than by this id.'
             ),
           url: z.string().describe('The URL that answered with a 4xx status.'),
           status: z

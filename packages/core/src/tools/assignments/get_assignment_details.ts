@@ -3,16 +3,16 @@ import { z } from 'zod';
 export const get_assignment_details = {
   name: 'get_assignment_details',
   description:
-    'Get an assignment: one assignment in full, with the fields the list tools leave out — `users`, the people it is assigned to with their display name and preferred colour, and `metadata`, the free-form object stored with it. Unlike the lists it returns the assignment whatever its state. It fails when no assignment carries that id, and also when the assignment’s project is not one of the account’s published projects holding an open or completed assignment, so a failure does not always mean the assignment belongs to somebody else — one in a still-pending project lands there too. Those failures carry `message` alone and no `error` or `code` key, so read the message. Resolve the project with `get_project_details`.',
+    'Get an assignment: one assignment in full, with the fields the list tools leave out — `users`, the people it is assigned to with their display name and preferred color, and `metadata`, the free-form object stored with it. Unlike the lists it returns the assignment whatever its state. It fails when no assignment carries that id, and also when the assignment’s project is not one of the account’s published projects holding an open or completed assignment, so a failure does not always mean the assignment belongs to somebody else — one in a still-pending project lands there too. Those failures carry `message` alone and no `error` or `code` key, so read the message. Resolve the project with `get_project_details`.',
   inputSchema: z.object({
-    id: z.number().describe('Id of the assignment, from `get_assignments`.'),
+    id: z.number().describe('ID of the assignment, from `get_assignments`.'),
   }),
   outputSchema: z.object({
-    id: z.number().describe('Id of the assignment.'),
+    id: z.number().describe('ID of the assignment.'),
     projectId: z
       .number()
       .describe(
-        'Id of the project the assignment belongs to. Read the project with `get_project_details`.'
+        'ID of the project the assignment belongs to. Read the project with `get_project_details`.'
       ),
     itemId: z
       .number()
@@ -20,7 +20,7 @@ export const get_assignment_details = {
       .nullish()
       .default(null)
       .describe(
-        'Id of the inventory page the assignment is attached to. `null` for an assignment that covers the project as a whole instead of one page: the stored value is `0`, reported here as `null`.'
+        'ID of the inventory page the assignment is attached to. `null` for an assignment that covers the project as a whole instead of one page: the stored value is `0`, reported here as `null`.'
       ),
     title: z
       .string()
@@ -85,7 +85,7 @@ export const get_assignment_details = {
           id: z
             .number()
             .describe(
-              'Id of the assigned user, the same id other tools accept as `filterByUserId`.'
+              'ID of the assigned user, the same id other tools accept as `filterByUserId`.'
             ),
           name: z
             .string()
@@ -95,7 +95,7 @@ export const get_assignment_details = {
           color: z
             .string()
             .describe(
-              'Colour recorded in the assigned user’s preferences, as the application stores it. Free-form, so treat it as an opaque value rather than a fixed palette.'
+              'Color recorded in the assigned user’s preferences, as the application stores it. Free-form, so treat it as an opaque value rather than a fixed palette.'
             ),
         })
       )

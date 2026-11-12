@@ -11,7 +11,7 @@ export const get_project_login_inputs = {
     projectId: z
       .number()
       .describe(
-        'Id of the project whose crawl to inspect, as returned by `create_project_from_url` or `create_project_from_sharepoint`.'
+        'ID of the project whose crawl to inspect, as returned by `create_project_from_url` or `create_project_from_sharepoint`.'
       ),
   }),
   outputSchema: z.object({

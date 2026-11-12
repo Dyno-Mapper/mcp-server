@@ -13,7 +13,7 @@ export const get_project_details = {
     projectId: z
       .number()
       .describe(
-        'Id of the project, as returned by `get_projects` or by one of the `create_project_from_url`, `create_project_from_file` and `create_project_from_sharepoint` tools.'
+        'ID of the project, as returned by `get_projects` or by one of the `create_project_from_url`, `create_project_from_file` and `create_project_from_sharepoint` tools.'
       ),
   }),
   outputSchema: z.object({
@@ -84,7 +84,7 @@ export const get_project_details = {
       .string()
       .nullish()
       .describe(
-        'Colour the application paints that group with. Null when the project is in no group, or when the group has no colour set.'
+        'Color the application paints that group with. Null when the project is in no group, or when the group has no color set.'
       ),
     logoUrl: z
       .string()

@@ -47,7 +47,7 @@ export const get_audit_non_crawlable = {
     items: z
       .array(
         z.object({
-          id: z.number().describe('Id of the crawled page record.'),
+          id: z.number().describe('ID of the crawled page record.'),
           url: z
             .string()
             .describe('URL of the page the run was not allowed to crawl.'),

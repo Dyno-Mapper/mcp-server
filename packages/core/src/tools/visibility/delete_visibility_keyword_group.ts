@@ -9,14 +9,14 @@ export const delete_visibility_keyword_group = {
     groupId: z
       .number()
       .describe(
-        'Id of the keyword group to delete, from `get_visibility_project_groups`. It has to exist and still be live: an id that does not exist, belongs to another project or was already deleted fails with 500 rather than 404.'
+        'ID of the keyword group to delete, from `get_visibility_project_groups`. It has to exist and still be live: an id that does not exist, belongs to another project or was already deleted fails with 500 rather than 404.'
       ),
   }),
   outputSchema: z.object({
     id: z
       .number()
       .describe(
-        'Id of the group that was taken out of service, echoed back so the caller can confirm which one it deleted.'
+        'ID of the group that was taken out of service, echoed back so the caller can confirm which one it deleted.'
       ),
   }),
   method: 'delete',

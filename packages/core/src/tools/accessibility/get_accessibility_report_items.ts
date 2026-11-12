@@ -9,11 +9,11 @@ export const get_accessibility_report_items = {
     '`group` and `subgroup` take the ids from `get_accessibility_report_groups`, and `search` matches the page URL. ' +
     'A run that belongs to another project, or an id that is not a run at all, answers `500` rather than `404`.',
   inputSchema: z.object({
-    projectId: z.number().describe('Id of the project the run belongs to.'),
+    projectId: z.number().describe('ID of the project the run belongs to.'),
     reportId: z
       .number()
       .describe(
-        'Id of the accessibility run — the `id` from `get_accessibility_results`, or the `id` that `run_accessibility_checker` returned.'
+        'ID of the accessibility run — the `id` from `get_accessibility_results`, or the `id` that `run_accessibility_checker` returned.'
       ),
     group: z
       .number()
@@ -78,7 +78,7 @@ export const get_accessibility_report_items = {
     limit: z
       .number()
       .describe(
-        'Page size that was applied: the `limit` you sent capped at 100, or 50 when you sent none.'
+        'Page size that was applied: the requested `limit` capped at 100, or 50 when none was sent.'
       ),
     page: z.number().describe('1-based page number that was served.'),
     pageSize: z
@@ -92,12 +92,12 @@ export const get_accessibility_report_items = {
           id: z
             .number()
             .describe(
-              'Id of this page’s result row — the `itemId` that `get_accessibility_report_item_result` takes.'
+              'ID of this page’s result row — the `itemId` that `get_accessibility_report_item_result` takes.'
             ),
           itemId: z
             .number()
             .describe(
-              'Id the checker recorded for the crawled page itself, inside the project. It is not the id `get_accessibility_report_item_result` takes — use `id` for that — and two runs report the same `itemId` for the same page.'
+              'ID the checker recorded for the crawled page itself, inside the project. It is not the id `get_accessibility_report_item_result` takes — use `id` for that — and two runs report the same `itemId` for the same page.'
             ),
           url: z
             .string()
@@ -107,7 +107,7 @@ export const get_accessibility_report_items = {
           state: z
             .string()
             .describe(
-              'Lifecycle of this page’s check: `pending` while it is queued, `running` while the checker is on it, `finished` once it has results, `unknown` for any stored value the API does not recognise.'
+              'Lifecycle of this page’s check: `pending` while it is queued, `running` while the checker is on it, `finished` once it has results, `unknown` for any stored value the API does not recognize.'
             ),
           status: z
             .string()

@@ -28,7 +28,7 @@ const problemSchema = z
                   id: z
                     .number()
                     .describe(
-                      'Id of this finding, unique within the page’s results.'
+                      'ID of this finding, unique within the page’s results.'
                     ),
                   type: z
                     .enum([
@@ -91,16 +91,16 @@ export const get_accessibility_report_item_result = {
     '`knownProblems` are confirmed violations, `likelyProblems` findings the checker believes but cannot prove without a person looking, `potentialProblems` findings that may be violations, and `archived` findings that were archived for this page — every finding also states its own `type` and `isArchived`. ' +
     '`itemId` is the `id` of a page row from `get_accessibility_report_items`, not that row’s `itemId` field. A page or run that does not belong to this project answers `500` rather than `404`.',
   inputSchema: z.object({
-    projectId: z.number().describe('Id of the project the run belongs to.'),
+    projectId: z.number().describe('ID of the project the run belongs to.'),
     reportId: z
       .number()
       .describe(
-        'Id of the accessibility run — the `id` from `get_accessibility_results`, or the `id` that `run_accessibility_checker` returned.'
+        'ID of the accessibility run — the `id` from `get_accessibility_results`, or the `id` that `run_accessibility_checker` returned.'
       ),
     itemId: z
       .number()
       .describe(
-        'Id of the page row in the run — the `id` from `get_accessibility_report_items`, not that row’s `itemId` field.'
+        'ID of the page row in the run — the `id` from `get_accessibility_report_items`, not that row’s `itemId` field.'
       ),
   }),
   outputSchema: z.object({

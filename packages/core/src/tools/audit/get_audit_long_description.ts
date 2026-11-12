@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const get_audit_long_description = {
   name: 'get_audit_long_description',
   description:
-    'List pages with a long meta description: the pages whose description is longer than the application allows, one row per page, with the description text, its `length` in characters and the URL. The threshold that selected the page is the application’s and is not returned, so compare `length` against the limit you intend to enforce. Search engines truncate over-long descriptions, so the end of each one is likely never displayed. Pages with no description at all are on `get_audit_missing_description`. Reads the latest run only; a project that has never been audited answers 500 `Project is not audited.` Requires the Content Audit feature, else 403 `feature_disabled`.',
+    'List pages with a long meta description: the pages whose description is longer than the application allows, one row per page, with the description text, its `length` in characters and the URL. The threshold that selected the page is the application’s and is not returned, so compare `length` against the intended limit. Search engines truncate over-long descriptions, so the end of each one is likely never displayed. Pages with no description at all are on `get_audit_missing_description`. Reads the latest run only; a project that has never been audited answers 500 `Project is not audited.` Requires the Content Audit feature, else 403 `feature_disabled`.',
   inputSchema: z.object({
     projectId: z.number().describe('The ID of the project'),
     search: z
@@ -47,7 +47,7 @@ export const get_audit_long_description = {
     items: z
       .array(
         z.object({
-          id: z.number().describe('Id of the crawled page record.'),
+          id: z.number().describe('ID of the crawled page record.'),
           description: z
             .string()
             .describe('The page’s meta description, as the run recorded it.'),

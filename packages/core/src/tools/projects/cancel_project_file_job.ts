@@ -10,10 +10,10 @@ export const cancel_project_file_job = {
       .describe(
         'Which import to cancel: `text` or `xml`. It must match the project’s import type, or the call answers 500.'
       ),
-    id: z.coerce.number().describe('Id of the project to cancel and delete.'),
+    id: z.coerce.number().describe('ID of the project to cancel and delete.'),
   }),
   outputSchema: z.object({
-    id: z.number().describe('Id of the project that was deleted.'),
+    id: z.number().describe('ID of the project that was deleted.'),
   }),
   method: 'delete',
   path: '/v1/project/{type}/{id}',

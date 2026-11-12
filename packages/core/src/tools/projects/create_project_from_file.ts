@@ -39,7 +39,7 @@ export const create_project_from_file = {
     id: z
       .number()
       .describe(
-        'Id of the project the import is creating. Poll `get_project_file_job_status` with the same `type` for its progress.'
+        'ID of the project the import is creating. Poll `get_project_file_job_status` with the same `type` for its progress.'
       ),
   }),
   method: 'post',

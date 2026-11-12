@@ -50,7 +50,7 @@ export const get_audit_broken_links = {
           id: z
             .number()
             .describe(
-              'Id of the record the run holds for this URL. Identify the row by `url` rather than by this id.'
+              'ID of the record the run holds for this URL. Identify the row by `url` rather than by this id.'
             ),
           url: z.string().describe('The failing URL, as the run recorded it.'),
           status: z

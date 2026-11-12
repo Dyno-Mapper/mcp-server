@@ -8,7 +8,7 @@ export const get_accessibility_score = {
     'The two runs are also compared: the `moved*` fields give the change since the previous run, which is what an “improving or worsening” indicator needs. ' +
     'Every field is `0` when the project has no run with results, so a project that was never checked reads exactly like one that scored zero — check with `get_accessibility_results` that a run exists before treating `0` as a result.',
   inputSchema: z.object({
-    projectId: z.number().describe('Id of the project whose score to read.'),
+    projectId: z.number().describe('ID of the project whose score to read.'),
   }),
   outputSchema: z.object({
     score: z

@@ -8,7 +8,7 @@ export const get_accessibility_results = {
     'Runs that were deleted are not listed, and a run that was just queued appears with `urls`, the problem counts and `score` still `null`, filling them in as the checker progresses. ' +
     'An `unauthorized_access` error means the token’s account cannot read this project; `feature_disabled` means its plan does not include Accessibility.',
   inputSchema: z.object({
-    projectId: z.number().describe('Id of the project whose runs to list.'),
+    projectId: z.number().describe('ID of the project whose runs to list.'),
     limit: z.coerce
       .number()
       .int()
@@ -36,7 +36,7 @@ export const get_accessibility_results = {
     limit: z
       .number()
       .describe(
-        'Page size that was applied — the `limit` you sent, capped at 1000, or 20 when you sent none.'
+        'Page size that was applied — the requested `limit`, capped at 1000, or 20 when none was sent.'
       ),
     page: z.number().describe('1-based page number that was served.'),
     pageSize: z
@@ -50,7 +50,7 @@ export const get_accessibility_results = {
           id: z
             .number()
             .describe(
-              'Id of the run, and the `reportId` every other accessibility tool takes.'
+              'ID of the run, and the `reportId` every other accessibility tool takes.'
             ),
           scheduled: z
             .boolean()

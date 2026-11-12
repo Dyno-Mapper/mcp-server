@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const get_audit_long_title = {
   name: 'get_audit_long_title',
   description:
-    'List pages with a long title: the pages whose title is longer than the application allows, one row per page, with the title text, its `length` in characters and the page URL. The threshold that put the page on the list is the application’s and is not returned, so compare `length` against the limit you intend to enforce. Search results truncate long titles, so their ends may never be shown. Pages with no title at all are on `get_audit_missing_title`, and titles shared by several pages on `get_audit_duplicate_title`. Reads the latest run only; a project that has never been audited answers 500 `Project is not audited.` Requires the Content Audit feature, else 403 `feature_disabled`.',
+    'List pages with a long title: the pages whose title is longer than the application allows, one row per page, with the title text, its `length` in characters and the page URL. The threshold that put the page on the list is the application’s and is not returned, so compare `length` against the intended limit. Search results truncate long titles, so their ends may never be shown. Pages with no title at all are on `get_audit_missing_title`, and titles shared by several pages on `get_audit_duplicate_title`. Reads the latest run only; a project that has never been audited answers 500 `Project is not audited.` Requires the Content Audit feature, else 403 `feature_disabled`.',
   inputSchema: z.object({
     projectId: z.number().describe('The ID of the project'),
     search: z
@@ -47,7 +47,7 @@ export const get_audit_long_title = {
     items: z
       .array(
         z.object({
-          id: z.number().describe('Id of the crawled page record.'),
+          id: z.number().describe('ID of the crawled page record.'),
           title: z
             .string()
             .describe('The page’s title text, as the run recorded it.'),

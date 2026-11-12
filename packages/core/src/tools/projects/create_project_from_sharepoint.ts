@@ -32,7 +32,7 @@ export const create_project_from_sharepoint = {
     id: z
       .number()
       .describe(
-        'Id of the project that was created. Poll `get_project_url_job_status` for the crawl it started.'
+        'ID of the project that was created. Poll `get_project_url_job_status` for the crawl it started.'
       ),
     loginInputs: z
       .array(

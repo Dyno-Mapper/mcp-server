@@ -7,7 +7,7 @@ export const get_inventory_item_links = {
   inputSchema: z.object({
     projectId: z
       .number()
-      .describe('Id of the project, as returned by `get_projects`'),
+      .describe('ID of the project, as returned by `get_projects`'),
     itemId: z
       .number()
       .describe(
@@ -90,7 +90,7 @@ export const get_inventory_item_links = {
           id: z
             .number()
             .describe(
-              'Id of the link found on this page. Pass it as `linkId` to `get_inventory_link_occurrences`'
+              'ID of the link found on this page. Pass it as `linkId` to `get_inventory_link_occurrences`'
             ),
           sourceTag: z
             .string()

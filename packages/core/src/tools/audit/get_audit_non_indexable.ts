@@ -45,7 +45,7 @@ export const get_audit_non_indexable = {
     items: z
       .array(
         z.object({
-          id: z.number().describe('Id of the crawled page record.'),
+          id: z.number().describe('ID of the crawled page record.'),
           url: z
             .string()
             .describe(

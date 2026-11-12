@@ -16,7 +16,7 @@ export const get_analytics_project = {
     endDate: z.iso
       .date()
       .describe(
-        'Last calendar day of the range, in `YYYY-MM-DD` form. Required, with no default. Inclusive. An `endDate` earlier than `startDate` is not rejected; it simply matches no rows'
+        'Last calendar day of the range, in `YYYY-MM-DD` form. Required, with no default. Inclusive. An `endDate` earlier than `startDate` is not rejected; it matches no rows'
       ),
   }),
   outputSchema: z.object({

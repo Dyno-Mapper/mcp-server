@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const get_analytics_sitemap_item = {
   name: 'get_analytics_sitemap_item',
   description:
-    'Traffic totals for one sitemap item over a date range. `linkId` is a sitemap item id, the `id` of an item returned by `get_project_sitemap_items`. The URL of the item is normalised like the stored page rows, host lowercased and a leading `www.` dropped, path and query lowercased, trailing slash trimmed, then matched against them; a URL that cannot be parsed matches no page at all. Both dates are required and the range includes both ends. A page with no traffic answers zeroes, while an item id that does not exist, or that belongs to a different project, answers 500 rather than 404. For the whole project use `get_analytics_project`, and for this page day by day use `get_analytics_sitemap_item_daily`.',
+    'Traffic totals for one sitemap item over a date range. `linkId` is a sitemap item id, the `id` of an item returned by `get_project_sitemap_items`. The URL of the item is normalized like the stored page rows, host lowercased and a leading `www.` dropped, path and query lowercased, trailing slash trimmed, then matched against them; a URL that cannot be parsed matches no page at all. Both dates are required and the range includes both ends. A page with no traffic answers zeroes, while an item id that does not exist, or that belongs to a different project, answers 500 rather than 404. For the whole project use `get_analytics_project`, and for this page day by day use `get_analytics_sitemap_item_daily`.',
   inputSchema: z.object({
     projectId: z
       .number()
@@ -21,7 +21,7 @@ export const get_analytics_sitemap_item = {
     endDate: z.iso
       .date()
       .describe(
-        'Last calendar day of the range, in `YYYY-MM-DD` form. Required, with no default. Inclusive. An `endDate` earlier than `startDate` is not rejected; it simply matches no rows'
+        'Last calendar day of the range, in `YYYY-MM-DD` form. Required, with no default. Inclusive. An `endDate` earlier than `startDate` is not rejected; it matches no rows'
       ),
   }),
   outputSchema: z.object({

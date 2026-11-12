@@ -14,7 +14,7 @@ export const refresh_project_url = {
     id: z.coerce
       .number()
       .describe(
-        'Id of the project to refresh, as returned by `create_project_from_url`.'
+        'ID of the project to refresh, as returned by `create_project_from_url`.'
       ),
     speed: z
       .enum(['slower', 'slowest'])
@@ -83,7 +83,7 @@ export const refresh_project_url = {
     id: z.coerce
       .number()
       .describe(
-        'Id of the project being refreshed. Its contents change as the refresh runs; no tool reports the refresh itself.'
+        'ID of the project being refreshed. Its contents change as the refresh runs; no tool reports the refresh itself.'
       ),
     loginInputs: z
       .array(

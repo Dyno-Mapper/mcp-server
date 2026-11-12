@@ -22,14 +22,14 @@ export const move_project_sitemap_item = {
       .nullable()
       .optional()
       .describe(
-        'Id of the container to move the item under, or `null` to make it a root item — refused with `root_exists` when the project already has one. Omit it to keep the current parent. A parent inside the item’s own subtree is rejected with `item_cycle`.'
+        'ID of the container to move the item under, or `null` to make it a root item — refused with `root_exists` when the project already has one. Omit it to keep the current parent. A parent inside the item’s own subtree is rejected with `item_cycle`.'
       ),
     afterItemId: z
       .number()
       .nullable()
       .optional()
       .describe(
-        'Id of the sibling to place the item after, among the published children of `parentId`. Omit it to append to the end.'
+        'ID of the sibling to place the item after, among the published children of `parentId`. Omit it to append to the end.'
       ),
   }),
   outputSchema: sitemapItemSchema,

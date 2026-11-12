@@ -13,10 +13,10 @@ export const get_project_sitemap_item_details = {
   inputSchema: z.object({
     projectId: z
       .number()
-      .describe('Id of the project, as returned by `get_projects`.'),
+      .describe('ID of the project, as returned by `get_projects`.'),
     itemId: z
       .number()
-      .describe('Id of the item, as returned by `get_project_sitemap_items`.'),
+      .describe('ID of the item, as returned by `get_project_sitemap_items`.'),
   }),
   outputSchema: sitemapItemSchema,
   method: 'get',

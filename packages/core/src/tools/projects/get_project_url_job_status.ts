@@ -12,13 +12,13 @@ export const get_project_url_job_status = {
     id: z.coerce
       .number()
       .describe(
-        'Id of the project whose crawl to report, as returned by `create_project_from_url` or `create_project_from_sharepoint`.'
+        'ID of the project whose crawl to report, as returned by `create_project_from_url` or `create_project_from_sharepoint`.'
       ),
   }),
   outputSchema: z.object({
     id: z.coerce
       .number()
-      .describe('Id of the project whose crawl this reports.'),
+      .describe('ID of the project whose crawl this reports.'),
     status: z
       .enum(['PENDING', 'RUNNING', 'PERSIST', 'FINISHED'])
       .describe(

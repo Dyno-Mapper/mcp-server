@@ -6,9 +6,9 @@ export const get_accessibility_pdf_files = {
     'List the PDF files the checker has found on, or been given for, a project — one row per file with the file’s check state and its problem counts. ' +
     '`id` is the `itemId` that `get_accessibility_pdf_item_result` takes for the per-criterion results. ' +
     'Checking is asynchronous: a file sits at `queued` and moves through `running` to `completed`, and its counts fill in as it goes. ' +
-    'Files that were deleted are excluded from the list, so `deleted` never appears in `state` here even though the field can hold it. Without `orderBy` the most recently modified file comes first, and `orderDir` defaults to `asc` when you pass an `orderBy` without a direction.',
+    'Files that were deleted are excluded from the list, so `deleted` never appears in `state` here even though the field can hold it. Without `orderBy` the most recently modified file comes first, and `orderDir` defaults to `asc` when an `orderBy` is sent without a direction.',
   inputSchema: z.object({
-    projectId: z.number().describe('Id of the project whose files to list.'),
+    projectId: z.number().describe('ID of the project whose files to list.'),
     search: z
       .string()
       .trim()
@@ -60,7 +60,7 @@ export const get_accessibility_pdf_files = {
     limit: z
       .number()
       .describe(
-        'Page size that was applied: the `limit` you sent capped at 100, or 50 when you sent none.'
+        'Page size that was applied: the requested `limit` capped at 100, or 50 when none was sent.'
       ),
     page: z.number().describe('1-based page number that was served.'),
     pageSize: z
@@ -74,7 +74,7 @@ export const get_accessibility_pdf_files = {
           id: z
             .number()
             .describe(
-              'Id of the PDF item — the `itemId` that `get_accessibility_pdf_item_result` takes for the file’s per-criterion results.'
+              'ID of the PDF item — the `itemId` that `get_accessibility_pdf_item_result` takes for the file’s per-criterion results.'
             ),
           url: z
             .string()
@@ -99,7 +99,7 @@ export const get_accessibility_pdf_files = {
           state: z
             .enum(['completed', 'running', 'deleted', 'queued', 'unknown'])
             .describe(
-              'Check lifecycle of the file: `completed` when the checker has results for it, `running` while it is being checked, `queued` while it waits to be checked, `deleted` for a removed file, and `unknown` for a stored value the API does not recognise. `deleted` is never returned here, because this list filters deleted files out.'
+              'Check lifecycle of the file: `completed` when the checker has results for it, `running` while it is being checked, `queued` while it waits to be checked, `deleted` for a removed file, and `unknown` for a stored value the API does not recognize. `deleted` is never returned here, because this list filters deleted files out.'
             ),
           status: z
             .string()

@@ -107,7 +107,7 @@ export const get_visibility_project_ranking = {
           id: z
             .number()
             .describe(
-              'Id of the tracked keyword. This is the id `update_visibility_keywords_group` and `update_visibility_keyword_setting` expect in `ids`, and the `keywordId` of `get_visibility_keyword_ranking`.'
+              'ID of the tracked keyword. This is the id `update_visibility_keywords_group` and `update_visibility_keyword_setting` expect in `ids`, and the `keywordId` of `get_visibility_keyword_ranking`.'
             ),
           keyword: z
             .string()
@@ -149,7 +149,7 @@ export const get_visibility_project_ranking = {
             .nullish()
             .default(null)
             .describe(
-              'Id of the stored ranking record the newest position came from. `null` when the keyword was not recorded inside the window.'
+              'ID of the stored ranking record the newest position came from. `null` when the keyword was not recorded inside the window.'
             ),
           endDate: z.iso
             .date()

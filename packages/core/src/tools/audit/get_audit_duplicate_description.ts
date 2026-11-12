@@ -50,7 +50,7 @@ export const get_audit_duplicate_description = {
           id: z
             .number()
             .describe(
-              'Id of the run’s duplicated-description record. Identify the group by `description`, not by this id.'
+              'ID of the run’s duplicated-description record. Identify the group by `description`, not by this id.'
             ),
           description: z
             .string()

@@ -3,10 +3,10 @@ import { z } from 'zod';
 export { PROJECT_ID_DESCRIPTION } from './project.js';
 
 export const SITEMAP_ITEM_ID_DESCRIPTION =
-  'Id of the sitemap item, as `get_project_sitemap_items` reports it.';
+  'ID of the sitemap item, as `get_project_sitemap_items` reports it.';
 
 export const SITEMAP_PARENT_ID_DESCRIPTION =
-  'Id of the container whose children are listed, or of the item whose subtree is listed. Omit it to start from the top of the sitemap.';
+  'ID of the container whose children are listed, or of the item whose subtree is listed. Omit it to start from the top of the sitemap.';
 
 const thumbnailSchema = z.object({
   title: z.string().describe('Title recorded for the thumbnail image.'),
@@ -56,7 +56,7 @@ export const sitemapItemSchema = z.object({
     .number()
     .nullable()
     .describe(
-      'Id of the category assigned to the item, from `get_project_categories`. Null when it is uncategorised.'
+      'ID of the category assigned to the item, from `get_project_categories`. Null when it is uncategorized.'
     ),
   workflowStatus: z
     .string()
@@ -114,13 +114,13 @@ export const sitemapItemSchema = z.object({
     .string()
     .nullable()
     .describe(
-      'Background colour the application paints the item with in the sitemap. Null when it uses the default.'
+      'Background color the application paints the item with in the sitemap. Null when it uses the default.'
     ),
   foregroundColor: z
     .string()
     .nullable()
     .describe(
-      'Text colour the application paints the item with in the sitemap. Null when it uses the default.'
+      'Text color the application paints the item with in the sitemap. Null when it uses the default.'
     ),
   hreflang: z
     .array(hreflangSchema)
@@ -169,7 +169,7 @@ export const sitemapItemListRowSchema = z.object({
     .number()
     .nullable()
     .describe(
-      'Id of the category assigned to the item, from `get_project_categories`. Null when it is uncategorised.'
+      'ID of the category assigned to the item, from `get_project_categories`. Null when it is uncategorized.'
     ),
   workflowStatus: z
     .string()
@@ -181,7 +181,7 @@ export const sitemapItemListRowSchema = z.object({
     .number()
     .nullable()
     .describe(
-      'Id of the item’s parent in the sitemap tree. 0 when the item sits at the root.'
+      'ID of the item’s parent in the sitemap tree. 0 when the item sits at the root.'
     ),
   ordering: z
     .number()
@@ -222,13 +222,13 @@ export const sitemapItemListRowSchema = z.object({
     .string()
     .nullable()
     .describe(
-      'Background colour the application paints the item with in the sitemap. Null when it uses the default.'
+      'Background color the application paints the item with in the sitemap. Null when it uses the default.'
     ),
   foregroundColor: z
     .string()
     .nullable()
     .describe(
-      'Text colour the application paints the item with in the sitemap. Null when it uses the default.'
+      'Text color the application paints the item with in the sitemap. Null when it uses the default.'
     ),
 });
 
@@ -275,7 +275,7 @@ export const contentBlockSchema = z.object({
   id: z
     .number()
     .describe(
-      'Id of the block, unique within the item. It is what a write refers to: a block sent with this id is rewritten in place, a block sent without one is added, and a stored block the write leaves out is deleted.'
+      'ID of the block, unique within the item. It is what a write refers to: a block sent with this id is rewritten in place, a block sent without one is added, and a stored block the write leaves out is deleted.'
     ),
   type: z
     .string()
@@ -307,7 +307,7 @@ export const contentBlockSchema = z.object({
       wrapperId: z
         .string()
         .describe(
-          'Id the wrapper element carries. Empty when the wrapper has none.'
+          'ID the wrapper element carries. Empty when the wrapper has none.'
         ),
     })
     .describe('How the block is wrapped when it is rendered.'),
@@ -319,7 +319,7 @@ export const contentBlockSchema = z.object({
   rendered: z
     .string()
     .describe(
-      'The block as the application renders it into the page, wrapper included — an anchor for a `link`, an `img` for an `image`, a player embed for a `video`, the stored HTML for `richtext`. It is built from the stored values on every read, and its HTML is sanitised: scripts, event handlers and `javascript:` addresses are removed, while frames, media and inline SVG survive. A `<form>` and its controls are removed and their text kept, so a page that pasted one renders without it.'
+      'The block as the application renders it into the page, wrapper included — an anchor for a `link`, an `img` for an `image`, a player embed for a `video`, the stored HTML for `richtext`. It is built from the stored values on every read, and its HTML is sanitized: scripts, event handlers and `javascript:` addresses are removed, while frames, media and inline SVG survive. A `<form>` and its controls are removed and their text kept, so a page that pasted one renders without it.'
     ),
 });
 
@@ -368,7 +368,7 @@ export const itemIdsResultSchema = z.object({
   itemIds: z
     .array(z.number())
     .describe(
-      'Ids the response reports: the items the request named, in the order they were given, or the new copies for `duplicate_project_sitemap_item`.'
+      'IDs the response reports: the items the request named, in the order they were given, or the new copies for `duplicate_project_sitemap_item`.'
     ),
   totalItems: z
     .number()
@@ -381,7 +381,7 @@ export const deletedItemsResultSchema = z.object({
   deletedItemIds: z
     .array(z.number())
     .describe(
-      'Ids the request deleted — the named items only, not the descendants that were soft-deleted with them. An item that was already deleted still appears here, so the list always matches the request.'
+      'IDs the request deleted — the named items only, not the descendants that were soft-deleted with them. An item that was already deleted still appears here, so the list always matches the request.'
     ),
   totalItems: z
     .number()

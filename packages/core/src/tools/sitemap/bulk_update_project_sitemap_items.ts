@@ -7,7 +7,7 @@ import {
 export const bulk_update_project_sitemap_items = {
   name: 'bulk_update_project_sitemap_items',
   description:
-    'Assign a category, status, tags or colours to sitemap items. ' +
+    'Assign a category, status, tags or colors to sitemap items. ' +
     'Sets one or more attributes across many items in one call — the bulk operations the editor uses when several nodes are selected at once. ' +
     'Send at least one of `category`, `workflowStatus`, `tags` or `colors`; none is rejected with `nothing_to_update`. ' +
     '`apply` decides how far each change reaches: `selected` for the named items alone, `children` includes their direct children, `subtree` includes everything beneath them. ' +
@@ -20,14 +20,14 @@ export const bulk_update_project_sitemap_items = {
       .min(1)
       .max(500)
       .describe(
-        'Ids the edit names, at most 500. Every id must belong to this project, otherwise the request is rejected with `invalid_item_ids` and nothing is changed; an id that has been deleted answers 404 `item_not_found`.'
+        'IDs the edit names, at most 500. Every id must belong to this project, otherwise the request is rejected with `invalid_item_ids` and nothing is changed; an id that has been deleted answers 404 `item_not_found`.'
       ),
     apply: z
       .enum(['selected', 'children', 'subtree'])
       .optional()
       .default('selected')
       .describe(
-        'How far the edit reaches from each named id. `selected` changes only the named items; `children` also changes their direct children; `subtree` changes everything beneath them. The undo record keeps only the ids you named, so undoing restores the selection’s values.'
+        'How far the edit reaches from each named id. `selected` changes only the named items; `children` also changes their direct children; `subtree` changes everything beneath them. The undo record keeps only the named ids, so undoing restores the selection’s values.'
       ),
     category: z
       .number()
@@ -62,15 +62,15 @@ export const bulk_update_project_sitemap_items = {
         background: z
           .string()
           .nullable()
-          .describe('Background colour, or `null` for the default.'),
+          .describe('Background color, or `null` for the default.'),
         foreground: z
           .string()
           .nullable()
-          .describe('Text colour, or `null` for the default.'),
+          .describe('Text color, or `null` for the default.'),
       })
       .optional()
       .describe(
-        'Colours to paint the affected items with, as a pair. Send both keys, or omit the object to leave colours alone.'
+        'Colors to paint the affected items with, as a pair. Send both keys, or omit the object to leave colors alone.'
       ),
   }),
   outputSchema: itemIdsResultSchema,

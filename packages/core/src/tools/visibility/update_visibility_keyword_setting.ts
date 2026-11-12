@@ -3,14 +3,14 @@ import { z } from 'zod';
 export const update_visibility_keyword_setting = {
   name: 'update_visibility_keyword_setting',
   description:
-    'Moves keywords to a different locale or device — the pair that decides which search results their rank is read from — for a keyword added in the wrong market or one that should also be tracked elsewhere. Each keyword succeeds or fails on its own, so read `result` rather than assuming the call worked: it can succeed while keywords were skipped. A keyword that already has ranking history is refused, and so is one that would collide with a keyword already tracked for the same text under the target pair — in practice only keywords not yet checked can be moved. Ids from another project are filtered out and appear nowhere in `result`. Locale values come from `get_visibility_locales`.',
+    'Moves keywords to a different locale or device — the pair that decides which search results their rank is read from — for a keyword added in the wrong market or one that should also be tracked elsewhere. Each keyword succeeds or fails on its own, so read `result` rather than assuming the call worked: it can succeed while keywords were skipped. A keyword that already has ranking history is refused, and so is one that would collide with a keyword already tracked for the same text under the target pair — in practice only keywords not yet checked can be moved. IDs from another project are filtered out and appear nowhere in `result`. Locale values come from `get_visibility_locales`.',
   inputSchema: z.object({
     projectId: z.number().describe('Numeric project id, from `get_projects`.'),
     ids: z
       .array(z.number())
       .min(1)
       .describe(
-        'Ids of the keywords to change, at least one, as returned by `create_visibility_keywords` or read from `id` in `get_visibility_project_ranking`. Ids belonging to another project are ignored and are not reported back in `result`.'
+        'IDs of the keywords to change, at least one, as returned by `create_visibility_keywords` or read from `id` in `get_visibility_project_ranking`. IDs belonging to another project are ignored and are not reported back in `result`.'
       ),
     locale: z
       .string()
@@ -30,7 +30,7 @@ export const update_visibility_keyword_setting = {
           id: z
             .number()
             .describe(
-              'Id of the keyword this entry reports on, as sent in `ids`. Keywords from another project have no entry.'
+              'ID of the keyword this entry reports on, as sent in `ids`. Keywords from another project have no entry.'
             ),
           updated: z
             .boolean()

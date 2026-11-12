@@ -49,7 +49,7 @@ export const get_audit_missing_title = {
         z.object({
           id: z
             .number()
-            .describe('Id of the crawled page record that has no title.'),
+            .describe('ID of the crawled page record that has no title.'),
           url: z
             .string()
             .describe('URL of the page the run found without a title.'),

@@ -14,12 +14,12 @@ export const create_item_comment = {
     projectId: z
       .number()
       .int()
-      .describe('Id of the project, as `get_projects` reports it.'),
+      .describe('ID of the project, as `get_projects` reports it.'),
     itemId: z
       .number()
       .int()
       .describe(
-        'Id of the sitemap item to comment on, as `get_project_sitemap_items` reports it. It must belong to this project and still be published, or the write answers 404 `item_not_found`.'
+        'ID of the sitemap item to comment on, as `get_project_sitemap_items` reports it. It must belong to this project and still be published, or the write answers 404 `item_not_found`.'
       ),
     comment: z
       .string()

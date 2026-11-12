@@ -3,23 +3,23 @@ import { z } from 'zod';
 export const get_accessibility_pdf_item_result = {
   name: 'get_accessibility_pdf_item_result',
   description:
-    'Return every criterion the checker evaluated for one PDF as a flat list, one row per criterion, so a client can render the file’s full checklist instead of the counts `get_accessibility_pdf_files` summarises. ' +
+    'Return every criterion the checker evaluated for one PDF as a flat list, one row per criterion, so a client can render the file’s full checklist instead of the counts `get_accessibility_pdf_files` summarizes. ' +
     '`itemId` is the `id` of a file row from `get_accessibility_pdf_files`. ' +
     'Each row names its family in `guideline` and its criterion in `criteria`; match those against `get_accessibility_pdf_guidelines` for the criterion’s title, explanation and link. ' +
     '`valid` is what the checker decided, `needsManualCheck` marks criteria a person still has to confirm, and archived results are included with `isArchived: true` rather than dropped. A file that does not belong to this project answers `500` rather than `404`.',
   inputSchema: z.object({
-    projectId: z.number().describe('Id of the project the file belongs to.'),
+    projectId: z.number().describe('ID of the project the file belongs to.'),
     itemId: z
       .number()
       .describe(
-        'Id of the PDF file — the `id` from `get_accessibility_pdf_files`.'
+        'ID of the PDF file — the `id` from `get_accessibility_pdf_files`.'
       ),
   }),
   outputSchema: z.object({
     result: z
       .array(
         z.object({
-          id: z.number().describe('Id of this check result row.'),
+          id: z.number().describe('ID of this check result row.'),
           guideline: z
             .string()
             .describe(

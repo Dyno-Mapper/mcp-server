@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const get_analytics_sitemap_item_daily = {
   name: 'get_analytics_sitemap_item_daily',
   description:
-    'One row per day of traffic for a single sitemap item, ordered oldest first, where `linkId` is a sitemap item id, the `id` of an item returned by `get_project_sitemap_items`. The URL of the item is normalised the same way as the stored page rows and then matched against them, so the series covers that one page. Both dates are required and the range includes both ends; days without collected data are absent rather than zero-filled. For the range total use `get_analytics_sitemap_item`, and for every page of the project use `get_analytics_project_pages`. An item id that does not exist, or belongs to a different project, answers 500 rather than 404.',
+    'One row per day of traffic for a single sitemap item, ordered oldest first, where `linkId` is a sitemap item id, the `id` of an item returned by `get_project_sitemap_items`. The URL of the item is normalized the same way as the stored page rows and then matched against them, so the series covers that one page. Both dates are required and the range includes both ends; days without collected data are absent rather than zero-filled. For the range total use `get_analytics_sitemap_item`, and for every page of the project use `get_analytics_project_pages`. An item id that does not exist, or belongs to a different project, answers 500 rather than 404.',
   inputSchema: z.object({
     projectId: z
       .number()
@@ -21,7 +21,7 @@ export const get_analytics_sitemap_item_daily = {
     endDate: z.iso
       .date()
       .describe(
-        'Last calendar day of the range, in `YYYY-MM-DD` form. Required, with no default. Inclusive. An `endDate` earlier than `startDate` is not rejected; it simply matches no rows'
+        'Last calendar day of the range, in `YYYY-MM-DD` form. Required, with no default. Inclusive. An `endDate` earlier than `startDate` is not rejected; it matches no rows'
       ),
   }),
   outputSchema: z.object({

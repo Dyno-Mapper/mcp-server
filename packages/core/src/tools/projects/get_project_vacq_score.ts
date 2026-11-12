@@ -11,7 +11,7 @@ export const get_project_vacq_score = {
   inputSchema: z.object({
     projectId: z
       .number()
-      .describe('Id of the project, as returned by `get_projects`.'),
+      .describe('ID of the project, as returned by `get_projects`.'),
   }),
   outputSchema: z.object({
     average: z

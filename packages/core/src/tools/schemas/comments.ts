@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const COMMENT_ID_DESCRIPTION =
-  'Id of the comment, as any comment response reports it. It must sit on the item named before it, or the write answers 404 with `comment_not_found`.';
+  'ID of the comment, as any comment response reports it. It must sit on the item named before it, or the write answers 404 with `comment_not_found`.';
 
 /**
  * One comment as the item-level reads and the comment writes report it.
@@ -10,7 +10,7 @@ export const commentSchema = z.object({
   id: z
     .number()
     .describe(
-      'Id of the comment itself — not the sitemap item id, which is `itemId` here and the `commentId` argument of the item comment tools.'
+      'ID of the comment itself — not the sitemap item id, which is `itemId` here and the `commentId` argument of the item comment tools.'
     ),
   comment: z
     .string()
@@ -46,7 +46,7 @@ export const commentSchema = z.object({
   itemId: z
     .number()
     .describe(
-      'Id of the sitemap item the comment is attached to, as `get_project_sitemap_items` reports it and as the item comment tools take as `itemId`.'
+      'ID of the sitemap item the comment is attached to, as `get_project_sitemap_items` reports it and as the item comment tools take as `itemId`.'
     ),
 });
 

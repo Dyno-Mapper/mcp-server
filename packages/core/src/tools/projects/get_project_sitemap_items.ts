@@ -14,12 +14,12 @@ export const get_project_sitemap_items = {
   inputSchema: z.object({
     projectId: z
       .number()
-      .describe('Id of the project, as returned by `get_projects`.'),
+      .describe('ID of the project, as returned by `get_projects`.'),
     parentId: z
       .number()
       .optional()
       .describe(
-        'Id of the item to list from: its subtree is returned, the item itself first (`depth: 0`) when it is published. Omit it to list from the top of the sitemap. An id that is not in this project lists nothing rather than failing.'
+        'ID of the item to list from: its subtree is returned, the item itself first (`depth: 0`) when it is published. Omit it to list from the top of the sitemap. An id that is not in this project lists nothing rather than failing.'
       ),
     limit: z
       .number()

@@ -18,20 +18,20 @@ export const bulk_move_project_sitemap_items = {
     items: z
       .array(
         z.object({
-          itemId: z.number().describe('Id of the item to move.'),
+          itemId: z.number().describe('ID of the item to move.'),
           parentId: z
             .number()
             .nullable()
             .optional()
             .describe(
-              'Id of the container to move it under, or `null` for the root, which is refused with `root_exists` when the project already has one. The project’s root item cannot be moved, so naming it rejects the whole batch with `root_not_movable`. Omit it to keep the current parent.'
+              'ID of the container to move it under, or `null` for the root, which is refused with `root_exists` when the project already has one. The project’s root item cannot be moved, so naming it rejects the whole batch with `root_not_movable`. Omit it to keep the current parent.'
             ),
           afterItemId: z
             .number()
             .nullable()
             .optional()
             .describe(
-              'Id of the sibling to place it after. Omit it to append.'
+              'ID of the sibling to place it after. Omit it to append.'
             ),
         })
       )

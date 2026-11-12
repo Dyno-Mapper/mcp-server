@@ -26,14 +26,14 @@ export const run_accessibility_checker = {
     'Watch the run with `get_accessibility_results`, where the page count, the problem counts and the score appear as it progresses, and per page with `get_accessibility_report_items`; `get_accessibility_score` then reports the finished run’s score. ' +
     'If the project has a stored login recipe the run reuses it and may pause on a sign-in prompt: `loginInputs` lists those prompts, `get_accessibility_login_inputs` reports when one is ready, and `submit_accessibility_login_input` answers it. For any other project `loginInputs` is empty and the run needs no answers.',
   inputSchema: z.object({
-    projectId: z.number().describe('Id of the project to check.'),
+    projectId: z.number().describe('ID of the project to check.'),
     guidelines: z
       .array(z.enum(AccessibilityGuide))
       .default([AccessibilityGuide.WCAG22_AAA])
       .describe(
         'Guideline sets to check the pages against, one entry per standard and level. ' +
-          '`WCAG2-A`, `WCAG2-AA` and `WCAG2-AAA` are WCAG 2.0 at levels A, AA and AAA; `WCAG21-*` is WCAG 2.1 and `WCAG22-*` is WCAG 2.2 at the same three levels; `WCAG1-*` is WCAG 1.0. ' +
-          '`BITV1` is the German BITV 1.0 catalogue, `508` the United States Section 508 catalogue, and `STANCA` the Italian Stanca Act catalogue — a single set each rather than a level. ' +
+          '`WCAG2-A`, `WCAG2-AA` and `WCAG2-AAA` are WCAG 2.0 at levels A, AA and AAA; `WCAG21-*` is WCAG 2.1 and `WCAG22-*` is WCAG 2.2 at the same three levels; `WCAG1-*` is WCAG 1.0; ' +
+          '`BITV1` is the German BITV 1.0 catalogue, `508` the United States Section 508 catalogue and `STANCA` the Italian Stanca Act catalogue, a single set each rather than a level. ' +
           'Defaults to `["WCAG22-AAA"]`.'
       ),
     reportSettings: z
@@ -101,7 +101,7 @@ export const run_accessibility_checker = {
     id: z
       .number()
       .describe(
-        'Id of the run that was queued: the `reportId` every other accessibility tool takes. The run appears in `get_accessibility_results` straight away.'
+        'ID of the run that was queued: the `reportId` every other accessibility tool takes. The run appears in `get_accessibility_results` straight away.'
       ),
     loginInputs: z
       .array(

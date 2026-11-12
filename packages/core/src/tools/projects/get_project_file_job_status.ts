@@ -12,10 +12,10 @@ export const get_project_file_job_status = {
       ),
     id: z.coerce
       .number()
-      .describe('Id of the project whose import this reports.'),
+      .describe('ID of the project whose import this reports.'),
   }),
   outputSchema: z.object({
-    id: z.number().describe('Id of the project whose import this reports.'),
+    id: z.number().describe('ID of the project whose import this reports.'),
     startDateTime: z.iso
       .datetime()
       .optional()

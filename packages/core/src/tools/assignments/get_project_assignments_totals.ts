@@ -7,7 +7,7 @@ export const get_project_assignments_totals = {
   inputSchema: z.object({
     projectId: z.coerce
       .number()
-      .describe('Id of the project, from `get_projects`.'),
+      .describe('ID of the project, from `get_projects`.'),
     filterByUserId: z
       .string()
       .transform((val) =>

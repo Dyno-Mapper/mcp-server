@@ -20,7 +20,7 @@ export const bulk_delete_project_sitemap_items = {
       .min(1)
       .max(500)
       .describe(
-        'Ids of the items to delete, at most 500 per request. Every id must belong to this project, otherwise the whole request is rejected with `invalid_item_ids` and nothing is deleted.'
+        'IDs of the items to delete, at most 500 per request. Every id must belong to this project, otherwise the whole request is rejected with `invalid_item_ids` and nothing is deleted.'
       ),
   }),
   outputSchema: deletedItemsResultSchema,

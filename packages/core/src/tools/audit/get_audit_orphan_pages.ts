@@ -50,7 +50,7 @@ export const get_audit_orphan_pages = {
           id: z
             .number()
             .describe(
-              'Id of the run’s orphan-page record. It is not a crawled page id — identify the page by `url`.'
+              'ID of the run’s orphan-page record. It is not a crawled page id — identify the page by `url`.'
             ),
           url: z
             .string()

@@ -105,6 +105,105 @@ function strictness(schema: any, specSchema: any, path = ''): string[] {
   return problems;
 }
 
+/**
+ * The public API's documentation style guide (`dynomapper-public-api`,
+ * `docs/style-guide.md`) is the house style for every string a client reads,
+ * and these tool descriptions follow it. These are the rules R1–R10 the guide's
+ * own checker can hold; voice, structure and what deserves an explanation stay
+ * in review.
+ */
+const houseStyle: {
+  id: string;
+  pattern: RegExp;
+  fix: string;
+  raw?: boolean;
+  prepare?: (text: string) => string;
+}[] = [
+  {
+    id: 'R1',
+    pattern: /\b(please|simply|easily)\b/gi,
+    fix: 'write for a caller, not a settings screen',
+  },
+  {
+    id: 'R1',
+    pattern: /\b(ON|OFF)\b/g,
+    fix: 'use `true` and `false`, not a settings-screen label',
+  },
+  {
+    id: 'R3',
+    pattern: /\bIds?\b/g,
+    fix: 'the house form is "ID" in prose and `id` for the field',
+  },
+  {
+    id: 'R3',
+    pattern: /\bJavascript\b/g,
+    fix: 'write "JavaScript"',
+  },
+  {
+    id: 'R3',
+    pattern: /\b(sub-domains?|querystrings?)\b/gi,
+    fix: 'write "subdomain" or "query string"',
+  },
+  {
+    id: 'R4',
+    pattern: /\bthis endpoint\b/gi,
+    fix: 'name the tool, or say "the call"',
+  },
+  {
+    id: 'R8',
+    pattern: /YOUR_[A-Z0-9_]+/g,
+    raw: true,
+    fix: 'use `ACCESS_TOKEN`, `PASSWORD` or `CLIENT_SECRET`',
+  },
+  {
+    id: 'R9',
+    pattern: /\b(e\.g\.|i\.e\.|etc\.|vs\.)/gi,
+    fix: 'write "for example", "that is", or finish the list',
+  },
+  {
+    id: 'R9',
+    pattern: /\bvia\b/gi,
+    fix: 'write "through" or "by using"',
+  },
+  {
+    id: 'R9',
+    pattern: / - /g,
+    prepare: (text) => text.replace(/^[ \t]*[-*+] /gm, ' '),
+    fix: 'use an em dash, not a spaced hyphen',
+  },
+  {
+    id: 'R9',
+    pattern:
+      /\b(colour\w*|behaviour\w*|cancelled|cancelling|summaris\w*|sanitis\w*|recognis\w*|normalis\w*|unnormalis\w*|uncategoris\w*|totalled|centre[sd]?)\b/gi,
+    fix: 'this corpus is American: color, behavior, canceled, summarize, sanitize, recognize, normalize, center',
+  },
+];
+
+/** Every description a JSON schema carries, with a path for the failure. */
+function schemaProse(
+  schema: any,
+  path: string
+): { where: string; text: string }[] {
+  if (!schema || typeof schema !== 'object') return [];
+
+  const entries: { where: string; text: string }[] = [];
+  if (typeof schema.description === 'string') {
+    entries.push({ where: path, text: schema.description });
+  }
+
+  for (const [key, value] of Object.entries(schema.properties ?? {})) {
+    entries.push(...schemaProse(value, `${path}.${key}`));
+  }
+  if (schema.items) entries.push(...schemaProse(schema.items, `${path}[]`));
+  for (const key of ['anyOf', 'oneOf', 'allOf']) {
+    for (const value of schema[key] ?? []) {
+      entries.push(...schemaProse(value, `${path}<${key}>`));
+    }
+  }
+
+  return entries;
+}
+
 describe('tool registry', () => {
   test('every tool is keyed by its own name', () => {
     for (const [key, tool] of Object.entries(tools)) {
@@ -244,5 +343,52 @@ describe('tool registry', () => {
     }
 
     expect(offenders).toEqual([]);
+  });
+
+  test('tool prose follows the API documentation house style', () => {
+    const violations: string[] = [];
+
+    const check = (where: string, text: string) => {
+      const bare = text
+        .replace(/```[\s\S]*?```/g, ' ')
+        .replace(/`[^`]*`/g, ' ');
+
+      for (const rule of houseStyle) {
+        const target = rule.raw ? text : bare;
+        const prepared = rule.prepare ? rule.prepare(target) : target;
+
+        for (const match of prepared.matchAll(rule.pattern)) {
+          violations.push(`${where}: ${rule.id} "${match[0]}" — ${rule.fix}`);
+        }
+      }
+    };
+
+    for (const tool of Object.values(tools) as any[]) {
+      check(`${tool.name} description`, tool.description);
+
+      for (const [key, io] of [
+        ['inputSchema', 'input'],
+        ['outputSchema', 'output'],
+      ] as const) {
+        const schema = z.toJSONSchema(tool[key], {
+          io,
+          unrepresentable: 'any',
+        }) as any;
+
+        for (const entry of schemaProse(schema, key)) {
+          check(`${tool.name} ${entry.where}`, entry.text);
+        }
+      }
+    }
+
+    check(
+      'packages/stdio/README.md',
+      readFileSync(
+        new URL('../../../packages/stdio/README.md', import.meta.url),
+        'utf8'
+      )
+    );
+
+    expect(violations).toEqual([]);
   });
 });

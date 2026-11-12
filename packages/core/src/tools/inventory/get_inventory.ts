@@ -8,7 +8,7 @@ export const get_inventory = {
     projectId: z
       .number()
       .describe(
-        'Id of the project, as returned by `get_projects`, and also the id the crawl of the project is stored under'
+        'ID of the project, as returned by `get_projects`, and also the id the crawl of the project is stored under'
       ),
     limit: z.coerce
       .number()
@@ -99,7 +99,7 @@ export const get_inventory = {
           id: z
             .number()
             .describe(
-              'Id of the link. Pass it as `linkId` to `get_inventory_link_occurrences`'
+              'ID of the link. Pass it as `linkId` to `get_inventory_link_occurrences`'
             ),
           sourceTag: z
             .string()

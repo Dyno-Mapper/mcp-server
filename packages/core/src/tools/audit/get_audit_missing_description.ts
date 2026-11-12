@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const get_audit_missing_description = {
   name: 'get_audit_missing_description',
   description:
-    'List pages with no meta description: the pages the latest run found without one, one row per page, with the crawled page’s id and URL. With no description the search engine composes the snippet from page text, so the result is unpredictable and often not the sentence you would choose. A description that exists but is too long is on `get_audit_long_description`, and one shared by several pages on `get_audit_duplicate_description`. Reads the latest run only, so a page fixed since that run stays listed until the next audit replaces it; a project that has never been audited answers 500 `Project is not audited.` Requires the Content Audit feature, else 403 `feature_disabled`.',
+    'List pages with no meta description: the pages the latest run found without one, one row per page, with the crawled page’s id and URL. With no description the search engine composes the snippet from page text, so the result is unpredictable and often not the sentence a person would choose. A description that exists but is too long is on `get_audit_long_description`, and one shared by several pages on `get_audit_duplicate_description`. Reads the latest run only, so a page fixed since that run stays listed until the next audit replaces it; a project that has never been audited answers 500 `Project is not audited.` Requires the Content Audit feature, else 403 `feature_disabled`.',
   inputSchema: z.object({
     projectId: z.number().describe('The ID of the project'),
     search: z
@@ -50,7 +50,7 @@ export const get_audit_missing_description = {
           id: z
             .number()
             .describe(
-              'Id of the crawled page record that has no meta description.'
+              'ID of the crawled page record that has no meta description.'
             ),
           url: z
             .string()

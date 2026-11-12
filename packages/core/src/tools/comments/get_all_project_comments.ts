@@ -14,7 +14,7 @@ export const get_all_project_comments = {
     projectId: z
       .number()
       .int()
-      .describe('Id of the project, as `get_projects` reports it.'),
+      .describe('ID of the project, as `get_projects` reports it.'),
     page: z
       .number()
       .int()
@@ -48,7 +48,7 @@ export const get_all_project_comments = {
       .int()
       .optional()
       .describe(
-        'Return only comments on this sitemap item. An id that is not in this project simply matches nothing rather than failing.'
+        'Return only comments on this sitemap item. An id that is not in this project matches nothing rather than failing.'
       ),
   }),
   outputSchema: projectCommentPageSchema,

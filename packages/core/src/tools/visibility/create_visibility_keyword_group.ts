@@ -18,7 +18,7 @@ export const create_visibility_keyword_group = {
     id: z
       .number()
       .describe(
-        'Id of the group, whether it was just created, already existed, or was revived after deletion.'
+        'ID of the group, whether it was just created, already existed, or was revived after deletion.'
       ),
     name: z
       .string()

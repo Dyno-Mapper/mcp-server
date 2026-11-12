@@ -8,11 +8,11 @@ export const get_accessibility_login_inputs = {
     'Only the user who started the run sees its prompts: a colleague with access to the same project can read the report but gets an empty list here. The list is also empty for a project that does not sign in. ' +
     'A prompt that expired about an hour after the run created it reports `completed: 1` and can never be answered: start a new run with `run_accessibility_checker` to get fresh prompts.',
   inputSchema: z.object({
-    projectId: z.number().describe('Id of the project the run belongs to.'),
+    projectId: z.number().describe('ID of the project the run belongs to.'),
     reportId: z
       .number()
       .describe(
-        'Id of the accessibility run — the `id` from `get_accessibility_results`, or the `id` that `run_accessibility_checker` returned.'
+        'ID of the accessibility run — the `id` from `get_accessibility_results`, or the `id` that `run_accessibility_checker` returned.'
       ),
   }),
   outputSchema: z.object({
@@ -48,7 +48,7 @@ export const get_accessibility_login_inputs = {
           value: z
             .string()
             .describe(
-              'Value currently held for this prompt: what a previous submit stored, or the text the run itself filled in (the authenticator prompt puts the number to match here). An empty string when nothing has been written, never null.'
+              'Value held for this prompt: what a previous submit stored, or the text the run itself filled in (the authenticator prompt puts the number to match here). An empty string when nothing has been written, never null.'
             ),
         })
       )

@@ -35,7 +35,7 @@ export const create_project_sitemap_item = {
       .nullable()
       .optional()
       .describe(
-        'Id of the category to assign, from `get_project_categories`. `null` clears it. An id this account cannot see is rejected with `unknown_category`; categories are never created implicitly.'
+        'ID of the category to assign, from `get_project_categories`. `null` clears it. An id this account cannot see is rejected with `unknown_category`; categories are never created implicitly.'
       ),
     workflowStatus: z
       .string()
@@ -83,14 +83,14 @@ export const create_project_sitemap_item = {
       .nullable()
       .optional()
       .describe(
-        'Background colour the application paints the item with in the sitemap. `null` restores the default.'
+        'Background color the application paints the item with in the sitemap. `null` restores the default.'
       ),
     foregroundColor: z
       .string()
       .nullable()
       .optional()
       .describe(
-        'Text colour the application paints the item with in the sitemap. `null` restores the default.'
+        'Text color the application paints the item with in the sitemap. `null` restores the default.'
       ),
     tags: z
       .array(z.string().min(1))
@@ -141,7 +141,7 @@ export const create_project_sitemap_item = {
       .nullable()
       .optional()
       .describe(
-        'Id of the container to create the item under. Omit it, or send `null`, only to create the project’s root item: a project has exactly one, the sitemap’s entry point, so creating a second answers `root_exists`. The parent must belong to this project.'
+        'ID of the container to create the item under. Omit it, or send `null`, only to create the project’s root item: a project has exactly one, the sitemap’s entry point, so creating a second answers `root_exists`. The parent must belong to this project.'
       ),
     afterItemId: z
       .number()
@@ -149,7 +149,7 @@ export const create_project_sitemap_item = {
       .nullable()
       .optional()
       .describe(
-        'Id of the sibling to place the new item after. Omit it to append to the end of the parent’s children. The sibling must be a child of `parentId`, otherwise the request is rejected with `invalid_after_item`.'
+        'ID of the sibling to place the new item after. Omit it to append to the end of the parent’s children. The sibling must be a child of `parentId`, otherwise the request is rejected with `invalid_after_item`.'
       ),
   }),
   outputSchema: sitemapItemWithLinkPathSchema,

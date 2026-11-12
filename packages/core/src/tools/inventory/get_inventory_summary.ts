@@ -8,7 +8,7 @@ export const get_inventory_summary = {
     projectId: z
       .number()
       .describe(
-        'Id of the project, as returned by `get_projects`, and also the id the crawl of the project is stored under'
+        'ID of the project, as returned by `get_projects`, and also the id the crawl of the project is stored under'
       ),
   }),
   outputSchema: z.object({

@@ -71,7 +71,7 @@ export const get_commented_items = {
           id: z
             .number()
             .describe(
-              'Id of the sitemap item, as `get_project_sitemap_items` reports it and as `get_item_comments` expects it'
+              'ID of the sitemap item, as `get_project_sitemap_items` reports it and as `get_item_comments` expects it'
             ),
           title: z
             .string()

@@ -21,7 +21,7 @@ export const get_project_groups = {
           name: z.string().describe('Name the account gave the group.'),
           color: z
             .string()
-            .describe('Colour the application paints the group with.'),
+            .describe('Color the application paints the group with.'),
         })
       )
       .describe(

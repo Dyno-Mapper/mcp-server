@@ -12,102 +12,106 @@ export const create_project_from_url = {
   inputSchema: z.object({
     url: z
       .url({ protocol: /^https?$/ })
-      .describe('URL of the website to crawl. It must start with https://.'),
+      .describe(
+        'URL the crawl starts from; it must start with `http://` or `https://`.'
+      ),
     followRobots: z
       .boolean()
       .optional()
       .default(true)
       .describe(
-        'Whether the crawler obeys a robots.txt file, which tells bots which pages to leave alone. On by default; turn it off to ignore those instructions and crawl everything reachable.'
+        'When true, the crawler obeys the site’s `robots.txt` and skips every page it disallows. Defaults to `true`.'
       ),
     followSubdomains: z
       .boolean()
       .optional()
       .default(false)
       .describe(
-        'Whether the crawler also visits subdomains of the start URL, such as north.example.com under example.com. Linked pages on a subdomain are collected by default; turn this on to crawl inside the subdomains too, or block each one with `skipLinks` instead.'
+        'When true, the crawler also visits subdomains of the start URL, such as `blog.example.com`. Defaults to `false`.'
       ),
     ignoreTrailingSlash: z
       .boolean()
       .optional()
       .default(true)
       .describe(
-        'Whether URLs that differ only by a trailing slash are treated as one page. On by default, which keeps the crawl forgiving of hand-written markup, as a browser would be.'
+        'When true, `/about` and `/about/` count as one page, so the second one crawled is dropped. Defaults to `true`.'
       ),
     ignoreQueryString: z
       .boolean()
       .optional()
       .default(false)
       .describe(
-        'Whether URLs that differ only in their query string, the part after `?`, are treated as one page. Turn it on for dynamic sections such as calendars, which can otherwise add many near-duplicate pages.'
+        'When true, URLs that differ only in their query string count as one page, so the second one crawled is dropped. Defaults to `false`.'
       ),
     includeRedirects: z
       .boolean()
       .optional()
       .default(false)
       .describe(
-        'Whether to keep both the redirected link and the URL it lands on. When off, only the destination is kept.'
+        'When true, a URL that redirects is kept in the sitemap next to its destination. Defaults to `false`.'
       ),
     includeBadLinks: z
       .boolean()
       .optional()
       .default(false)
       .describe(
-        'Whether to keep pages that answer with a 4xx or 5xx status code, such as 404 Not Found or 500 Internal Server Error, instead of dropping them.'
+        'When true, pages that answered `4xx` or `5xx` are kept in the sitemap instead of dropped. Defaults to `false`.'
       ),
     renderJavascript: z
       .boolean()
       .optional()
       .default(false)
       .describe(
-        'Whether to render each page’s JavaScript, CSS, images and other assets during the crawl. Turn it on for sites that build their content in the browser.'
+        'When true, pages are rendered in a headless browser before they are read, so links and content that JavaScript adds are found. Defaults to `false`.'
       ),
     includeContent: z
       .boolean()
       .optional()
       .default(false)
       .describe(
-        'Whether to download the entire body of each page. Refine which part is kept with `includeContentByXpath`.'
+        'When true, each page’s body is stored with its item; the XPath fields narrow which part is kept. Defaults to `false`.'
       ),
     uniquePageTitle: z
       .boolean()
       .optional()
       .default(false)
       .describe(
-        'Whether to rely on every page having its own title, which gives a more accurate crawl. Only turn it on when you are certain: content management systems that publish several URLs under one title produce duplicates in the project.'
+        'When true, a page whose title matches one already crawled is dropped as a duplicate. Defaults to `false`.'
       ),
     ignoreScheme: z
       .boolean()
       .optional()
       .default(true)
       .describe(
-        'Whether the http:// and https:// forms of a page are treated as one page. On by default, which avoids duplicates on servers that answer both schemes.'
+        'When true, the `http://` and `https://` forms of a URL count as one page. Defaults to `true`.'
       ),
     arrangeLinksByUrl: z
       .boolean()
       .optional()
       .default(true)
       .describe(
-        'Whether the sitemap is arranged by the parent/child relationship between the URLs of the domain or subdomain. On by default.'
+        'When true, the tree follows each URL’s path, so `/a/b` nests under `/a` even when the crawl found it elsewhere. Defaults to `true`.'
       ),
     domainAsRoot: z
       .boolean()
       .optional()
       .default(false)
       .describe(
-        'Whether the primary domain becomes the root of the sitemap tree when you crawl a subdomain or subdirectory.'
+        'When true, the tree is rooted at the domain rather than at the start URL, which matters when the start URL is a subdomain or subdirectory. Defaults to `false`.'
       ),
     includePdf: z
       .boolean()
       .optional()
       .default(false)
-      .describe('Whether PDF links are included in the sitemap.'),
+      .describe(
+        'When true, links to PDF files are kept in the sitemap. Defaults to `false`.'
+      ),
     startUrlAsRoot: z
       .boolean()
       .optional()
       .default(false)
       .describe(
-        'Whether the hierarchy tree is rooted at the start URL rather than the domain, when you crawl a subdirectory or subdomain. Requires `arrangeLinksByUrl` to be on.'
+        'When true, the tree is rooted at the start URL rather than at the domain. It has no effect unless `arrangeLinksByUrl` is also `true`. Defaults to `false`.'
       ),
     authOptions: z
       .object({
@@ -115,7 +119,7 @@ export const create_project_from_url = {
           .number()
           .optional()
           .describe(
-            'Id of a saved login definition the crawl signs in with, as listed by `get_project_custom_logins`. Omit it for a site with no login.'
+            'ID of a saved login definition the crawl signs in with, as listed by `get_project_custom_logins`. Omit it for a site with no login.'
           ),
         inputs: z
           .array(z.string())
@@ -201,11 +205,11 @@ export const create_project_from_url = {
         z.object({
           projectId: z
             .number()
-            .describe('Id of the project to take included links from.'),
+            .describe('ID of the project to take included links from.'),
           itemIds: z
             .array(z.number())
             .describe(
-              'Ids of the items in that project whose links are included, as returned by `get_project_sitemap_items`.'
+              'IDs of the items in that project whose links are included, as returned by `get_project_sitemap_items`.'
             ),
         })
       )
@@ -238,11 +242,11 @@ export const create_project_from_url = {
         z.object({
           projectId: z
             .number()
-            .describe('Id of the project to take excluded links from.'),
+            .describe('ID of the project to take excluded links from.'),
           itemIds: z
             .array(z.number())
             .describe(
-              'Ids of the items in that project whose links are excluded, as returned by `get_project_sitemap_items`.'
+              'IDs of the items in that project whose links are excluded, as returned by `get_project_sitemap_items`.'
             ),
         })
       )
@@ -297,13 +301,13 @@ export const create_project_from_url = {
     id: z
       .number()
       .describe(
-        'Id of the project that was created. Poll `get_project_url_job_status` with it for the crawl it started.'
+        'ID of the project that was created. Poll `get_project_url_job_status` with it for the crawl it started.'
       ),
     jobId: z
       .number()
       .optional()
       .describe(
-        'Id of the crawl job the crawler queued for this project, returned so the project can be correlated with the crawler’s own records. `id`, not this, is what every other tool takes.'
+        'ID of the crawl job the crawler queued for this project, returned so the project can be correlated with the crawler’s own records. `id`, not this, is what every other tool takes.'
       ),
     loginInputs: z
       .array(

@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const get_analytics_project_daily = {
   name: 'get_analytics_project_daily',
   description:
-    'One row of traffic figures per stored day for a project, taken from the Google Analytics 4 properties linked to the project and ordered oldest first. Use it to chart a trend; `get_analytics_project` returns the same metrics totalled over the whole range. Both dates are required and the range includes both ends. Days without collected data are absent rather than zero-filled, and the rows come back as stored without merging, so a day with figures from more than one property appears more than once: add those rows up yourself if you need one figure per day.',
+    'One row of traffic figures per stored day for a project, taken from the Google Analytics 4 properties linked to the project and ordered oldest first. Use it to chart a trend; `get_analytics_project` returns the same metrics totaled over the whole range. Both dates are required and the range includes both ends. Days without collected data are absent rather than zero-filled, and the rows come back as stored without merging, so a day with figures from more than one property appears more than once: add those rows up if one figure per day is needed.',
   inputSchema: z.object({
     projectId: z
       .number()
@@ -16,7 +16,7 @@ export const get_analytics_project_daily = {
     endDate: z.iso
       .date()
       .describe(
-        'Last calendar day of the range, in `YYYY-MM-DD` form. Required, with no default. Inclusive. An `endDate` earlier than `startDate` is not rejected; it simply matches no rows'
+        'Last calendar day of the range, in `YYYY-MM-DD` form. Required, with no default. Inclusive. An `endDate` earlier than `startDate` is not rejected; it matches no rows'
       ),
   }),
   outputSchema: z.object({

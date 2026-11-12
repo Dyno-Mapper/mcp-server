@@ -8,11 +8,11 @@ export const get_accessibility_report_groups = {
     'Only groups that produced a problem appear, and within them only the subgroups that did, sorted by name — an empty `groups` array means the run found nothing, not that it is unfinished. ' +
     'The `id` values are the ones `get_accessibility_report_items` takes as `group` and `subgroup`. A run of another project, or an id that is not a run, answers `500` rather than `404`.',
   inputSchema: z.object({
-    projectId: z.number().describe('Id of the project the run belongs to.'),
+    projectId: z.number().describe('ID of the project the run belongs to.'),
     reportId: z
       .number()
       .describe(
-        'Id of the accessibility run — the `id` from `get_accessibility_results`, or the `id` that `run_accessibility_checker` returned.'
+        'ID of the accessibility run — the `id` from `get_accessibility_results`, or the `id` that `run_accessibility_checker` returned.'
       ),
   }),
   outputSchema: z.object({
@@ -22,7 +22,7 @@ export const get_accessibility_report_groups = {
           id: z
             .number()
             .describe(
-              'Id of the guideline group. Pass it as `group` to `get_accessibility_report_items` to see only the pages with problems in it.'
+              'ID of the guideline group. Pass it as `group` to `get_accessibility_report_items` to see only the pages with problems in it.'
             ),
           name: z
             .string()
@@ -51,7 +51,7 @@ export const get_accessibility_report_groups = {
                 id: z
                   .number()
                   .describe(
-                    'Id of the subgroup. Pass it as `subgroup` to `get_accessibility_report_items` to see only the pages with problems in it.'
+                    'ID of the subgroup. Pass it as `subgroup` to `get_accessibility_report_items` to see only the pages with problems in it.'
                   ),
                 name: z
                   .string()

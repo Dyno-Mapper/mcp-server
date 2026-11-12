@@ -8,7 +8,7 @@ export const get_accessibility_history = {
     'With neither date it returns the 100 most recent qualifying runs; with `startDate` and/or `endDate` it returns every qualifying run in the range. ' +
     'This is the data `get_accessibility_score` reduces to a single number, and the run ids are accepted as `reportId` by `get_accessibility_report_items`.',
   inputSchema: z.object({
-    projectId: z.number().describe('Id of the project whose history to read.'),
+    projectId: z.number().describe('ID of the project whose history to read.'),
     startDate: z.iso
       .date()
       .optional()
@@ -19,7 +19,7 @@ export const get_accessibility_history = {
       .date()
       .optional()
       .describe(
-        'Latest creation date to include, as `YYYY-MM-DD`, compared at midnight of that day — so a run later on the same day falls outside the range and you should pass the following day to include it. Omit to run up to the newest qualifying run.'
+        'Latest creation date to include, as `YYYY-MM-DD`, compared at midnight of that day — so a run later on the same day falls outside the range, and the following day is needed to include it. Omit to run up to the newest qualifying run.'
       ),
   }),
   outputSchema: z.object({
@@ -29,7 +29,7 @@ export const get_accessibility_history = {
           id: z
             .number()
             .describe(
-              'Id of the run — the `reportId` the other accessibility tools take.'
+              'ID of the run — the `reportId` the other accessibility tools take.'
             ),
           date: z.iso
             .datetime()

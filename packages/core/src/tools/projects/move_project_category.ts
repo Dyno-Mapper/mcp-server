@@ -15,7 +15,7 @@ export const move_project_category = {
       .number()
       .nullable()
       .describe(
-        'Id of the category to place this one after. Null puts it first in the list.'
+        'ID of the category to place this one after. Null puts it first in the list.'
       ),
   }),
   outputSchema: categorySchema,

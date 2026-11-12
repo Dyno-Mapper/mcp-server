@@ -3,11 +3,11 @@ import { z } from 'zod';
 export const get_inventory_link_occurrences = {
   name: 'get_inventory_link_occurrences',
   description:
-    'List where one link is used: each row is a page on the crawled site that contains a reference to the URL asked about, with that page title, status and the anchor text it used. The same URL referenced from ten pages is one row in `get_inventory` and ten rows here, which is how you find the pages that carry a broken or duplicated URL. `linkId` is a link id from `get_inventory` or `get_inventory_item_links`, never a sitemap item id. An id that no page references answers `total` 0 with an empty `items`; each returned `id` is the id of the referencing page. A project that was never crawled answers 500 rather than an empty list.',
+    'List where one link is used: each row is a page on the crawled site that contains a reference to the URL asked about, with that page title, status and the anchor text it used. The same URL referenced from ten pages is one row in `get_inventory` and ten rows here, which is how the pages that carry a broken or duplicated URL are found. `linkId` is a link id from `get_inventory` or `get_inventory_item_links`, never a sitemap item id. An id that no page references answers `total` 0 with an empty `items`; each returned `id` is the id of the referencing page. A project that was never crawled answers 500 rather than an empty list.',
   inputSchema: z.object({
     projectId: z
       .number()
-      .describe('Id of the project, as returned by `get_projects`'),
+      .describe('ID of the project, as returned by `get_projects`'),
     linkId: z
       .number()
       .describe(
@@ -60,7 +60,7 @@ export const get_inventory_link_occurrences = {
           id: z
             .number()
             .describe(
-              'Id of the page that references the link, an inventory link id of its own rather than the id that was asked about'
+              'ID of the page that references the link, an inventory link id of its own rather than the id that was asked about'
             ),
           url: z
             .string()

@@ -9,7 +9,7 @@ export const get_visibility_keyword_ranking = {
     keywordId: z
       .number()
       .describe(
-        'Id of the keyword, the `id` of a row from `get_visibility_project_ranking` — not the internal keyword id. It is not checked against this project, so an id from another project is accepted and normally comes back with an empty `data` array; an id that does not exist fails the whole call with 500.'
+        'ID of the keyword, the `id` of a row from `get_visibility_project_ranking` — not the internal keyword id. It is not checked against this project, so an id from another project is accepted and normally comes back with an empty `data` array; an id that does not exist fails the whole call with 500.'
       ),
     startDate: z.iso
       .date()
@@ -32,7 +32,7 @@ export const get_visibility_keyword_ranking = {
     id: z
       .number()
       .describe(
-        'Id of the tracked keyword, the same value that was requested.'
+        'ID of the tracked keyword, the same value that was requested.'
       ),
     keyword: z
       .string()

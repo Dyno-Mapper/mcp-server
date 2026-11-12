@@ -14,12 +14,12 @@ export const delete_item_comment = {
     projectId: z
       .number()
       .int()
-      .describe('Id of the project, as `get_projects` reports it.'),
+      .describe('ID of the project, as `get_projects` reports it.'),
     itemId: z
       .number()
       .int()
       .describe(
-        'Id of the sitemap item the comment sits on, as `get_project_sitemap_items` reports it.'
+        'ID of the sitemap item the comment sits on, as `get_project_sitemap_items` reports it.'
       ),
     commentId: z.number().int().describe(COMMENT_ID_DESCRIPTION),
   }),

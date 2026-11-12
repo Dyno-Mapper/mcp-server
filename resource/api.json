@@ -5213,7 +5213,7 @@
         "tags": [
           "Projects"
         ],
-        "description": "Lists the sitemap tree of a project, one row per item, so a client can walk the project the way the application’s sitemap editor does. An item is either a page (`type: link`) or a container that groups pages (`type: container`); `url` is the page’s address and `children` the number of published items beneath it. The counts cover published items and comments only.\n\nSend `parentId` to list one item’s part of the tree instead of the whole tree: the item itself comes first, followed by every published item beneath it, with `depth` counted from that item. The rows are a subtree, not only the direct children — a page has none, so it returns itself. `limit` and `offset` page the result: `offset` is 0-based and is only applied when `limit` is sent, and when both are sent `nextOffset` is `offset + limit`, ready to be requested next. Without `limit` every matching item is returned and `nextOffset` is null. `total` counts all items under `parentId` regardless of paging.\n\nThe tree is cut at the project’s configured maximum level, so the rows are the upper part of the tree rather than every item ever recorded, and `total` can be larger than the number of rows. `depth` is the level the tree records for the row: a position in the tree rather than a count of link hops from the start URL. To read one item with its metadata, use `GET /v1/project/{projectId}/item/{itemId}`.",
+        "description": "Lists the sitemap tree of a project, one row per item, so a client can walk the project the way the application’s sitemap editor does. An item is either a page (`type: link`) or a container that groups pages (`type: container`); `url` is the page’s address and `children` the number of published items beneath it. The counts cover published items and comments only.\n\nSend `parentId` to list one item’s part of the tree instead of the whole tree: the item itself comes first, followed by every published item beneath it, with `depth` counted from that item. The rows are a subtree, not only the direct children — a page has none, so it returns itself. `limit` and `offset` page the result: `limit` defaults to 100 and values above 1000 are lowered to 1000, while `offset` is 0-based, defaults to 0 and applies whether or not `limit` is sent. `nextOffset` is `offset + limit` while the page came back full, and null when it came back short, so null means there is nothing left to read. `total` counts all items under `parentId` regardless of paging.\n\nThe tree is cut at the project’s configured maximum level, so the rows are the upper part of the tree rather than every item ever recorded, and `total` can be larger than the number of rows. `depth` is the level the tree records for the row: a position in the tree rather than a count of link hops from the start URL. To read one item with its metadata, use `GET /v1/project/{projectId}/item/{itemId}`.",
         "parameters": [
           {
             "schema": {
@@ -5226,21 +5226,26 @@
           },
           {
             "schema": {
-              "type": "number"
+              "type": "integer",
+              "minimum": 0,
+              "exclusiveMinimum": true,
+              "maximum": 9007199254740991
             },
             "in": "query",
             "name": "limit",
             "required": false,
-            "description": "Maximum number of items to return. Omit it to return every matching item; the API applies no default and no maximum."
+            "description": "Maximum number of items to return. Defaults to 100 when omitted. Must be a positive whole number; a value above 1000 is lowered to 1000 rather than refused."
           },
           {
             "schema": {
-              "type": "number"
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
             },
             "in": "query",
             "name": "offset",
             "required": false,
-            "description": "Number of items to skip, 0-based. Only applied when `limit` is also sent; without `limit` the whole set is returned from the beginning."
+            "description": "Number of items to skip, 0-based. Defaults to 0, and applies whether or not `limit` is sent. Must be a whole number; a negative or fractional value answers `400`."
           },
           {
             "schema": {
@@ -5276,24 +5281,19 @@
                     },
                     "total": {
                       "type": "number",
-                      "description": "Number of items the listing covers, across every page — not the number of rows in `items`. It includes the item named by `parentId`, and it can be larger than the rows even without paging, because the tree is cut at the project’s maximum level."
+                      "description": "Number of items the listing covers, across every page — not the number of rows in `items`. It includes the item named by `parentId`, and it can be larger than the rows on any page, because the tree is cut at the project’s maximum level."
                     },
                     "limit": {
-                      "default": null,
-                      "description": "Page size the request used, or null when `limit` was omitted and everything was returned.",
-                      "nullable": true,
-                      "type": "number"
+                      "type": "number",
+                      "description": "Page size applied to this response: the `limit` that was sent, or 100 when none was, after the 1000 cap."
                     },
                     "offset": {
-                      "default": null,
-                      "description": "Number of items skipped before the first row, or null when the request sent no `offset`.",
-                      "nullable": true,
-                      "type": "number"
+                      "type": "number",
+                      "description": "Number of items skipped before the first row: the `offset` that was sent, or 0 when none was."
                     },
                     "nextOffset": {
-                      "default": null,
-                      "description": "Offset to send for the next page: `offset + limit`. It is computed without checking whether more items exist, so a page shorter than `limit` means there is nothing left. Null when `offset` or `limit` was omitted.",
                       "nullable": true,
+                      "description": "Offset to send for the next page, `offset + limit`, or null when this page held fewer rows than `limit`, so there are no further rows even if `total` is larger.",
                       "type": "number"
                     },
                     "items": {

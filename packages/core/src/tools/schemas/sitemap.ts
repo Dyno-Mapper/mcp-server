@@ -245,25 +245,23 @@ export const sitemapItemListSchema = z.object({
   total: z
     .number()
     .describe(
-      'Number of items the listing covers, across every page — not the number of rows in `items`. It includes the item named by `parentId`, and it can be larger than the rows even without paging, because the tree is cut at the project’s maximum level.'
+      'Number of items the listing covers, across every page — not the number of rows in `items`. It includes the item named by `parentId`, and it can be larger than the rows on any page, because the tree is cut at the project’s maximum level.'
     ),
   limit: z
     .number()
-    .nullable()
     .describe(
-      'Page size the request used, or null when `limit` was omitted and everything was returned.'
+      'Page size applied to the response: the requested `limit`, capped at 1000, or 100 when none was sent.'
     ),
   offset: z
     .number()
-    .nullable()
     .describe(
-      'Number of items skipped before the first row, or null when the request sent no `offset`.'
+      'Number of items skipped before the first row: the requested `offset`, or 0 when none was sent.'
     ),
   nextOffset: z
     .number()
     .nullable()
     .describe(
-      'Offset to send for the next page: `offset + limit`. It is computed without checking whether more items exist, so a page shorter than `limit` means there is nothing left. Null when `offset` or `limit` was omitted.'
+      'Offset to send for the next page, `offset + limit`, or null when this page held fewer rows than `limit`, so there are no further rows even if `total` is larger.'
     ),
   items: z.array(sitemapItemListRowSchema).describe('The items on this page.'),
 });

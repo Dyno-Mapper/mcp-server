@@ -274,7 +274,8 @@ different prompt.
 
 ### Edit a sitemap
 
-1. Read the tree with `get_project_sitemap_items`; pass `parentId` to start at one item. Read
+1. Read the tree with `get_project_sitemap_items`; pass `parentId` to start at one item, and follow
+   `nextOffset` until it is null — a response holds 100 rows by default. Read
    `get_project_sitemap_item_details` for the metadata of the item you are about to change.
 2. `create_project_sitemap_item` adds a page or container, `update_project_sitemap_item` edits one,
    and `move_project_sitemap_item` or `bulk_move_project_sitemap_items` reparents or repositions it.

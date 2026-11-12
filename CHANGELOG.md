@@ -23,8 +23,7 @@ the repository change behind it.
   `POST /v1/project/scratch`: an empty, published project with an optional
   title, a `Home` root at `https://www.example.com`, and no job to poll.
 - `packages/stdio/README.md` lists the tool, describes a "Create a project by
-  hand" workflow, names `get_current_user` as the first call, and points its
-  API reference link at `resource/api.json`.
+  hand" workflow, and names `get_current_user` as the first call.
 - `tools.test.ts` enforces the house style's checkable rules — `ID` in prose,
   American spelling, no `this endpoint`, `simply`, `via`, `e.g.`, spaced
   hyphens or settings-screen `ON`/`OFF` — across tool descriptions, input and

@@ -214,10 +214,6 @@ The following tools are available through this MCP server:
 | `get_project_assignments_totals`       | Get assignment totals by project                                                  |
 | `get_assignment_details`               | Get an assignment by id                                                           |
 
-The tool descriptions follow the [public API reference](../../resource/api.json) checked into this
-repository. Every tool description names the tools you need next instead of API endpoints, so the
-two stay usable side by side.
-
 ## Workflows
 
 Most tools stand alone. These sequences do not, and the calls only make sense in order.

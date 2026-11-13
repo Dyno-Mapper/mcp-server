@@ -191,7 +191,7 @@ export const sitemapItemListRowSchema = z.object({
   depth: z
     .number()
     .describe(
-      'Level the sitemap tree records for the row: its position in the tree rather than a count of link hops from the start URL.'
+      'Level the row sits at in this listing: 0 for the row the listing starts at — the item named by `parentId`, or the top of the sitemap — and one more for each level below it.'
     ),
   children: z
     .number()
@@ -242,11 +242,6 @@ export const sitemapItemListSchema = z.object({
     .describe(
       'Item the listing was made from: `parentId` from the request, or null when the whole tree was listed.'
     ),
-  total: z
-    .number()
-    .describe(
-      'Number of items the listing covers, across every page — not the number of rows in `items`. It includes the item named by `parentId`, and it can be larger than the rows on any page, because the tree is cut at the project’s maximum level.'
-    ),
   limit: z
     .number()
     .describe(
@@ -257,11 +252,16 @@ export const sitemapItemListSchema = z.object({
     .describe(
       'Number of items skipped before the first row: the requested `offset`, or 0 when none was sent.'
     ),
+  maxLevel: z
+    .number()
+    .describe(
+      'Levels the listing covered: the `maxLevel` that was sent, or the project’s configured maximum level when none was, lowered to 10 if it was higher. The deepest `depth` on a page is one less than this value.'
+    ),
   nextOffset: z
     .number()
     .nullable()
     .describe(
-      'Offset to send for the next page, `offset + limit`, or null when this page held fewer rows than `limit`, so there are no further rows even if `total` is larger.'
+      'Offset to send for the next page, `offset + limit`, or null when this page was the last, so following it until it is null reads every row once.'
     ),
   items: z.array(sitemapItemListRowSchema).describe('The items on this page.'),
 });

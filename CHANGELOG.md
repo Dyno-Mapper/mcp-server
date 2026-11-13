@@ -8,6 +8,23 @@ each release here points at the entry for that version.
 Versions are shared: the root manifest, every workspace and both changelogs
 carry one version per release, and `npm run check:changelogs` enforces it.
 
+## [0.5.0] - 2026-11-13
+
+The public API reference changed the sitemap item listing: it takes
+`maxLevel`, reports the level it covered, no longer returns `total`, and
+redefines `nextOffset` and `depth`. This release follows that contract. What a
+package consumer sees is in
+[packages/stdio/CHANGELOG.md](packages/stdio/CHANGELOG.md); this file records
+the repository change behind it.
+
+### Changed
+
+- `get_project_sitemap_items` takes `maxLevel`, capped at 10, and reports the
+  effective level in `maxLevel`; its output schema no longer requires `total`.
+- `packages/stdio/README.md` describes widening the tree cut and reading below
+  it by passing a listed item as `parentId`.
+- `resource/api.json` documents the revised listing.
+
 ## [0.4.0] - 2026-11-12
 
 The public API reference gained one operation, `POST /v1/project/scratch`, and

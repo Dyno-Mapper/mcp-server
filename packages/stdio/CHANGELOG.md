@@ -5,6 +5,30 @@ Notable changes to `@dynomapper/mcp-server`, the stdio server published to npm.
 The version tracks the release it ships with. `0.1.0` was the first publish and
 predates this file.
 
+## [0.5.0] - 2026-11-13
+
+Follows the public API's revised sitemap item listing.
+
+### Breaking
+
+- `get_project_sitemap_items` no longer returns `total`. Follow `nextOffset`
+  until it is null to read every row, and read `maxLevel` to see how many
+  levels the listing covered.
+
+### Added
+
+- `get_project_sitemap_items` takes an optional `maxLevel` to list up to 10
+  levels instead of the project's configured maximum. Values above 10 are
+  lowered to 10.
+
+### Changed
+
+- `depth` in `get_project_sitemap_items` starts at 0 for the row the listing
+  starts at — the `parentId` item or the top of the sitemap — and counts one
+  more for each level below it.
+- `nextOffset` is null only when the page was the last, so following it reads
+  every row once.
+
 ## [0.4.0] - 2026-11-12
 
 The public API gained one operation and a documentation style guide. This

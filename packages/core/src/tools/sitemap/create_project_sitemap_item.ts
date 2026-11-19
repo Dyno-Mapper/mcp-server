@@ -27,7 +27,7 @@ export const create_project_sitemap_item = {
       .nullable()
       .optional()
       .describe(
-        'Address the item points at, stored verbatim — no trimming, no validation, no de-duplication, so two items may share one URL. Sending `null` or an empty string turns the item into a container; sending a URL turns it into a link and records the URL’s MD5 for the application’s own lookups.'
+        'Address the item points at, stored verbatim — no trimming, no validation, no de-duplication, so two items may share one URL. Sending `null` or an empty string turns the item into a container; sending a URL turns it into a link.'
       ),
     category: z
       .number()

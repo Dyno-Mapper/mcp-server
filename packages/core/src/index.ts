@@ -11,6 +11,11 @@ export {
   type DynoMapperServerOptions,
 } from './server.js';
 export {
+  MAX_UPLOAD_BYTES,
+  PURPOSE_MAX_BYTES,
+  type UploadPurpose,
+} from './upload/source.js';
+export {
   parseEntrypoint,
   UsageError,
   type EntrypointAction,

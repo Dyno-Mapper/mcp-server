@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vite-plus/test';
 import { readFileSync } from 'node:fs';
 import { z } from 'zod';
-import { tools } from './tools/tools.js';
+import { inputSchemaFor, tools } from './tools/tools.js';
 
 // The published API spec is a repository-level fixture, shared with the source
 // it documents rather than copied into the package.
@@ -251,6 +251,21 @@ describe('tool registry', () => {
       'create_item_comment',
       'update_item_comment',
       'delete_item_comment',
+      'store_content_image',
+      'get_content_images',
+      'delete_content_image',
+      'store_content_file',
+      'get_content_files',
+      'delete_content_file',
+      'run_accessibility_pdf_upload_test',
+      'run_accessibility_pdf_url_test',
+      'run_accessibility_pdf_sitemap_test',
+      'get_accessibility_pdf_run',
+      'delete_accessibility_pdf_item',
+      'refresh_accessibility_pdf_item',
+      'archive_accessibility_pdf_results',
+      'unarchive_accessibility_pdf_results',
+      'set_accessibility_pdf_result_note',
     ]) {
       expect(name in tools, `missing tool ${name}`).toBe(true);
     }
@@ -321,11 +336,16 @@ describe('tool registry', () => {
       /\b(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+\/|\bendpoint\b/i;
 
     for (const tool of Object.values(tools) as any[]) {
+      // Both transports' arguments are described to an agent, so both are
+      // held to the same rule: a schema that names a route is a schema that
+      // reads like API documentation rather than like a tool.
       const inputJson = JSON.stringify(
-        z.toJSONSchema(tool.inputSchema, {
-          io: 'input',
-          unrepresentable: 'any',
-        })
+        (['stdio', 'hosted'] as const).map((mode) =>
+          z.toJSONSchema(inputSchemaFor(tool, mode), {
+            io: 'input',
+            unrepresentable: 'any',
+          })
+        )
       );
       const outputJson = JSON.stringify(
         z.toJSONSchema(tool.outputSchema, {
@@ -370,13 +390,28 @@ describe('tool registry', () => {
         ['inputSchema', 'input'],
         ['outputSchema', 'output'],
       ] as const) {
-        const schema = z.toJSONSchema(tool[key], {
-          io,
-          unrepresentable: 'any',
-        }) as any;
+        // A tool whose arguments differ by transport is checked on both, so a
+        // second set of descriptions cannot escape the house style.
+        const schemas =
+          key === 'inputSchema'
+            ? (['stdio', 'hosted'] as const).map(
+                (mode) =>
+                  z.toJSONSchema(inputSchemaFor(tool, mode), {
+                    io,
+                    unrepresentable: 'any',
+                  }) as any
+              )
+            : [
+                z.toJSONSchema(tool.outputSchema, {
+                  io,
+                  unrepresentable: 'any',
+                }) as any,
+              ];
 
-        for (const entry of schemaProse(schema, key)) {
-          check(`${tool.name} ${entry.where}`, entry.text);
+        for (const schema of schemas) {
+          for (const entry of schemaProse(schema, key)) {
+            check(`${tool.name} ${entry.where}`, entry.text);
+          }
         }
       }
     }

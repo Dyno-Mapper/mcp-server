@@ -8,7 +8,12 @@ import express, {
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { effectiveAllowedHosts, type HttpConfig } from './config.js';
-import { bearerChallenge, bearerToken, isExpiredJwt } from './bearer.js';
+import {
+  bearerChallenge,
+  bearerToken,
+  callerIdentity,
+  isExpiredJwt,
+} from './bearer.js';
 import { firstHeader } from './headers.js';
 import {
   METADATA_PATHS,
@@ -279,6 +284,85 @@ function concurrencyGuard(config: HttpConfig) {
   };
 }
 
+interface UploadSlot {
+  inFlight: number;
+  updatedAt: number;
+}
+
+/**
+ * Caps uploads in flight per caller, before the body is buffered.
+ *
+ * The JSON body is parsed before the JSON-RPC call inside it is dispatched, so
+ * the only moment at which an upload can be refused for capacity is before it
+ * is read. What makes that possible here is that no other call carries this
+ * much argument: a declared body over `MCP_UPLOAD_GATE_BYTES` is an upload, and
+ * everything smaller is served exactly as it was.
+ *
+ * Per caller rather than global, so one account cannot occupy every slot, and
+ * keyed on the account rather than the address, because a shared egress — an
+ * agent platform calling on behalf of many accounts — would otherwise throttle
+ * itself. The count is released when the response ends or the connection dies.
+ *
+ * A caller that sends no `Content-Length` cannot be charged before the read,
+ * and is bounded only by the general concurrency guard.
+ */
+function uploadGate(config: HttpConfig) {
+  const slots = new Map<string, UploadSlot>();
+  const idleLimit = 10 * 60_000;
+
+  return (req: Request, res: Response, next: NextFunction) => {
+    const declared = Number(req.headers['content-length']);
+
+    if (!Number.isFinite(declared) || declared <= config.uploadGateBytes) {
+      next();
+      return;
+    }
+
+    const token = bearerToken(req.headers.authorization);
+    if (!token) {
+      // authGuard has already refused a tokenless request; nothing to charge.
+      next();
+      return;
+    }
+
+    const key = callerIdentity(token);
+    const now = Date.now();
+    const slot = slots.get(key) ?? { inFlight: 0, updatedAt: now };
+    slot.updatedAt = now;
+
+    if (slot.inFlight >= config.maxUploadConcurrency) {
+      res.set('Retry-After', '1');
+      sendJsonRpcError(
+        res,
+        503,
+        -32000,
+        `Too many uploads in flight: the limit is ${config.maxUploadConcurrency} per caller`
+      );
+      return;
+    }
+
+    slot.inFlight += 1;
+    slots.set(key, slot);
+
+    onDone(res, () => {
+      slot.inFlight = Math.max(0, slot.inFlight - 1);
+      slot.updatedAt = Date.now();
+    });
+
+    // A caller that stops calling leaves an empty slot behind; drop those when
+    // the map grows, never one that is still holding a request.
+    if (slots.size > 5_000) {
+      for (const [candidate, entry] of slots) {
+        if (entry.inFlight === 0 && now - entry.updatedAt > idleLimit) {
+          slots.delete(candidate);
+        }
+      }
+    }
+
+    next();
+  };
+}
+
 /** Runs `callback` once, when the response finishes or its connection dies. */
 function onDone(res: Response, callback: () => void): void {
   let done = false;
@@ -424,8 +508,10 @@ export function createHostedApp(options: HostedAppOptions): HostedApp {
   app.post(
     '/mcp',
     rateLimitGuard(config),
-    // Before the body is buffered: refusing for capacity after reading a
-    // request is the cost this guard exists to avoid.
+    // Both of these run before the body is buffered: refusing for capacity
+    // after reading a request is the cost they exist to avoid, and an upload
+    // is the one request large enough to be recognised by its declared size.
+    uploadGate(config),
     concurrencyGuard(config),
     express.json({ limit: config.maxBodyBytes, type: 'application/json' }),
     async (req: Request, res: Response) => {

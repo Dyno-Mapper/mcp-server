@@ -65,6 +65,7 @@ refuse older runtimes. CI and the container image run 26 LTS — `node:26` and
 npm install         # links the workspaces and installs the git hooks
 npm run dev         # stdio server from source
 npm run dev:http    # hosted server from source (http://127.0.0.1:3000/mcp)
+npm run api:download # refresh resource/api.json from production
 npm test            # vitest, every workspace
 npm run check       # format, lint and type-check every workspace
 npm run build       # both single-file bundles
@@ -73,6 +74,16 @@ npm run check:changelogs # assert the two changelogs and the manifests agree
 npm run check:secrets    # fail on a credential in any file git would commit
 npm run verify      # all of the above, in CI order
 ```
+
+`npm run api:download` fetches the published OpenAPI reference from
+`https://api.dynomapper.com/documentation/json` and writes it, two-space
+indented, to `resource/api.json`. The endpoint is public, so no token is read.
+It is developer tooling rather than part of `npm run verify`: the committed
+file is a test fixture, and `tools.test.ts` fails when the reference documents
+an operation no tool covers, so review the diff and cover any new operations
+before committing a refresh. Pass `--url <url>` to read another deployment and
+`--out <file>` to write somewhere else; `node scripts/download-api.mjs --help`
+lists the options.
 
 `npm run verify` is the gate CI runs before it builds the image. The static
 checks use Oxfmt, Oxlint's type-aware rules and tsgolint; `npm run format`

@@ -65,6 +65,8 @@ function config(overrides: Partial<HttpConfig> = {}): HttpConfig {
     rateLimitPerMinute: 60,
     rateLimitBurst: 20,
     maxBodyBytes: 256 * 1024,
+    maxUploadConcurrency: 2,
+    uploadGateBytes: 8 * 1024 * 1024,
     maxConcurrency: 100,
     requestTimeoutMs: 5_000,
     jsonResponses: true,
@@ -77,9 +79,33 @@ function config(overrides: Partial<HttpConfig> = {}): HttpConfig {
 /** Stands in for the DYNO Mapper API, so a tool call has something to answer. */
 async function startStub(options: { delayMs?: number } = {}) {
   const authorizations: (string | undefined)[] = [];
+  /** Every upload body that reached the API, so the bytes can be checked. */
+  const uploads: { contentType: string | undefined; body: string }[] = [];
 
   const server: Server = createHttpServer((req, res) => {
     authorizations.push(req.headers.authorization);
+
+    if (req.url === '/v1/files') {
+      const chunks: Buffer[] = [];
+      req.on('data', (chunk) => chunks.push(chunk));
+      req.on('end', () => {
+        uploads.push({
+          contentType: req.headers['content-type'],
+          body: Buffer.concat(chunks).toString('utf8'),
+        });
+        res.writeHead(201, { 'content-type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            key: 'uploads/api/project_text/b2/list.txt',
+            name: 'list.txt',
+            size: 19,
+            mimeType: 'text/plain',
+          })
+        );
+      });
+      return;
+    }
+
     const answer = () => {
       res.writeHead(200, { 'content-type': 'application/json' });
       res.end(JSON.stringify(USER));
@@ -97,6 +123,7 @@ async function startStub(options: { delayMs?: number } = {}) {
   return {
     url: `http://127.0.0.1:${port}`,
     authorizations,
+    uploads,
     close: () => new Promise<void>((resolve) => server.close(() => resolve())),
   };
 }
@@ -400,7 +427,7 @@ describe('expired tokens', () => {
 });
 
 describe('hosted tool surface', () => {
-  test('omits the tools that need a local filesystem', async () => {
+  test('offers uploads as bytes, because a pod cannot read the caller’s disk', async () => {
     const app = await harness();
 
     const listed = await app.rpc({
@@ -411,14 +438,112 @@ describe('hosted tool surface', () => {
     const tools = (await listed.json()).result.tools as any[];
     const byName = new Map(tools.map((tool) => [tool.name, tool]));
 
-    expect(byName.has('upload_file')).toBe(false);
+    const upload = byName.get('upload_file') as any;
+    expect(upload).toBeDefined();
+
+    const uploadArgs = Object.keys(upload.inputSchema.properties);
+    expect(uploadArgs).toEqual(
+      expect.arrayContaining(['purpose', 'content', 'name', 'mimeType', 'url'])
+    );
+    expect(uploadArgs).not.toContain('file');
+    // The description must not offer an argument this transport refuses.
+    expect(upload.description).not.toContain('Absolute path');
+    expect(upload.description).toContain('base64');
 
     const fromFile = byName.get('create_project_from_file') as any;
     expect(Object.keys(fromFile.inputSchema.properties)).not.toContain('file');
     expect(Object.keys(fromFile.inputSchema.properties)).toEqual(
       expect.arrayContaining(['url', 'fileKey', 'type'])
     );
-    expect(fromFile.description).not.toContain('Absolute path');
+    // Nothing about this call differs by transport, so a hosted deployment must
+    // read the same text — including the errors it answers, which a hand-kept
+    // override silently dropped.
+    expect(fromFile.description).toContain('invalid_file_source');
+    expect(fromFile.description).toContain('purpose_mismatch');
+  });
+
+  test('uploads bytes sent as base64 to the API as a file part', async () => {
+    const app = await harness();
+
+    const response = await app.rpc({
+      jsonrpc: '2.0',
+      id: 5,
+      method: 'tools/call',
+      params: {
+        name: 'upload_file',
+        arguments: {
+          purpose: 'project_text',
+          content: Buffer.from('https://example.com').toString('base64'),
+          name: 'list.txt',
+          mimeType: 'text/plain',
+        },
+      },
+    });
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.result.isError).toBeFalsy();
+    expect(body.result.structuredContent.key).toBe(
+      'uploads/api/project_text/b2/list.txt'
+    );
+
+    // The whole point: base64 arrived in the request body and left as a file.
+    expect(app.stub.uploads).toHaveLength(1);
+    expect(app.stub.uploads[0].contentType).toContain('multipart/form-data');
+    expect(app.stub.uploads[0].body).toContain('https://example.com');
+    expect(app.stub.uploads[0].body).toContain('name="purpose"');
+    expect(app.stub.uploads[0].body).toContain('filename="list.txt"');
+  });
+
+  test('accepts the empty url a client fills in for an argument it did not use', async () => {
+    const app = await harness();
+
+    // Exactly what a client that populates every property sends: the content
+    // upload, with `url` left as an empty string. It used to fail the schema
+    // with -32602 "Invalid URL at url" before the tool was ever reached.
+    const response = await app.rpc({
+      jsonrpc: '2.0',
+      id: 9,
+      method: 'tools/call',
+      params: {
+        name: 'upload_file',
+        arguments: {
+          purpose: 'project_text',
+          content: Buffer.from('https://example.com').toString('base64'),
+          name: 'list.txt',
+          mimeType: 'text/plain',
+          url: '',
+        },
+      },
+    });
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.error).toBeUndefined();
+    expect(body.result.isError).toBeFalsy();
+    expect(app.stub.uploads).toHaveLength(1);
+  });
+
+  test('refuses an upload that names no source, in the API’s own word', async () => {
+    const app = await harness();
+
+    const response = await app.rpc({
+      jsonrpc: '2.0',
+      id: 6,
+      method: 'tools/call',
+      params: {
+        name: 'upload_file',
+        arguments: { purpose: 'project_text' },
+      },
+    });
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.result.isError).toBe(true);
+    expect(JSON.parse(body.result.content[0].text).error).toBe(
+      'invalid_file_source'
+    );
+    expect(app.stub.uploads).toHaveLength(0);
   });
 });
 
@@ -435,6 +560,84 @@ describe('hosted request guards', () => {
 
     expect(response.status).toBe(413);
     expect((await response.json()).error.code).toBe(-32000);
+  });
+
+  test('caps uploads in flight per caller before the body is read', async () => {
+    const app = await harness(
+      { uploadGateBytes: 256, maxUploadConcurrency: 1 },
+      { delayMs: 300 }
+    );
+
+    const call = {
+      jsonrpc: '2.0',
+      id: 6,
+      method: 'tools/call',
+      params: {
+        name: 'get_current_user',
+        arguments: { note: 'x'.repeat(500) },
+      },
+    };
+
+    const first = app.rpc(call);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const refused = await app.rpc(call);
+    expect(refused.status).toBe(503);
+    expect(refused.headers.get('retry-after')).toBe('1');
+    expect((await refused.json()).error.code).toBe(-32000);
+
+    expect((await first).status).toBe(200);
+
+    // The slot is released when the response ends, so the next upload is served
+    // rather than punished for the one before it.
+    expect((await app.rpc(call)).status).toBe(200);
+  });
+
+  test('counts uploads per subject, so a shared address is not throttled', async () => {
+    const app = await harness(
+      { uploadGateBytes: 256, maxUploadConcurrency: 1 },
+      { delayMs: 300 }
+    );
+
+    const call = {
+      jsonrpc: '2.0',
+      id: 7,
+      method: 'tools/call',
+      params: {
+        name: 'get_current_user',
+        arguments: { note: 'x'.repeat(500) },
+      },
+    };
+
+    // Two accounts calling through one platform share an address and nothing
+    // else; keying the cap on the address would make them queue behind each
+    // other, which is the monopolisation the cap exists to prevent.
+    const as = (sub: string) => ({
+      authorization: `Bearer ${jwt({ sub, exp: Math.floor(Date.now() / 1000) + 600 })}`,
+    });
+
+    const first = app.rpc(call, as('account-a'));
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect((await app.rpc(call, as('account-b'))).status).toBe(200);
+    expect((await first).status).toBe(200);
+  });
+
+  test('does not charge a body under the gate to an upload slot', async () => {
+    const app = await harness(
+      { uploadGateBytes: 256, maxUploadConcurrency: 1 },
+      { delayMs: 150 }
+    );
+
+    const small = {
+      jsonrpc: '2.0',
+      id: 8,
+      method: 'tools/call',
+      params: { name: 'get_current_user', arguments: {} },
+    };
+
+    const [a, b] = await Promise.all([app.rpc(small), app.rpc(small)]);
+    expect([a.status, b.status]).toEqual([200, 200]);
   });
 
   test('rejects malformed JSON with a JSON-RPC parse error', async () => {

@@ -22,6 +22,10 @@ export interface HttpConfig {
   rateLimitBurst: number;
   /** Largest accepted `application/json` request body, in bytes. */
   maxBodyBytes: number;
+  /** Uploads in flight per caller, before the endpoint answers 503. */
+  maxUploadConcurrency: number;
+  /** Body size at which a request is treated as an upload, in bytes. */
+  uploadGateBytes: number;
   /** Requests handled at once before the endpoint answers 503. */
   maxConcurrency: number;
   /** Deadline for one DYNO Mapper API call, in milliseconds. */
@@ -177,7 +181,16 @@ export function readHttpConfig(
     trustProxy: readBool(env, 'MCP_TRUST_PROXY', false),
     rateLimitPerMinute: readInt(env, ['MCP_RATE_LIMIT'], 60),
     rateLimitBurst: readInt(env, ['MCP_RATE_BURST'], 20),
-    maxBodyBytes: readInt(env, ['MCP_MAX_BODY_BYTES'], 256 * 1024),
+    // 96 MiB, because the largest file an upload accepts is 64 MB and base64
+    // spends four bytes to carry three: 64 MiB of file arrives as 87.4 MB of
+    // JSON, and the margin covers the envelope around it.
+    maxBodyBytes: readInt(env, ['MCP_MAX_BODY_BYTES'], 96 * 1024 * 1024),
+    // An upload holds the file several times over while it is decoded, typed
+    // and re-sent, so only a couple per caller may be in flight at once.
+    maxUploadConcurrency: readInt(env, ['MCP_MAX_UPLOAD_CONCURRENCY'], 2),
+    // Nothing but an upload carries this much argument, so a body this large
+    // can be charged to an upload slot before it is buffered.
+    uploadGateBytes: readInt(env, ['MCP_UPLOAD_GATE_BYTES'], 8 * 1024 * 1024),
     maxConcurrency: readInt(env, ['MCP_MAX_CONCURRENCY'], 100),
     // Below CloudFront's 30 second response timeout, so a slow call ends as a
     // tool error the agent can read rather than a 504 it cannot.

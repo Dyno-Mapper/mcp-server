@@ -30,7 +30,7 @@ export const get_inventory_link_occurrences = {
       .trim()
       .optional()
       .describe(
-        'Text to match against the anchor text this page used, the page title and the page URL, compared with SQL `LIKE`, so `%` and `_` act as wildcards rather than literal characters'
+        'Text to match against the anchor text this page used, the page title and the page URL, matched as a pattern in which `%` matches any run of characters and `_` matches one character'
       ),
   }),
   outputSchema: z.object({
@@ -95,7 +95,7 @@ export const get_inventory_link_occurrences = {
         })
       )
       .describe(
-        'The pages that reference the link. No sort is applied beyond the order the database returns, so do not rely on it between requests'
+        'The pages that reference the link. No ordering is guaranteed between requests'
       ),
   }),
   method: 'get',

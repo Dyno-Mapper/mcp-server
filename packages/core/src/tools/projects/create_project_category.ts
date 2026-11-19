@@ -7,7 +7,7 @@ export const create_project_category = {
     'Ensure a category exists. ' +
     'Makes sure a category of this name is visible to the account and answers it; a name that already exists returns the existing category and writes nothing. ' +
     'Names are trimmed and compared exactly, so case matters. ' +
-    'A new category is appended to the end of the list; a category a delete soft-deleted earlier is revived in its old place. ' +
+    'A new category is appended to the end of the list; one an earlier delete took out of the list comes back in the place it had. ' +
     'Duplicate names are allowed, so the account’s own visible category is preferred over a shared one. ' +
     'Read the full list with `get_project_categories`.',
   inputSchema: z.object({

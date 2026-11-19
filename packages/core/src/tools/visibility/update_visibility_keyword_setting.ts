@@ -42,7 +42,7 @@ export const update_visibility_keyword_setting = {
             .optional()
             .nullish()
             .describe(
-              'Why the keyword was skipped: `Cannot update keyword with existing stats` when it already has ranking history, `Keyword already exists with different locale and device` when another keyword of the project already occupies the target pair, or the database error code for any other failure. `null` when `updated` is `true`.'
+              'Why the keyword was skipped: `Cannot update keyword with existing stats` when it already has ranking history, `Keyword already exists with different locale and device` when another keyword of the project already occupies the target pair, or a machine-readable error code for any other failure. `null` when `updated` is `true`.'
             ),
         })
       )

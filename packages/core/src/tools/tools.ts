@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import type { UploadPart } from '../upload/source.js';
 import { get_current_user } from './account/get_current_user.js';
 import { get_projects } from './projects/get_projects.js';
 import { get_project_details } from './projects/get_project_details.js';
@@ -101,29 +103,108 @@ import { get_accessibility_report_item_result } from './accessibility/get_access
 import { get_accessibility_pdf_files } from './accessibility/get_accessibility_pdf_files.js';
 import { get_accessibility_pdf_guidelines } from './accessibility/get_accessibility_pdf_guidelines.js';
 import { get_accessibility_pdf_item_result } from './accessibility/get_accessibility_pdf_item_result.js';
+import { run_accessibility_pdf_upload_test } from './accessibility/run_accessibility_pdf_upload_test.js';
+import { run_accessibility_pdf_url_test } from './accessibility/run_accessibility_pdf_url_test.js';
+import { run_accessibility_pdf_sitemap_test } from './accessibility/run_accessibility_pdf_sitemap_test.js';
+import { get_accessibility_pdf_run } from './accessibility/get_accessibility_pdf_run.js';
+import { delete_accessibility_pdf_item } from './accessibility/delete_accessibility_pdf_item.js';
+import { refresh_accessibility_pdf_item } from './accessibility/refresh_accessibility_pdf_item.js';
+import { archive_accessibility_pdf_results } from './accessibility/archive_accessibility_pdf_results.js';
+import { unarchive_accessibility_pdf_results } from './accessibility/unarchive_accessibility_pdf_results.js';
+import { set_accessibility_pdf_result_note } from './accessibility/set_accessibility_pdf_result_note.js';
 import { get_accessibility_login_inputs } from './accessibility/get_accessibility_login_inputs.js';
 import { submit_accessibility_login_input } from './accessibility/submit_accessibility_login_input.js';
 import { upload_file } from './files/upload_file.js';
+import { store_content_image } from './content/store_content_image.js';
+import { get_content_images } from './content/get_content_images.js';
+import { delete_content_image } from './content/delete_content_image.js';
+import { store_content_file } from './content/store_content_file.js';
+import { get_content_files } from './content/get_content_files.js';
+import { delete_content_file } from './content/delete_content_file.js';
 import { get_assignments } from './assignments/get_assignments.js';
 import { get_project_assignments } from './assignments/get_project_assignments.js';
 import { get_assignments_totals } from './assignments/get_assignments_totals.js';
 import { get_project_assignments_totals } from './assignments/get_project_assignments_totals.js';
 import { get_assignment_details } from './assignments/get_assignment_details.js';
 
+/**
+ * Which artifact is serving the call.
+ *
+ * The two are not interchangeable: stdio runs on the caller's machine and can
+ * read its filesystem, a hosted server cannot. A tool that differs declares
+ * how, rather than having its differences kept in a table elsewhere.
+ */
+export type TransportMode = 'stdio' | 'hosted';
+
+/** What a tool is told about the call it is part of. */
+export interface ToolContext {
+  mode: TransportMode;
+  /**
+   * Budget for the whole call, in milliseconds. Set by the hosted transport
+   * only, where a call has a deadline its caller is waiting on.
+   */
+  timeoutMs?: number;
+}
+
+/** A call a tool prepared from its arguments. */
+export interface PreparedCall {
+  /** Arguments to send, which may differ from the ones the caller gave. */
+  args: any;
+  /** Bytes an upload sends, when the source was not a local path. */
+  upload?: UploadPart;
+  /** Where those bytes came from, for the operator's log line. */
+  source?: 'file' | 'content' | 'url';
+}
+
+/**
+ * Either a prepared call or the refusal to make one.
+ *
+ * A tool that has work to do before the API is called — resolving a file into
+ * bytes, say — reports a refusal as a result rather than as a thrown error,
+ * because a caller's bad file is a tool error, not a crash. A refusal still
+ * names which source was attempted, so the operator's line can say so.
+ */
+export type PrepareResult =
+  | PreparedCall
+  | { error: CallToolResult; source?: PreparedCall['source'] };
+
 export interface Tool {
   name: string;
   description: string;
-  inputSchema: z.ZodObject<any>;
+  /**
+   * The arguments this tool takes, per transport where they differ.
+   *
+   * A function is how a tool says it accepts different arguments depending on
+   * where it runs: `upload_file` takes a path on stdio and bytes on a hosted
+   * server. Everything else is one schema for both.
+   */
+  inputSchema: z.ZodObject<any> | ((mode: TransportMode) => z.ZodObject<any>);
   outputSchema: z.ZodObject<any>;
   method: string;
   path: string;
   /**
-   * `true` sends the file part next to a JSON `body` part (text and XML
-   * imports); `'fields'` sends every argument as its own form field next to
-   * the file (uploads). A `true` tool called without a file sends a plain
-   * JSON body instead.
+   * `'fields'` sends every argument as its own form field next to the file,
+   * which is the shape an upload expects. Uploads are the only calls that
+   * take a file: an import names a key the upload returned instead.
    */
-  multipart?: boolean | 'fields';
+  multipart?: 'fields';
+  /**
+   * Resolves arguments before the call is made.
+   *
+   * `upload_file` uses it to turn base64 or a URL into the bytes an upload
+   * sends. A tool without one sends its arguments as the caller gave them.
+   */
+  prepare?: (args: any, context: ToolContext) => Promise<PrepareResult>;
+}
+
+/** The input schema a tool offers on one transport. */
+export function inputSchemaFor(
+  tool: Tool,
+  mode: TransportMode = 'stdio'
+): z.ZodObject<any> {
+  return typeof tool.inputSchema === 'function'
+    ? tool.inputSchema(mode)
+    : tool.inputSchema;
 }
 
 export const tools: Record<string, Tool> = {
@@ -233,9 +314,25 @@ export const tools: Record<string, Tool> = {
   get_accessibility_pdf_files: get_accessibility_pdf_files as any,
   get_accessibility_pdf_guidelines: get_accessibility_pdf_guidelines as any,
   get_accessibility_pdf_item_result: get_accessibility_pdf_item_result as any,
+  run_accessibility_pdf_upload_test: run_accessibility_pdf_upload_test as any,
+  run_accessibility_pdf_url_test: run_accessibility_pdf_url_test as any,
+  run_accessibility_pdf_sitemap_test: run_accessibility_pdf_sitemap_test as any,
+  get_accessibility_pdf_run: get_accessibility_pdf_run as any,
+  delete_accessibility_pdf_item: delete_accessibility_pdf_item as any,
+  refresh_accessibility_pdf_item: refresh_accessibility_pdf_item as any,
+  archive_accessibility_pdf_results: archive_accessibility_pdf_results as any,
+  unarchive_accessibility_pdf_results:
+    unarchive_accessibility_pdf_results as any,
+  set_accessibility_pdf_result_note: set_accessibility_pdf_result_note as any,
   get_accessibility_login_inputs: get_accessibility_login_inputs as any,
   submit_accessibility_login_input: submit_accessibility_login_input as any,
   upload_file: upload_file as any,
+  store_content_image: store_content_image as any,
+  get_content_images: get_content_images as any,
+  delete_content_image: delete_content_image as any,
+  store_content_file: store_content_file as any,
+  get_content_files: get_content_files as any,
+  delete_content_file: delete_content_file as any,
   get_assignments: get_assignments as any,
   get_project_assignments: get_project_assignments as any,
   get_assignments_totals: get_assignments_totals as any,

@@ -9,8 +9,8 @@ export const update_project_sitemap_item = {
   name: 'update_project_sitemap_item',
   description:
     'Update a sitemap item. ' +
-    'Changes the fields an item carries. Only the fields sent are written, so this is safe to use for a rename as well as for a full edit; `url: null` turns the item into a container and `category: null` or `workflowStatus: null` clears them. ' +
-    'Sending `url` re-derives the item’s type, and editing the root’s URL also rewrites the project’s domain. ' +
+    'Changes the fields an item carries. Only the fields sent are written, so this is safe to use for a rename as well as for a full edit, and a title change is recorded as a `renameTitle` step even when it is sent with other fields; `url: null` turns the item into a container and `category: null` or `workflowStatus: null` clears them. ' +
+    'Sending `url` re-derives the item’s type, and editing the root’s URL also rewrites the project’s domain, and its `image_url` unless the project was crawled. ' +
     '`pathMode` sets the address scheme, with `slug` or `staticUrl`; sending it again retries an address that was not saved, and `linkPathSaved` reports whether it was. ' +
     'The write is one undo step, reversible with `undo_project_sitemap_edit`. ' +
     'The response is the item as `get_project_sitemap_item_details` returns it.',
@@ -29,7 +29,7 @@ export const update_project_sitemap_item = {
       .nullable()
       .optional()
       .describe(
-        'Address the item points at, stored verbatim — no trimming, no validation, no de-duplication, so two items may share one URL. Sending `null` or an empty string turns the item into a container; sending a URL turns it into a link and records the URL’s MD5 for the application’s own lookups.'
+        'Address the item points at, stored verbatim — no trimming, no validation, no de-duplication, so two items may share one URL. Sending `null` or an empty string turns the item into a container; sending a URL turns it into a link.'
       ),
     category: z
       .number()

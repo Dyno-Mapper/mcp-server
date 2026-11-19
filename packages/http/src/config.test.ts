@@ -56,3 +56,43 @@ describe('MCP_AUTHORIZATION_SERVER', () => {
     ).toThrow(/MCP_AUTHORIZATION_SERVER/);
   });
 });
+
+describe('upload settings', () => {
+  test('frames a 64 MB file, which base64 sends as 87.4 MB of JSON', () => {
+    // The largest file any purpose accepts, plus the room the base64 envelope
+    // needs on top of it. A limit below this refuses the biggest uploads with
+    // a 413 rather than accepting them.
+    const largestFile = 64 * 1024 * 1024;
+    const needed = Math.ceil((largestFile * 4) / 3);
+
+    expect(readHttpConfig({}).maxBodyBytes).toBeGreaterThan(needed);
+  });
+
+  test('allows two uploads per caller and charges one above 8 MiB', () => {
+    const config = readHttpConfig({});
+
+    expect(config.maxUploadConcurrency).toBe(2);
+    expect(config.uploadGateBytes).toBe(8 * 1024 * 1024);
+  });
+
+  test('reads the overrides an operator is likely to set', () => {
+    const config = readHttpConfig({
+      MCP_MAX_BODY_BYTES: '1048576',
+      MCP_MAX_UPLOAD_CONCURRENCY: '1',
+      MCP_UPLOAD_GATE_BYTES: '1024',
+    });
+
+    expect(config.maxBodyBytes).toBe(1_048_576);
+    expect(config.maxUploadConcurrency).toBe(1);
+    expect(config.uploadGateBytes).toBe(1024);
+  });
+
+  test('refuses a value that cannot mean what it says', () => {
+    expect(() => readHttpConfig({ MCP_MAX_UPLOAD_CONCURRENCY: '0' })).toThrow(
+      /MCP_MAX_UPLOAD_CONCURRENCY/
+    );
+    expect(() => readHttpConfig({ MCP_UPLOAD_GATE_BYTES: 'lots' })).toThrow(
+      /MCP_UPLOAD_GATE_BYTES/
+    );
+  });
+});

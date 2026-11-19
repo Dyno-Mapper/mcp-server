@@ -131,69 +131,6 @@ describe('ApiHelper.handleToolRequest', () => {
     expect(errorData.message).toBe('Item not found');
   });
 
-  test('should send a JSON body for multiPart: true when no file is given', async () => {
-    const mockResponse = {
-      data: { success: true, id: 1 },
-      status: 201,
-      config: { headers: {} },
-    };
-
-    mockClient.request.mockImplementationOnce(async (config: any) => {
-      expect(config.method).toBe('POST');
-      expect(config.url).toBe('/v1/project/text');
-      // No file means one source only, so the request goes out as JSON
-      // instead of multipart: a file part plus a body source is refused.
-      expect(config.data instanceof FormData).toBe(false);
-      expect(config.data).toEqual({
-        url: 'https://example.com/urllist.txt',
-      });
-      expect(config.headers['Content-Type']).toBe('application/json');
-
-      return { ...mockResponse, config };
-    });
-
-    const result = await apiHelper.handleToolRequest(
-      'POST',
-      '/v1/project/{type}',
-      {
-        type: 'text',
-        url: 'https://example.com/urllist.txt',
-      },
-      undefined,
-      true
-    );
-
-    expect(result.isError).toBeUndefined();
-    const data = JSON.parse((result.content[0] as any).text);
-    expect(data).toEqual(mockResponse.data);
-  });
-
-  test('should send a JSON body when only a fileKey is given', async () => {
-    const mockResponse = {
-      data: { success: true, id: 2 },
-      status: 201,
-      config: { headers: {} },
-    };
-
-    mockClient.request.mockImplementationOnce(async (config: any) => {
-      expect(config.data instanceof FormData).toBe(false);
-      expect(config.data).toEqual({
-        fileKey: 'uploads/api/project_text/b2/file.txt',
-      });
-      return { ...mockResponse, config };
-    });
-
-    const result = await apiHelper.handleToolRequest(
-      'POST',
-      '/v1/project/{type}',
-      { type: 'text', fileKey: 'uploads/api/project_text/b2/file.txt' },
-      undefined,
-      true
-    );
-
-    expect(result.isError).toBeUndefined();
-  });
-
   test('should send each argument as a form field for multiPart: fields', async () => {
     const mockResponse = {
       data: { key: 'uploads/api/project_text/b2/file.txt' },
@@ -225,12 +162,52 @@ describe('ApiHelper.handleToolRequest', () => {
       '/v1/files',
       { purpose: 'project_text', file: '/tmp/test.txt' },
       undefined,
-      'fields'
+      { multipart: 'fields' }
     );
 
     expect(result.isError).toBeUndefined();
     const data = JSON.parse((result.content[0] as any).text);
     expect(data).toEqual(mockResponse.data);
+  });
+
+  test('should send resolved bytes as the file part', async () => {
+    const mockResponse = {
+      data: { key: 'uploads/api/sitemap_content_image/b2/logo.png' },
+      status: 201,
+      config: { headers: {} },
+    };
+
+    mockClient.request.mockImplementationOnce(async (config: any) => {
+      const formData = config.data as FormData;
+      expect(formData.get('purpose')).toBe('sitemap_content_image');
+
+      // No path to read: the bytes arrived some other way — base64 the caller
+      // sent, or a URL this server fetched — and are sent on as they are.
+      const file = formData.get('file') as any;
+      expect(file.name).toBe('logo.png');
+      expect(file.type).toBe('image/png');
+      expect(await file.text()).toBe('bytes the caller sent');
+      expect(config.headers['Content-Type']).toBeUndefined();
+
+      return { ...mockResponse, config };
+    });
+
+    const result = await apiHelper.handleToolRequest(
+      'POST',
+      '/v1/files',
+      { purpose: 'sitemap_content_image' },
+      undefined,
+      {
+        multipart: 'fields',
+        upload: {
+          bytes: Buffer.from('bytes the caller sent'),
+          name: 'logo.png',
+          mimeType: 'image/png',
+        },
+      }
+    );
+
+    expect(result.isError).toBeUndefined();
   });
 
   test('should return an error when multiPart: fields has a missing file', async () => {
@@ -239,106 +216,7 @@ describe('ApiHelper.handleToolRequest', () => {
       '/v1/files',
       { purpose: 'project_text', file: '/tmp/non-existent.txt' },
       undefined,
-      'fields'
-    );
-
-    expect(result.isError).toBe(true);
-    const errorData = JSON.parse((result.content[0] as any).text);
-    expect(errorData.error).toBe('File not found');
-    expect(errorData.message).toContain('/tmp/non-existent.txt');
-  });
-
-  test('should handle successful POST request with multiPart: true and file', async () => {
-    const mockResponse = {
-      data: { success: true, id: 2 },
-      status: 201,
-      config: { headers: {} },
-    };
-
-    mockClient.request.mockImplementationOnce(async (config: any) => {
-      expect(config.method).toBe('POST');
-      expect(config.url).toBe('/v1/project/text');
-      expect(config.data instanceof FormData).toBe(true);
-
-      const formData = config.data as FormData;
-      expect(formData.has('file')).toBe(true);
-      expect(formData.has('body')).toBe(true);
-
-      const file = formData.get('file') as any;
-      expect(file.name).toBe('test.txt');
-      expect(file.type).toBe('text/plain');
-
-      const body = JSON.parse(await (formData.get('body') as File).text());
-      expect(body.speed).toBe('slowest');
-
-      return { ...mockResponse, config };
-    });
-
-    const result = await apiHelper.handleToolRequest(
-      'POST',
-      '/v1/project/{type}',
-      {
-        type: 'text',
-        file: '/tmp/test.txt',
-        speed: 'slowest',
-      },
-      undefined,
-      true
-    );
-
-    expect(result.isError).toBeUndefined();
-    const data = JSON.parse((result.content[0] as any).text);
-    expect(data).toEqual(mockResponse.data);
-  });
-
-  test('should handle successful POST request with multiPart: true and xml file', async () => {
-    const mockResponse = {
-      data: { success: true, id: 3 },
-      status: 201,
-      config: { headers: {} },
-    };
-
-    mockClient.request.mockImplementationOnce(async (config: any) => {
-      expect(config.method).toBe('POST');
-      expect(config.url).toBe('/v1/project/xml');
-      expect(config.data instanceof FormData).toBe(true);
-
-      const formData = config.data as FormData;
-      expect(formData.has('file')).toBe(true);
-
-      const file = formData.get('file') as any;
-      expect(file.name).toBe('test.xml');
-      expect(file.type).toBe('application/xml');
-
-      return { ...mockResponse, config };
-    });
-
-    const result = await apiHelper.handleToolRequest(
-      'POST',
-      '/v1/project/{type}',
-      {
-        type: 'xml',
-        file: '/tmp/test.xml',
-      },
-      undefined,
-      true
-    );
-
-    expect(result.isError).toBeUndefined();
-    const data = JSON.parse((result.content[0] as any).text);
-    expect(data).toEqual(mockResponse.data);
-  });
-
-  test('should return error when multiPart: true and file property is set but file not found', async () => {
-    const result = await apiHelper.handleToolRequest(
-      'POST',
-      '/v1/project/{type}',
-      {
-        type: 'text',
-        file: '/tmp/non-existent.txt',
-      },
-      undefined,
-      true
+      { multipart: 'fields' }
     );
 
     expect(result.isError).toBe(true);

@@ -9,8 +9,9 @@ An [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server for th
 - **Project Management**: Create, list, and manage sitemap projects.
 - **Sitemap Editing**: Add, edit, move, duplicate, sort, and delete pages and containers, with undo and redo.
 - **Content Blocks**: Read and replace the content blocks of a sitemap page.
+- **Page Content Assets**: Store the images and files that a page's blocks point at.
 - **Comments**: Read a project's comment feed and post, edit, or delete comments.
-- **Accessibility Auditing**: Run and retrieve accessibility reports (WCAG 2.1/2.2).
+- **Accessibility Auditing**: Run and retrieve accessibility reports (WCAG 2.1/2.2), including audits of the PDFs a site serves.
 - **Inventory & Audit**: Get detailed site inventory and SEO audit results.
 - **Analytics Integration**: Access project-level and page-level analytics.
 - **Content Assignments**: Manage content assignments and workflow statuses.
@@ -101,118 +102,133 @@ project and needs no id, and it answers the account the token belongs to.
 
 The following tools are available through this MCP server:
 
-| Tool                                   | Description                                                                       |
-| -------------------------------------- | --------------------------------------------------------------------------------- |
-| `get_current_user`                     | Get current user information and account details                                  |
-| `get_projects`                         | Get a list of projects                                                            |
-| `get_project_details`                  | Get the details of a project                                                      |
-| `create_project_from_url`              | Create a Project from URL                                                         |
-| `create_project_from_sharepoint`       | Create a private Project from a SharePoint team site                              |
-| `create_project_from_scratch`          | Create an empty project to build by hand                                          |
-| `create_project_from_file`             | Create a Project from a text or xml file, or from a key returned by `upload_file` |
-| `upload_file`                          | Upload a text or XML source and get the key an import accepts                     |
-| `get_project_url_job_status`           | Get Project job status created by URL                                             |
-| `get_project_file_job_status`          | Get status of project job created from text or xml file                           |
-| `cancel_project_url_job`               | Cancel Project job created by URL                                                 |
-| `cancel_project_file_job`              | Cancel project job created from text or xml file                                  |
-| `refresh_project_url`                  | Refresh Project created by URL                                                    |
-| `refresh_project_file`                 | Refresh Project created from text or xml file                                     |
-| `cancel_project_url_refresh`           | Cancel Project refresh created by URL                                             |
-| `cancel_project_file_refresh`          | Cancel project refresh job created from text or xml file                          |
-| `get_project_sitemap_items`            | Get the sitemap items of a project                                                |
-| `get_project_sitemap_item_details`     | Get the details of a specific sitemap item in a project                           |
-| `create_project_sitemap_item`          | Add a page or container to the sitemap                                            |
-| `bulk_update_project_sitemap_items`    | Assign a category, status, tags or colors to several items                        |
-| `update_project_sitemap_item`          | Edit a page or container                                                          |
-| `delete_project_sitemap_item`          | Delete an item and its subtree                                                    |
-| `bulk_delete_project_sitemap_items`    | Delete several items in one call                                                  |
-| `move_project_sitemap_item`            | Reparent or reposition an item                                                    |
-| `bulk_move_project_sitemap_items`      | Move several items in one call                                                    |
-| `duplicate_project_sitemap_item`       | Copy an item and its direct children                                              |
-| `sort_project_sitemap_items`           | Sort the children of a container                                                  |
-| `get_project_sitemap_undo`             | Inspect the next undo                                                             |
-| `undo_project_sitemap_edit`            | Undo the last sitemap edit                                                        |
-| `get_project_sitemap_redo`             | Inspect the next redo                                                             |
-| `redo_project_sitemap_edit`            | Redo the last undone edit                                                         |
-| `get_project_sitemap_item_content`     | List an item's content blocks                                                     |
-| `replace_project_sitemap_item_content` | Replace an item's content blocks                                                  |
-| `get_project_categories`               | Get the list of project categories                                                |
-| `create_project_category`              | Create or restore a category                                                      |
-| `update_project_category`              | Rename or recolour a category                                                     |
-| `delete_project_category`              | Delete a category, or hide a shared one                                           |
-| `move_project_category`                | Move a category among its siblings                                                |
-| `get_project_workflow_statuses`        | Get the list of project workflow statuses                                         |
-| `create_project_workflow_status`       | Create or restore a workflow status                                               |
-| `update_project_workflow_status`       | Rename or recolour a workflow status                                              |
-| `delete_project_workflow_status`       | Delete a workflow status, or hide a built-in one                                  |
-| `move_project_workflow_status`         | Move a workflow status among its siblings                                         |
-| `get_project_groups`                   | Get the list of project groups                                                    |
-| `get_project_custom_logins`            | Get the list of custom login definitions                                          |
-| `test_project_custom_login`            | Test custom login                                                                 |
-| `get_project_custom_login_test_result` | Get custom login test result                                                      |
-| `get_project_vacq_score`               | Get the VACQ (Accessibility, Content Quality, Visibility) score for a project     |
-| `get_project_dacq_score`               | Get the DACQ score of a private SharePoint project                                |
-| `get_project_login_inputs`             | List the sign-in prompts a crawl is waiting on                                    |
-| `submit_project_login_input`           | Submit the value of a crawl's sign-in prompt                                      |
-| `get_inventory`                        | Get inventory of a project                                                        |
-| `get_inventory_summary`                | Get inventory summary of a project                                                |
-| `get_inventory_item_links`             | Get links of a project sitemap item                                               |
-| `get_inventory_link_occurrences`       | Get occurrences of a link in inventory                                            |
-| `get_audit_results`                    | Get audit results of a project                                                    |
-| `get_audit_score`                      | Get audit score of a project                                                      |
-| `get_audit_broken_links`               | Get broken links audit of a project                                               |
-| `get_audit_client_error`               | Get client errors audit of a project                                              |
-| `get_audit_duplicate_title`            | Get duplicate title audit of a project                                            |
-| `get_audit_missing_title`              | Get missing title audit of a project                                              |
-| `get_audit_long_title`                 | Get long title audit of a project                                                 |
-| `get_audit_duplicate_description`      | Get duplicate description audit of a project                                      |
-| `get_audit_missing_description`        | Get missing description audit of a project                                        |
-| `get_audit_long_description`           | Get long description audit of a project                                           |
-| `get_audit_non_crawlable`              | Get non-crawlable pages audit of a project                                        |
-| `get_audit_non_indexable`              | Get non-indexable pages audit of a project                                        |
-| `get_audit_orphan_pages`               | Get orphan pages audit of a project                                               |
-| `get_analytics_project`                | Get analytics of a project                                                        |
-| `get_analytics_project_daily`          | Get analytics daily data                                                          |
-| `get_analytics_project_traffic_source` | Get traffic sources                                                               |
-| `get_analytics_project_events`         | Get events                                                                        |
-| `get_analytics_project_pages`          | Get analytics of project pages                                                    |
-| `get_analytics_sitemap_item`           | Get analytics of a sitemap item                                                   |
-| `get_analytics_sitemap_item_daily`     | Get analytics daily data of a sitemap item                                        |
-| `get_commented_items`                  | Get commented items for a project                                                 |
-| `get_all_project_comments`             | Get every comment in a project                                                    |
-| `get_item_comments`                    | Get item comments                                                                 |
-| `create_item_comment`                  | Comment on an item                                                                |
-| `update_item_comment`                  | Edit a comment                                                                    |
-| `delete_item_comment`                  | Delete a comment                                                                  |
-| `get_visibility_project_ranking`       | Get keywords ranking of a project                                                 |
-| `get_visibility_project_score`         | Get keywords score of a project                                                   |
-| `get_visibility_project_groups`        | Get keyword groups                                                                |
-| `get_visibility_keyword_ranking`       | Get daily ranking of a keyword in a project                                       |
-| `get_visibility_locales`               | Get visibility locales                                                            |
-| `create_visibility_keyword_group`      | Create a keyword group                                                            |
-| `delete_visibility_keyword_group`      | Delete a keyword group                                                            |
-| `create_visibility_keywords`           | Create visibility keywords                                                        |
-| `update_visibility_keywords_group`     | Update keyword groups for a project keyword                                       |
-| `update_visibility_keyword_setting`    | Update settings for a project keyword                                             |
-| `run_accessibility_checker`            | Run accessibility checker on a project                                            |
-| `get_accessibility_results`            | Get accessibility results of a project                                            |
-| `get_accessibility_login_inputs`       | List the sign-in prompts an accessibility run is waiting on                       |
-| `submit_accessibility_login_input`     | Submit the value of an accessibility run's sign-in prompt                         |
-| `delete_accessibility_report`          | Delete accessibility results of a project                                         |
-| `get_accessibility_report_items`       | Get accessibility report items                                                    |
-| `get_accessibility_history`            | Get results history of a project on a specified date range                        |
-| `get_accessibility_score`              | Get accessibility score of a project                                              |
-| `get_accessibility_report_problems`    | Get accessibility report problems                                                 |
-| `get_accessibility_report_groups`      | Get accessibility report groups and subgroups                                     |
-| `get_accessibility_report_item_result` | Get accessibility report item result                                              |
-| `get_accessibility_pdf_files`          | List PDF accessibility files                                                      |
-| `get_accessibility_pdf_guidelines`     | List PDF accessibility guidelines                                                 |
-| `get_accessibility_pdf_item_result`    | Get PDF accessibility item result                                                 |
-| `get_assignments`                      | Get a paginated list of assignments                                               |
-| `get_project_assignments`              | Get a paginated list of assignments by project                                    |
-| `get_assignments_totals`               | Get assignment totals                                                             |
-| `get_project_assignments_totals`       | Get assignment totals by project                                                  |
-| `get_assignment_details`               | Get an assignment by id                                                           |
+| Tool                                   | Description                                                                   |
+| -------------------------------------- | ----------------------------------------------------------------------------- |
+| `get_current_user`                     | Get current user information and account details                              |
+| `get_projects`                         | Get a list of projects                                                        |
+| `get_project_details`                  | Get the details of a project                                                  |
+| `create_project_from_url`              | Create a Project from URL                                                     |
+| `create_project_from_sharepoint`       | Create a private Project from a SharePoint team site                          |
+| `create_project_from_scratch`          | Create an empty project to build by hand                                      |
+| `create_project_from_file`             | Create a Project from a text or xml source, by key or URL                     |
+| `upload_file`                          | Upload a file and get the key another call accepts                            |
+| `get_project_url_job_status`           | Get Project job status created by URL                                         |
+| `get_project_file_job_status`          | Get status of project job created from text or xml file                       |
+| `cancel_project_url_job`               | Cancel Project job created by URL                                             |
+| `cancel_project_file_job`              | Cancel project job created from text or xml file                              |
+| `refresh_project_url`                  | Refresh Project created by URL                                                |
+| `refresh_project_file`                 | Refresh Project created from text or xml file                                 |
+| `cancel_project_url_refresh`           | Cancel Project refresh created by URL                                         |
+| `cancel_project_file_refresh`          | Cancel project refresh job created from text or xml file                      |
+| `get_project_sitemap_items`            | Get the sitemap items of a project                                            |
+| `get_project_sitemap_item_details`     | Get the details of a specific sitemap item in a project                       |
+| `create_project_sitemap_item`          | Add a page or container to the sitemap                                        |
+| `bulk_update_project_sitemap_items`    | Assign a category, status, tags or colors to several items                    |
+| `update_project_sitemap_item`          | Edit a page or container                                                      |
+| `delete_project_sitemap_item`          | Delete an item and its subtree                                                |
+| `bulk_delete_project_sitemap_items`    | Delete several items in one call                                              |
+| `move_project_sitemap_item`            | Reparent or reposition an item                                                |
+| `bulk_move_project_sitemap_items`      | Move several items in one call                                                |
+| `duplicate_project_sitemap_item`       | Copy an item and its direct children                                          |
+| `sort_project_sitemap_items`           | Sort the children of a container                                              |
+| `get_project_sitemap_undo`             | Inspect the next undo                                                         |
+| `undo_project_sitemap_edit`            | Undo the last sitemap edit                                                    |
+| `get_project_sitemap_redo`             | Inspect the next redo                                                         |
+| `redo_project_sitemap_edit`            | Redo the last undone edit                                                     |
+| `get_project_sitemap_item_content`     | List an item's content blocks                                                 |
+| `replace_project_sitemap_item_content` | Replace an item's content blocks                                              |
+| `store_content_image`                  | Store an uploaded image for a page to point at                                |
+| `get_content_images`                   | List the images a project has stored                                          |
+| `delete_content_image`                 | Delete a stored image                                                         |
+| `store_content_file`                   | Store an uploaded file for a page to link to                                  |
+| `get_content_files`                    | List the files a project has stored                                           |
+| `delete_content_file`                  | Delete a stored file                                                          |
+| `get_project_categories`               | Get the list of project categories                                            |
+| `create_project_category`              | Create or restore a category                                                  |
+| `update_project_category`              | Rename or recolour a category                                                 |
+| `delete_project_category`              | Delete a category, or hide a shared one                                       |
+| `move_project_category`                | Move a category among its siblings                                            |
+| `get_project_workflow_statuses`        | Get the list of project workflow statuses                                     |
+| `create_project_workflow_status`       | Create or restore a workflow status                                           |
+| `update_project_workflow_status`       | Rename or recolour a workflow status                                          |
+| `delete_project_workflow_status`       | Delete a workflow status, or hide a built-in one                              |
+| `move_project_workflow_status`         | Move a workflow status among its siblings                                     |
+| `get_project_groups`                   | Get the list of project groups                                                |
+| `get_project_custom_logins`            | Get the list of custom login definitions                                      |
+| `test_project_custom_login`            | Test custom login                                                             |
+| `get_project_custom_login_test_result` | Get custom login test result                                                  |
+| `get_project_vacq_score`               | Get the VACQ (Accessibility, Content Quality, Visibility) score for a project |
+| `get_project_dacq_score`               | Get the DACQ score of a private SharePoint project                            |
+| `get_project_login_inputs`             | List the sign-in prompts a crawl is waiting on                                |
+| `submit_project_login_input`           | Submit the value of a crawl's sign-in prompt                                  |
+| `get_inventory`                        | Get inventory of a project                                                    |
+| `get_inventory_summary`                | Get inventory summary of a project                                            |
+| `get_inventory_item_links`             | Get links of a project sitemap item                                           |
+| `get_inventory_link_occurrences`       | Get occurrences of a link in inventory                                        |
+| `get_audit_results`                    | Get audit results of a project                                                |
+| `get_audit_score`                      | Get audit score of a project                                                  |
+| `get_audit_broken_links`               | Get broken links audit of a project                                           |
+| `get_audit_client_error`               | Get client errors audit of a project                                          |
+| `get_audit_duplicate_title`            | Get duplicate title audit of a project                                        |
+| `get_audit_missing_title`              | Get missing title audit of a project                                          |
+| `get_audit_long_title`                 | Get long title audit of a project                                             |
+| `get_audit_duplicate_description`      | Get duplicate description audit of a project                                  |
+| `get_audit_missing_description`        | Get missing description audit of a project                                    |
+| `get_audit_long_description`           | Get long description audit of a project                                       |
+| `get_audit_non_crawlable`              | Get non-crawlable pages audit of a project                                    |
+| `get_audit_non_indexable`              | Get non-indexable pages audit of a project                                    |
+| `get_audit_orphan_pages`               | Get orphan pages audit of a project                                           |
+| `get_analytics_project`                | Get analytics of a project                                                    |
+| `get_analytics_project_daily`          | Get analytics daily data                                                      |
+| `get_analytics_project_traffic_source` | Get traffic sources                                                           |
+| `get_analytics_project_events`         | Get events                                                                    |
+| `get_analytics_project_pages`          | Get analytics of project pages                                                |
+| `get_analytics_sitemap_item`           | Get analytics of a sitemap item                                               |
+| `get_analytics_sitemap_item_daily`     | Get analytics daily data of a sitemap item                                    |
+| `get_commented_items`                  | Get commented items for a project                                             |
+| `get_all_project_comments`             | Get every comment in a project                                                |
+| `get_item_comments`                    | Get item comments                                                             |
+| `create_item_comment`                  | Comment on an item                                                            |
+| `update_item_comment`                  | Edit a comment                                                                |
+| `delete_item_comment`                  | Delete a comment                                                              |
+| `get_visibility_project_ranking`       | Get keywords ranking of a project                                             |
+| `get_visibility_project_score`         | Get keywords score of a project                                               |
+| `get_visibility_project_groups`        | Get keyword groups                                                            |
+| `get_visibility_keyword_ranking`       | Get daily ranking of a keyword in a project                                   |
+| `get_visibility_locales`               | Get visibility locales                                                        |
+| `create_visibility_keyword_group`      | Create a keyword group                                                        |
+| `delete_visibility_keyword_group`      | Delete a keyword group                                                        |
+| `create_visibility_keywords`           | Create visibility keywords                                                    |
+| `update_visibility_keywords_group`     | Update keyword groups for a project keyword                                   |
+| `update_visibility_keyword_setting`    | Update settings for a project keyword                                         |
+| `run_accessibility_checker`            | Run accessibility checker on a project                                        |
+| `get_accessibility_results`            | Get accessibility results of a project                                        |
+| `get_accessibility_login_inputs`       | List the sign-in prompts an accessibility run is waiting on                   |
+| `submit_accessibility_login_input`     | Submit the value of an accessibility run's sign-in prompt                     |
+| `delete_accessibility_report`          | Delete accessibility results of a project                                     |
+| `get_accessibility_report_items`       | Get accessibility report items                                                |
+| `get_accessibility_history`            | Get results history of a project on a specified date range                    |
+| `get_accessibility_score`              | Get accessibility score of a project                                          |
+| `get_accessibility_report_problems`    | Get accessibility report problems                                             |
+| `get_accessibility_report_groups`      | Get accessibility report groups and subgroups                                 |
+| `get_accessibility_report_item_result` | Get accessibility report item result                                          |
+| `get_accessibility_pdf_files`          | List PDF accessibility files                                                  |
+| `get_accessibility_pdf_guidelines`     | List PDF accessibility guidelines                                             |
+| `get_accessibility_pdf_item_result`    | Get PDF accessibility item result                                             |
+| `run_accessibility_pdf_upload_test`    | Audit an uploaded PDF                                                         |
+| `run_accessibility_pdf_url_test`       | Audit PDFs named by URL                                                       |
+| `run_accessibility_pdf_sitemap_test`   | Audit the PDFs found on a project                                             |
+| `get_accessibility_pdf_run`            | Get one PDF audit run                                                         |
+| `delete_accessibility_pdf_item`        | Delete an audited PDF file                                                    |
+| `refresh_accessibility_pdf_item`       | Re-audit one PDF file                                                         |
+| `archive_accessibility_pdf_results`    | Archive PDF findings                                                          |
+| `unarchive_accessibility_pdf_results`  | Restore archived PDF findings                                                 |
+| `set_accessibility_pdf_result_note`    | Set the note on an archived PDF finding                                       |
+| `get_assignments`                      | Get a paginated list of assignments                                           |
+| `get_project_assignments`              | Get a paginated list of assignments by project                                |
+| `get_assignments_totals`               | Get assignment totals                                                         |
+| `get_project_assignments_totals`       | Get assignment totals by project                                              |
+| `get_assignment_details`               | Get an assignment by id                                                       |
 
 ## Workflows
 
@@ -236,7 +252,7 @@ Most tools stand alone. These sequences do not, and the calls only make sense in
 3. Poll `get_project_file_job_status` as above.
 
 Keys are account-scoped and not consumed, so one upload can back several imports. A project created
-from a file or a key cannot be refreshed — send a `url` when you need `refresh_project_file` later.
+from a key cannot be refreshed — send a `url` when you need `refresh_project_file` later.
 
 ### Create a project by hand
 
@@ -290,6 +306,21 @@ different prompt.
    `bulk_delete_project_sitemap_items` remove a subtree, and `undo_project_sitemap_edit` restores
    it. Inspect the next step with `get_project_sitemap_undo`, and replay an undone step with
    `redo_project_sitemap_edit` after checking `get_project_sitemap_redo`.
+
+### Store an image for a page
+
+1. `upload_file` with `purpose: 'sitemap_content_image'` stores the picture and returns a `key`.
+2. `store_content_image` with that key copies it into the project's image store and answers the
+   public `url`. Uploading alone does not: until the key is used, the upload waits in staging and
+   expires there.
+3. Put the `url` in the `properties.imageUrl` of an `image` block, or in an `<img>` element of
+   a `richtext` block, and write the page with `replace_project_sitemap_item_content`.
+
+Files work the same way, with `purpose: 'sitemap_content_file'`, `store_content_file` and a
+`file` block's `properties.url` and `properties.name`. `get_content_images` and
+`get_content_files` list what a project already holds, so a caller can offer a choice instead of
+another upload. The two deletes remove an address that a page may still point at, because nothing
+counts the references, so change the block in the same round.
 
 ## Changelog
 

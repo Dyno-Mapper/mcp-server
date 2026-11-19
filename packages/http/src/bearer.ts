@@ -6,6 +6,7 @@
  * that must happen before an API call: is a token present at all, and has it
  * visibly expired.
  */
+import { createHash } from 'node:crypto';
 import { resourceMetadataUrl } from './protected-resource.js';
 
 const BEARER = /^Bearer\s+(\S+)$/i;
@@ -57,6 +58,49 @@ export function isExpiredJwt(token: string, now = Date.now()): boolean {
   }
 
   return exp * 1000 <= now;
+}
+
+/**
+ * A stable key for one caller, for the limits that are per account.
+ *
+ * The token itself is never the key: it is a credential, and a map filled with
+ * credentials is a map worth stealing. What is keyed is either the `sub` a JWT
+ * already carries — the account, which is what "per caller" means — or a digest
+ * of an opaque personal access token, which stands in for one. Hashed rather
+ * than stored so two callers' tokens cannot be compared from a heap dump, and
+ * prefixed so a subject and a digest cannot collide.
+ *
+ * `sub` is not verified for the same reason `exp` is not: this process holds no
+ * signing key and the API decides whether a token is genuine. Using a forged
+ * subject can only give the caller a private bucket of its own, which is
+ * exactly what a genuine subject gives it.
+ */
+export function callerIdentity(token: string): string {
+  const subject = jwtSubject(token);
+
+  if (subject) {
+    return `sub:${subject}`;
+  }
+
+  return `token:${createHash('sha256').update(token).digest('hex')}`;
+}
+
+/** The `sub` of a token that is a decodable JWT carrying one. */
+function jwtSubject(token: string): string | undefined {
+  const parts = token.split('.');
+  if (parts.length !== 3) {
+    return undefined;
+  }
+
+  let claims: unknown;
+  try {
+    claims = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+  } catch {
+    return undefined;
+  }
+
+  const sub = (claims as { sub?: unknown } | null)?.sub;
+  return typeof sub === 'string' && sub.length > 0 ? sub : undefined;
 }
 
 /**

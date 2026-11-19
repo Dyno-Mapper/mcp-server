@@ -6,7 +6,7 @@ export const update_project_category = {
   description:
     'Update a project category. ' +
     'Renames a category, sets or clears its color, or both; only the fields sent are written, and `color: null` removes the color. ' +
-    'Renaming a shared category answers 409 because the row belongs to every account — create one with `create_project_category` instead. ' +
+    'Renaming a shared category answers 409 because it is every other account’s category too — create one with `create_project_category` instead. ' +
     'Renaming does not touch the items carrying the category: they store the id and follow the new name. ' +
     'Sending neither field answers 400 `nothing_to_update`. ' +
     'Read the result with `get_project_categories`.',

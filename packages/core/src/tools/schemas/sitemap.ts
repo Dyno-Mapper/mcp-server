@@ -379,7 +379,7 @@ export const deletedItemsResultSchema = z.object({
   deletedItemIds: z
     .array(z.number())
     .describe(
-      'IDs the request deleted — the named items only, not the descendants that were soft-deleted with them. An item that was already deleted still appears here, so the list always matches the request.'
+      'IDs the request deleted — the named items only, not the descendants that were deleted with them. An item that was already deleted still appears here, so the list always matches the request.'
     ),
   totalItems: z
     .number()

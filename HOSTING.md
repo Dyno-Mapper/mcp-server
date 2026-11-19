@@ -70,16 +70,16 @@ warns at startup when it is set.
 Failures that happen before a tool runs are HTTP statuses with a JSON-RPC error
 body, so a client never receives an HTML page:
 
-| Status | Meaning                                                                               |
-| ------ | ------------------------------------------------------------------------------------- |
-| `400`  | Malformed JSON (`-32700`) or an unsupported protocol version                          |
-| `401`  | No token or an expired one (`-32001`); `WWW-Authenticate` names the metadata document |
-| `403`  | Bad `Host` or `Origin`                                                                |
-| `405`  | `GET`/`DELETE`; `Allow: POST`                                                         |
-| `406`  | `Accept` missing `text/event-stream`                                                  |
-| `413`  | Body over `MCP_MAX_BODY_BYTES`                                                        |
-| `429`  | Over the per-caller rate limit; honours `Retry-After`                                 |
-| `503`  | `MCP_MAX_CONCURRENCY` requests already in flight                                      |
+| Status | Meaning                                                                                                                       |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| `400`  | Malformed JSON (`-32700`) or an unsupported protocol version                                                                  |
+| `401`  | No token or an expired one (`-32001`); `WWW-Authenticate` names the metadata document                                         |
+| `403`  | Bad `Host` or `Origin`                                                                                                        |
+| `405`  | `GET`/`DELETE`; `Allow: POST`                                                                                                 |
+| `406`  | `Accept` missing `text/event-stream`                                                                                          |
+| `413`  | Body over `MCP_MAX_BODY_BYTES`                                                                                                |
+| `429`  | Over the per-caller rate limit; honours `Retry-After`                                                                         |
+| `503`  | `MCP_MAX_CONCURRENCY` requests in flight, or an upload when `MCP_MAX_UPLOAD_CONCURRENCY` is already in flight for that caller |
 
 A tool that fails — including a rejected token — is a normal `200` with an
 `isError` result, because the DYNO Mapper API is the authority on whether a
@@ -142,34 +142,110 @@ the server named in `authorization_servers`, not to this one.
 
 ### Tool surface
 
-Hosted mode drops the two things that only work against a local filesystem:
+The tool surface is the stdio server's, with one tool's argument exchanged for
+another. `upload_file` reads a path on the stdio server, where the caller and
+the server share a filesystem, and takes the caller's bytes here, where they do
+not:
 
-- `upload_file` is not registered.
-- `create_project_from_file` loses its `file` argument; `url` and `fileKey`
-  remain.
+| Transport | Source of the file                                     |
+| --------- | ------------------------------------------------------ |
+| stdio     | `file`, an absolute path on the caller's machine       |
+| hosted    | `content`, base64 plus `name` and `mimeType`, or `url` |
 
-Everything else is identical to the stdio server in `packages/stdio`.
+Everything else is identical to the stdio server in `packages/stdio`. Uploads
+are what a deployment has to be sized for; see [Uploads](#uploads).
 
 ## Configuration
 
-| Variable                   | Default                      | Meaning                                                                                                                                                                                                                    |
-| -------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `MCP_PORT` / `PORT`        | `3000`                       | Listener port.                                                                                                                                                                                                             |
-| `MCP_HOST` / `HOST`        | `127.0.0.1`                  | Listener interface. A container sets `0.0.0.0`.                                                                                                                                                                            |
-| `MCP_ALLOWED_HOSTS`        | —                            | Comma-separated `Host` allowlist. Unset, a loopback listener accepts only localhost names; a public one is not checked at all.                                                                                             |
-| `MCP_ALLOWED_ORIGINS`      | —                            | Comma-separated `Origin` allowlist. Unset, `Origin` is not checked. A request without `Origin` is always allowed. This rejects foreign origins; it does not turn on CORS, which only the well-known metadata routes speak. |
-| `MCP_TRUST_PROXY`          | `false`                      | Read the caller IP from the CDN's viewer-address header when present, then the last `X-Forwarded-For` entry.                                                                                                               |
-| `MCP_RATE_LIMIT`           | `60`                         | Sustained requests per minute per caller.                                                                                                                                                                                  |
-| `MCP_RATE_BURST`           | `20`                         | Burst allowance per caller.                                                                                                                                                                                                |
-| `MCP_MAX_BODY_BYTES`       | `262144`                     | Largest accepted request body.                                                                                                                                                                                             |
-| `MCP_MAX_CONCURRENCY`      | `100`                        | Requests in flight before `503`.                                                                                                                                                                                           |
-| `MCP_REQUEST_TIMEOUT_MS`   | `25000`                      | Deadline for one DYNO Mapper API call. Hosted mode only.                                                                                                                                                                   |
-| `MCP_JSON_RESPONSES`       | `true`                       | `false` answers with an SSE stream instead of one JSON body.                                                                                                                                                               |
-| `MCP_PUBLIC_URL`           | —                            | Origin this deployment answers at, such as `https://mcp.dynomapper.com`. Unset, every advertised URL is derived from the request `Host`.                                                                                   |
-| `MCP_AUTHORIZATION_SERVER` | `https://api.dynomapper.com` | Issuer advertised in the protected-resource document. It must match that server's own `issuer` exactly, or a client rejects the document.                                                                                  |
+| Variable                     | Default                      | Meaning                                                                                                                                                                                                                    |
+| ---------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MCP_PORT` / `PORT`          | `3000`                       | Listener port.                                                                                                                                                                                                             |
+| `MCP_HOST` / `HOST`          | `127.0.0.1`                  | Listener interface. A container sets `0.0.0.0`.                                                                                                                                                                            |
+| `MCP_ALLOWED_HOSTS`          | —                            | Comma-separated `Host` allowlist. Unset, a loopback listener accepts only localhost names; a public one is not checked at all.                                                                                             |
+| `MCP_ALLOWED_ORIGINS`        | —                            | Comma-separated `Origin` allowlist. Unset, `Origin` is not checked. A request without `Origin` is always allowed. This rejects foreign origins; it does not turn on CORS, which only the well-known metadata routes speak. |
+| `MCP_TRUST_PROXY`            | `false`                      | Read the caller IP from the CDN's viewer-address header when present, then the last `X-Forwarded-For` entry.                                                                                                               |
+| `MCP_RATE_LIMIT`             | `60`                         | Sustained requests per minute per caller.                                                                                                                                                                                  |
+| `MCP_RATE_BURST`             | `20`                         | Burst allowance per caller.                                                                                                                                                                                                |
+| `MCP_MAX_BODY_BYTES`         | `100663296`                  | Largest accepted request body: 96 MiB, which holds a 64 MB file as base64. A body above 8 MiB is charged to an upload slot.                                                                                                |
+| `MCP_MAX_CONCURRENCY`        | `100`                        | Requests in flight before `503`.                                                                                                                                                                                           |
+| `MCP_MAX_UPLOAD_CONCURRENCY` | `2`                          | Uploads in flight **per caller** before `503`. Keyed on the JWT `sub`, or a digest of an opaque token.                                                                                                                     |
+| `MCP_UPLOAD_GATE_BYTES`      | `8388608`                    | Body size at which a request is treated as an upload and charged a slot before it is read.                                                                                                                                 |
+| `MCP_REQUEST_TIMEOUT_MS`     | `25000`                      | Deadline for the whole tool call, a `url` fetch included. Hosted mode only.                                                                                                                                                |
+| `MCP_JSON_RESPONSES`         | `true`                       | `false` answers with an SSE stream instead of one JSON body.                                                                                                                                                               |
+| `MCP_PUBLIC_URL`             | —                            | Origin this deployment answers at, such as `https://mcp.dynomapper.com`. Unset, every advertised URL is derived from the request `Host`.                                                                                   |
+| `MCP_AUTHORIZATION_SERVER`   | `https://api.dynomapper.com` | Issuer advertised in the protected-resource document. It must match that server's own `issuer` exactly, or a client rejects the document.                                                                                  |
 
 `MCP_`-prefixed names win over the generic ones, which matters when a shared pod
 injects `PORT` for the application container.
+
+## Uploads
+
+`upload_file` is how a file reaches the API: an import, a PDF accessibility
+run, or an image or document a page points at. The API takes the file as
+`multipart/form-data` and answers a key, and every call that spends that key
+takes `fileKey` instead of a file.
+
+This server cannot read the caller's disk, so the bytes arrive one of two ways
+— and only on this server, because the stdio one shares the caller's filesystem:
+
+- **`content`** — the file's bytes as base64, with `name` and `mimeType`
+  alongside. Nothing about this is free: base64 carries three bytes in four, so
+  a 64 MB file is 87.4 MB of request body, and the process holds it several
+  times over while it decodes, types and re-sends it.
+- **`url`** — the server fetches it. The response's `Content-Type` is the
+  declared media type and its filename is the name, unless `mimeType` or `name`
+  overrides them. Reading stops the moment the file passes the purpose's limit,
+  whether or not the response declared a length.
+
+Send exactly one, or the call answers `invalid_file_source`.
+
+### What a deployment has to be sized for
+
+An upload costs roughly five times the file: the base64 string inside the
+parsed body, the raw body buffer, the decoded bytes, the `Blob` the form is
+built from, and the serialised request. Two concurrent 64 MB uploads are
+therefore around 600 MB of transient heap, which is what
+`MCP_MAX_UPLOAD_CONCURRENCY` bounds. Size the container for
+`MCP_MAX_UPLOAD_CONCURRENCY x 5 x 64 MB` on top of everything else the pod does.
+
+Two guards keep that bounded:
+
+- **Per-caller upload slots.** A body over `MCP_UPLOAD_GATE_BYTES` is treated as
+  an upload — no other tool carries that much argument — and is charged a slot
+  before it is read, answering `503` with `Retry-After` when the caller already
+  has `MCP_MAX_UPLOAD_CONCURRENCY` in flight. The slot is keyed on the account,
+  not the address: a platform calling on behalf of many accounts shares an
+  address and nothing else.
+- **The body limit.** `MCP_MAX_BODY_BYTES` defaults to 96 MiB, which is what a
+  64 MB file needs as base64. A request with no `Content-Length` cannot be
+  charged a slot before it is read, and is bounded only by
+  `MCP_MAX_CONCURRENCY`.
+
+Lowering `MCP_MAX_BODY_BYTES` is supported; the server warns at startup when it
+is below what a 64 MB upload needs. The effect is that `content` uploads above
+three quarters of the limit are refused with `413`, while `url` uploads are
+unaffected.
+
+### What a URL may be
+
+A caller-supplied URL is fetched from inside the network this container runs in,
+and the caller learns only whether it worked — never the body that was fetched.
+Left open, that is a blind SSRF primitive. A hosted server therefore refuses any
+URL whose host resolves to a loopback, private, link-local (including the
+metadata endpoint), CGNAT, multicast or reserved address, in either family,
+including the IPv4-mapped and NAT64 spellings. It follows at most three
+redirects and re-checks every hop.
+
+Two things stay the operator's:
+
+- The check runs on the addresses DNS returned and the connection resolves
+  again, so a rebinding attack narrows the window rather than closing it.
+- The pod's egress rules decide what is reachable regardless. Restrict egress to
+  the API and the public internet, never the internal network.
+
+None of this reaches the stdio server: it reads a path and never fetches a URL,
+so there is no address for it to refuse. A file the stdio user has is a file
+they can name.
 
 ## Deploying behind a CDN
 
@@ -287,7 +363,8 @@ not understand `${input:...}`. Use an environment variable instead:
 | `401` despite a configured header                                   | The CDN dropped `Authorization`; forward it in its origin request policy.                                                                                        |
 | `403 Invalid Host`                                                  | Viewer `Host` not forwarded, or missing from `MCP_ALLOWED_HOSTS`.                                                                                                |
 | `504` from the CDN                                                  | The CDN's response timeout is below the call's duration; raise it to 120s.                                                                                       |
-| A tool always says "File not found"                                 | A local path was sent. Hosted mode cannot read the caller's filesystem.                                                                                          |
+| `413` on an upload                                                  | The body is over `MCP_MAX_BODY_BYTES`, or the file is over its purpose's limit. See [Uploads](#uploads).                                                         |
+| `blocked_address` on an upload                                      | The URL resolved to a private, loopback or link-local address. A hosted server fetches only public ones; send the bytes as `content` instead.                    |
 | `503` under load                                                    | `MCP_MAX_CONCURRENCY` reached; the load is real, not a session leak — there are none.                                                                            |
 | Client reports a JSON parse error where a token should be requested | It guessed `/register` on this origin, so it never found the protected-resource document. Check `MCP_PUBLIC_URL` and that the URL in the challenge is reachable. |
 | Client cannot complete authorization                                | The server named in `authorization_servers` refused or could not be reached. This endpoint does not sit on that hop.                                             |

@@ -8,6 +8,73 @@ each release here points at the entry for that version.
 Versions are shared: the root manifest, every workspace and both changelogs
 carry one version per release, and `npm run check:changelogs` enforces it.
 
+## [0.6.0] - 2026-11-19
+
+The public API reference gained 15 operations: six that store, list and delete
+the images and files a page's content blocks point at, and nine that run and
+review PDF accessibility audits. The same update removed `multipart/form-data`
+from the text and XML imports, which made `create_project_from_file`'s `file`
+argument fail on every call, and reshaped one PDF response field. This release
+adds the tools, follows both contract changes and re-aligns the descriptions
+that the reworded reference no longer supports. What a package consumer sees is
+in [packages/stdio/CHANGELOG.md](packages/stdio/CHANGELOG.md); this file records
+the repository change behind it.
+
+### Added
+
+- The six content tools — `store_content_image`, `get_content_images`,
+  `delete_content_image`, `store_content_file`, `get_content_files` and
+  `delete_content_file` — in a new `tools/content/` directory.
+- The nine PDF audit tools: the three that start a run, the one that reads a
+  run, the three that change a file's findings and the note call.
+- `tools.test.ts` registers the fifteen new tools by name, so a missing
+  registration fails the suite rather than only the coverage check.
+- `upload_file` on the hosted image, which used to be dropped there because a
+  path names the pod's disk rather than the caller's. It takes the file as
+  `content` — base64 with `name` and `mimeType` — or as a `url` this server
+  fetches, and re-posts it as the multipart call the API expects. A `url` is
+  fetched only after every address it resolves to has been found public, and
+  the download stops the moment the file passes its purpose's limit.
+- An Uploads section in [HOSTING.md](HOSTING.md#uploads): what an upload costs
+  in memory, which guards bound it, and what a `url` is allowed to be.
+
+### Changed
+
+- `create_project_from_file` takes a `fileKey` or a `url` and nothing else. The
+  `file` argument is gone, and with it `api.ts`'s file-and-body multipart mode
+  and the five tests that covered it.
+- `upload_file` offers the reference's five purposes, each with its own media
+  types and size limit, and names the one tool that can spend each key.
+- `get_accessibility_pdf_item_result` reports `messages`, `note` and `always`
+  in place of the `message` field that was null in every response.
+- Around twenty tool files drop claims the reference no longer makes — soft
+  deletes, revived rows, database collation, the recorded MD5 — and keep what a
+  caller observes. `delete_item_comment` gains the refusal a project that is not
+  published answers.
+- `packages/stdio/README.md` lists the fifteen tools and describes storing an
+  image for a page.
+- `resource/api.json` is the published reference for this release. Its own
+  `## Files` table still names two purposes and one 64 MB limit; the operation
+  schema settles it, and the tools follow the schema.
+- `MCP_MAX_BODY_BYTES` defaults to 96 MiB rather than 256 KiB. Base64 carries a
+  64 MB file as 87.4 MB of JSON, so the old limit refused every upload worth
+  making; the server now warns at startup when a deployment lowers it again.
+- `MCP_MAX_UPLOAD_CONCURRENCY` and `MCP_UPLOAD_GATE_BYTES` are new. An upload
+  holds its file several times over while it is decoded and re-sent, so a body
+  over the gate is charged to a per-caller slot before it is read, and a caller
+  with both slots busy is answered `503` rather than by running out of memory.
+- `MCP_REQUEST_TIMEOUT_MS` now bounds the whole tool call. A `url` upload used
+  to have no deadline of its own, which would have made the documented
+  `Request Timeout` a promise the server no longer kept.
+
+Hosted mode now registers `upload_file` too, so nothing has to run on the
+caller's machine to move a file into the API, and the four tools that spend a
+key are reachable from a hosted agent with no other setup. Its argument remains
+the one thing that differs by transport, and the only thing that should: stdio
+reads a path, a hosted server takes the bytes or fetches a `url`, and the
+package is unchanged. What a deployment has to be sized for, and which addresses
+a `url` may reach, are in [HOSTING.md](HOSTING.md#uploads).
+
 ## [0.5.0] - 2026-11-13
 
 The public API reference changed the sitemap item listing: it takes

@@ -65,6 +65,8 @@ function config(overrides: Partial<HttpConfig> = {}): HttpConfig {
     rateLimitPerMinute: 60,
     rateLimitBurst: 20,
     maxBodyBytes: 256 * 1024,
+    maxUploadConcurrency: 2,
+    uploadGateBytes: 8 * 1024 * 1024,
     maxConcurrency: 100,
     requestTimeoutMs: 5_000,
     jsonResponses: true,
@@ -435,6 +437,84 @@ describe('hosted request guards', () => {
 
     expect(response.status).toBe(413);
     expect((await response.json()).error.code).toBe(-32000);
+  });
+
+  test('caps uploads in flight per caller before the body is read', async () => {
+    const app = await harness(
+      { uploadGateBytes: 256, maxUploadConcurrency: 1 },
+      { delayMs: 300 }
+    );
+
+    const call = {
+      jsonrpc: '2.0',
+      id: 6,
+      method: 'tools/call',
+      params: {
+        name: 'get_current_user',
+        arguments: { note: 'x'.repeat(500) },
+      },
+    };
+
+    const first = app.rpc(call);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const refused = await app.rpc(call);
+    expect(refused.status).toBe(503);
+    expect(refused.headers.get('retry-after')).toBe('1');
+    expect((await refused.json()).error.code).toBe(-32000);
+
+    expect((await first).status).toBe(200);
+
+    // The slot is released when the response ends, so the next upload is served
+    // rather than punished for the one before it.
+    expect((await app.rpc(call)).status).toBe(200);
+  });
+
+  test('counts uploads per subject, so a shared address is not throttled', async () => {
+    const app = await harness(
+      { uploadGateBytes: 256, maxUploadConcurrency: 1 },
+      { delayMs: 300 }
+    );
+
+    const call = {
+      jsonrpc: '2.0',
+      id: 7,
+      method: 'tools/call',
+      params: {
+        name: 'get_current_user',
+        arguments: { note: 'x'.repeat(500) },
+      },
+    };
+
+    // Two accounts calling through one platform share an address and nothing
+    // else; keying the cap on the address would make them queue behind each
+    // other, which is the monopolisation the cap exists to prevent.
+    const as = (sub: string) => ({
+      authorization: `Bearer ${jwt({ sub, exp: Math.floor(Date.now() / 1000) + 600 })}`,
+    });
+
+    const first = app.rpc(call, as('account-a'));
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect((await app.rpc(call, as('account-b'))).status).toBe(200);
+    expect((await first).status).toBe(200);
+  });
+
+  test('does not charge a body under the gate to an upload slot', async () => {
+    const app = await harness(
+      { uploadGateBytes: 256, maxUploadConcurrency: 1 },
+      { delayMs: 150 }
+    );
+
+    const small = {
+      jsonrpc: '2.0',
+      id: 8,
+      method: 'tools/call',
+      params: { name: 'get_current_user', arguments: {} },
+    };
+
+    const [a, b] = await Promise.all([app.rpc(small), app.rpc(small)]);
+    expect([a.status, b.status]).toEqual([200, 200]);
   });
 
   test('rejects malformed JSON with a JSON-RPC parse error', async () => {

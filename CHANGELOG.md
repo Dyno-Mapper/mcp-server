@@ -8,6 +8,53 @@ each release here points at the entry for that version.
 Versions are shared: the root manifest, every workspace and both changelogs
 carry one version per release, and `npm run check:changelogs` enforces it.
 
+## [0.6.0] - 2026-11-19
+
+The public API reference gained 15 operations: six that store, list and delete
+the images and files a page's content blocks point at, and nine that run and
+review PDF accessibility audits. The same update removed `multipart/form-data`
+from the text and XML imports, which made `create_project_from_file`'s `file`
+argument fail on every call, and reshaped one PDF response field. This release
+adds the tools, follows both contract changes and re-aligns the descriptions
+that the reworded reference no longer supports. What a package consumer sees is
+in [packages/stdio/CHANGELOG.md](packages/stdio/CHANGELOG.md); this file records
+the repository change behind it.
+
+### Added
+
+- The six content tools — `store_content_image`, `get_content_images`,
+  `delete_content_image`, `store_content_file`, `get_content_files` and
+  `delete_content_file` — in a new `tools/content/` directory.
+- The nine PDF audit tools: the three that start a run, the one that reads a
+  run, the three that change a file's findings and the note call.
+- `tools.test.ts` registers the fifteen new tools by name, so a missing
+  registration fails the suite rather than only the coverage check.
+
+### Changed
+
+- `create_project_from_file` takes a `fileKey` or a `url` and nothing else. The
+  `file` argument is gone, and with it `api.ts`'s file-and-body multipart mode
+  and the five tests that covered it.
+- `upload_file` offers the reference's five purposes, each with its own media
+  types and size limit, and names the one tool that can spend each key.
+- `get_accessibility_pdf_item_result` reports `messages`, `note` and `always`
+  in place of the `message` field that was null in every response.
+- Around twenty tool files drop claims the reference no longer makes — soft
+  deletes, revived rows, database collation, the recorded MD5 — and keep what a
+  caller observes. `delete_item_comment` gains the refusal a project that is not
+  published answers.
+- `packages/stdio/README.md` lists the fifteen tools and describes storing an
+  image for a page.
+- `resource/api.json` is the published reference for this release. Its own
+  `## Files` table still names two purposes and one 64 MB limit; the operation
+  schema settles it, and the tools follow the schema.
+
+Hosted mode is unchanged. It still does not register `upload_file`, because a
+path names the pod's disk rather than the caller's, and the four tools that
+spend a key say so only through `create_project_from_file`'s hosted
+description. A hosted upload path is a transport feature of its own and is not
+part of this release.
+
 ## [0.5.0] - 2026-11-13
 
 The public API reference changed the sitemap item listing: it takes

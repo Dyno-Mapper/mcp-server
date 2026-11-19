@@ -5,6 +5,48 @@ Notable changes to `@dynomapper/mcp-server`, the stdio server published to npm.
 The version tracks the release it ships with. `0.1.0` was the first publish and
 predates this file.
 
+## [0.6.0] - 2026-11-19
+
+Follows the public API reference, which gained 15 operations, three upload
+purposes, and a rule that a file reaches an import only as an uploaded key.
+
+### Breaking
+
+- `create_project_from_file` no longer takes `file`. Upload the file with
+  `upload_file` and pass the returned `key` as `fileKey`, or send a `url`. The
+  imports stopped accepting `multipart/form-data`, so the old argument failed
+  on every call.
+- `get_accessibility_pdf_item_result` rows no longer carry `message`, which was
+  null in every response because the checker's text arrived under a key the
+  tool did not declare. They carry `messages`, one entry per finding, and add
+  `note` and `always`.
+
+### Added
+
+- PDF audits: `run_accessibility_pdf_upload_test`,
+  `run_accessibility_pdf_url_test`, `run_accessibility_pdf_sitemap_test`,
+  `get_accessibility_pdf_run`, `delete_accessibility_pdf_item`,
+  `refresh_accessibility_pdf_item`, `archive_accessibility_pdf_results`,
+  `unarchive_accessibility_pdf_results` and `set_accessibility_pdf_result_note`.
+  A run costs one PDF check from the plan's allowance, and a run that finishes
+  as `completed` still has to have its `error` read.
+- Page content assets: `store_content_image`, `get_content_images`,
+  `delete_content_image`, `store_content_file`, `get_content_files` and
+  `delete_content_file`. An uploaded image or file becomes public, and starts
+  counting against the account's storage, only when it is stored with one of
+  these; until then the upload waits in staging and expires there.
+
+### Changed
+
+- `upload_file` takes the five purposes — `project_text`, `project_xml`,
+  `pdf_accessibility`, `sitemap_content_image` and `sitemap_content_file` — and
+  states each purpose's media types, its size limit and the one tool that can
+  spend the key.
+- Tool descriptions describe what a caller sees rather than how the API stores
+  it, following the reworded reference: no soft deletes, no revived rows, no
+  database vocabulary. The behavior they document is unchanged.
+- `delete_item_comment` says what a project that is not published answers.
+
 ## [0.5.0] - 2026-11-13
 
 Follows the public API's revised sitemap item listing.

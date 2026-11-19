@@ -3,6 +3,22 @@ import { type CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import fs from 'node:fs';
 import * as pathMod from 'node:path';
 import mime from 'mime-types';
+import type { UploadPart } from './upload/source.js';
+
+/** What a tool needs beyond its arguments — the transport's own settings. */
+export interface ToolCallOptions {
+  /** Sends every argument as its own form field next to a file part. */
+  multipart?: 'fields';
+  /**
+   * Bytes an upload sends, for the sources that are not a local path.
+   *
+   * `upload_file` resolves base64 and URL sources itself, because neither is
+   * available to a server that does not share the caller's filesystem.
+   */
+  upload?: UploadPart;
+  /** Deadline for this call, when it is shorter than the instance default. */
+  timeoutMs?: number;
+}
 
 export class ApiHelper {
   private client: AxiosInstance;
@@ -79,14 +95,37 @@ export class ApiHelper {
    * Builds the request body for an upload.
    *
    * Every argument goes in as its own form field next to the file, which is
-   * the shape an upload expects. Imports do not take this path: they name a
-   * key the upload returned, so no other call sends a file.
+   * the shape an upload expects. The file itself is either bytes already in
+   * hand — base64 the caller sent, or a URL this server fetched — or a path to
+   * read, which only works where the caller and the server share a filesystem.
+   * Imports do not take this path: they name a key the upload returned, so no
+   * other call sends a file.
    */
-  private buildMultipartBody(finalArgs: any): {
+  private buildMultipartBody(
+    finalArgs: any,
+    upload?: UploadPart
+  ): {
     data?: FormData;
     error?: CallToolResult;
   } {
     const formData = new FormData();
+
+    // Bytes the caller sent, or that this server fetched, are already in hand:
+    // there is no path to read and no media type to infer from one. The view
+    // is over the buffer rather than a copy of it, because a 64 MB upload is
+    // already held several times over by this point.
+    if (upload) {
+      const view = new Uint8Array(
+        upload.bytes.buffer as ArrayBuffer,
+        upload.bytes.byteOffset,
+        upload.bytes.byteLength
+      );
+      formData.append(
+        'file',
+        new Blob([view], { type: upload.mimeType }),
+        upload.name
+      );
+    }
 
     for (const [key, value] of Object.entries(finalArgs ?? {})) {
       if (value === undefined || value === null) {
@@ -94,6 +133,9 @@ export class ApiHelper {
       }
 
       if (key === 'file') {
+        if (upload) {
+          continue;
+        }
         if (!fs.existsSync(String(value))) {
           return { error: this.fileNotFoundResult(String(value)) };
         }
@@ -113,7 +155,7 @@ export class ApiHelper {
     path: string,
     args: any,
     apiKey?: string,
-    multiPart?: 'fields'
+    options: ToolCallOptions = {}
   ): Promise<CallToolResult> {
     try {
       const headers: Record<string, string> = {};
@@ -135,8 +177,11 @@ export class ApiHelper {
 
       let data = finalArgs;
 
-      if (multiPart === 'fields') {
-        const { data: formData, error } = this.buildMultipartBody(finalArgs);
+      if (options.multipart === 'fields') {
+        const { data: formData, error } = this.buildMultipartBody(
+          finalArgs,
+          options.upload
+        );
 
         if (error) {
           return error;
@@ -151,6 +196,7 @@ export class ApiHelper {
         method,
         url: resolvedPath,
         headers,
+        ...(options.timeoutMs ? { timeout: options.timeoutMs } : {}),
         [method.toLowerCase() === 'get' || method.toLowerCase() === 'delete'
           ? 'params'
           : 'data']: data,
@@ -203,7 +249,7 @@ export class ApiHelper {
         structuredContent: response.data,
       };
     } catch (error) {
-      return this.handleError(error);
+      return this.handleError(error, options.timeoutMs);
     }
   }
 
@@ -233,14 +279,14 @@ export class ApiHelper {
     return info;
   }
 
-  async handleError(error: any): Promise<CallToolResult> {
+  async handleError(error: any, timeoutMs?: number): Promise<CallToolResult> {
     let errorResponse: { error: string; message: string } & Record<string, any>;
 
     // The hosted transport caps a call below CloudFront's response timeout, so
     // a slow endpoint has to become advice the agent can act on rather than a
     // 504 from the CDN with no JSON-RPC body.
     if (error?.code === 'ECONNABORTED' || error?.code === 'ETIMEDOUT') {
-      const seconds = Math.round((this.timeoutMs ?? 0) / 1000);
+      const seconds = Math.round((timeoutMs ?? this.timeoutMs ?? 0) / 1000);
       return {
         content: [
           {

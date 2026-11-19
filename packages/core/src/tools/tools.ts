@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import type { UploadPart } from '../upload/source.js';
 import { get_current_user } from './account/get_current_user.js';
 import { get_projects } from './projects/get_projects.js';
 import { get_project_details } from './projects/get_project_details.js';
@@ -125,10 +127,58 @@ import { get_assignments_totals } from './assignments/get_assignments_totals.js'
 import { get_project_assignments_totals } from './assignments/get_project_assignments_totals.js';
 import { get_assignment_details } from './assignments/get_assignment_details.js';
 
+/**
+ * Which artifact is serving the call.
+ *
+ * The two are not interchangeable: stdio runs on the caller's machine and can
+ * read its filesystem, a hosted server cannot. A tool that differs declares
+ * how, rather than having its differences kept in a table elsewhere.
+ */
+export type TransportMode = 'stdio' | 'hosted';
+
+/** What a tool is told about the call it is part of. */
+export interface ToolContext {
+  mode: TransportMode;
+  /**
+   * Budget for the whole call, in milliseconds. Set by the hosted transport
+   * only, where a call has a deadline its caller is waiting on.
+   */
+  timeoutMs?: number;
+}
+
+/** A call a tool prepared from its arguments. */
+export interface PreparedCall {
+  /** Arguments to send, which may differ from the ones the caller gave. */
+  args: any;
+  /** Bytes an upload sends, when the source was not a local path. */
+  upload?: UploadPart;
+  /** Where those bytes came from, for the operator's log line. */
+  source?: 'file' | 'content' | 'url';
+}
+
+/**
+ * Either a prepared call or the refusal to make one.
+ *
+ * A tool that has work to do before the API is called — resolving a file into
+ * bytes, say — reports a refusal as a result rather than as a thrown error,
+ * because a caller's bad file is a tool error, not a crash. A refusal still
+ * names which source was attempted, so the operator's line can say so.
+ */
+export type PrepareResult =
+  | PreparedCall
+  | { error: CallToolResult; source?: PreparedCall['source'] };
+
 export interface Tool {
   name: string;
   description: string;
-  inputSchema: z.ZodObject<any>;
+  /**
+   * The arguments this tool takes, per transport where they differ.
+   *
+   * A function is how a tool says it accepts different arguments depending on
+   * where it runs: `upload_file` takes a path on stdio and bytes on a hosted
+   * server. Everything else is one schema for both.
+   */
+  inputSchema: z.ZodObject<any> | ((mode: TransportMode) => z.ZodObject<any>);
   outputSchema: z.ZodObject<any>;
   method: string;
   path: string;
@@ -138,6 +188,23 @@ export interface Tool {
    * take a file: an import names a key the upload returned instead.
    */
   multipart?: 'fields';
+  /**
+   * Resolves arguments before the call is made.
+   *
+   * `upload_file` uses it to turn base64 or a URL into the bytes an upload
+   * sends. A tool without one sends its arguments as the caller gave them.
+   */
+  prepare?: (args: any, context: ToolContext) => Promise<PrepareResult>;
+}
+
+/** The input schema a tool offers on one transport. */
+export function inputSchemaFor(
+  tool: Tool,
+  mode: TransportMode = 'stdio'
+): z.ZodObject<any> {
+  return typeof tool.inputSchema === 'function'
+    ? tool.inputSchema(mode)
+    : tool.inputSchema;
 }
 
 export const tools: Record<string, Tool> = {

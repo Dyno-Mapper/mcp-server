@@ -162,12 +162,52 @@ describe('ApiHelper.handleToolRequest', () => {
       '/v1/files',
       { purpose: 'project_text', file: '/tmp/test.txt' },
       undefined,
-      'fields'
+      { multipart: 'fields' }
     );
 
     expect(result.isError).toBeUndefined();
     const data = JSON.parse((result.content[0] as any).text);
     expect(data).toEqual(mockResponse.data);
+  });
+
+  test('should send resolved bytes as the file part', async () => {
+    const mockResponse = {
+      data: { key: 'uploads/api/sitemap_content_image/b2/logo.png' },
+      status: 201,
+      config: { headers: {} },
+    };
+
+    mockClient.request.mockImplementationOnce(async (config: any) => {
+      const formData = config.data as FormData;
+      expect(formData.get('purpose')).toBe('sitemap_content_image');
+
+      // No path to read: the bytes arrived some other way — base64 the caller
+      // sent, or a URL this server fetched — and are sent on as they are.
+      const file = formData.get('file') as any;
+      expect(file.name).toBe('logo.png');
+      expect(file.type).toBe('image/png');
+      expect(await file.text()).toBe('bytes the caller sent');
+      expect(config.headers['Content-Type']).toBeUndefined();
+
+      return { ...mockResponse, config };
+    });
+
+    const result = await apiHelper.handleToolRequest(
+      'POST',
+      '/v1/files',
+      { purpose: 'sitemap_content_image' },
+      undefined,
+      {
+        multipart: 'fields',
+        upload: {
+          bytes: Buffer.from('bytes the caller sent'),
+          name: 'logo.png',
+          mimeType: 'image/png',
+        },
+      }
+    );
+
+    expect(result.isError).toBeUndefined();
   });
 
   test('should return an error when multiPart: fields has a missing file', async () => {
@@ -176,7 +216,7 @@ describe('ApiHelper.handleToolRequest', () => {
       '/v1/files',
       { purpose: 'project_text', file: '/tmp/non-existent.txt' },
       undefined,
-      'fields'
+      { multipart: 'fields' }
     );
 
     expect(result.isError).toBe(true);

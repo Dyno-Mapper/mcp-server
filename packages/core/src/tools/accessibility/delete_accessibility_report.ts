@@ -5,7 +5,7 @@ export const delete_accessibility_report = {
   description:
     'Delete one accessibility run of a project: it deletes the named run, not every result for the project. ' +
     'The run drops out of `get_accessibility_results`, while the project’s other runs stay and keep feeding `get_accessibility_score`. ' +
-    'A check that is still running for it is canceled first, and the run is marked deleted even if that cancellation fails, so the call does not report the failure. ' +
+    'A check that is still running for it is canceled first, and the run still leaves the list even if that cancellation fails, so the call does not report the failure. ' +
     'Returns the id of the run it deleted. A `reportId` that is not a run of this project, a run that belongs to another account, and a run that is already deleted all answer `500` rather than `404`, so check the id before deleting.',
   inputSchema: z.object({
     projectId: z.number().describe('ID of the project the run belongs to.'),

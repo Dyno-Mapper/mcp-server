@@ -33,7 +33,7 @@ export const get_inventory = {
       .trim()
       .optional()
       .describe(
-        'Text to match against the URL of the link and the anchor text recorded for it, compared with SQL `LIKE`, so `%` and `_` act as wildcards rather than literal characters. A numeric value also matches links whose stored status equals that number exactly'
+        'Text to match against the URL of the link and the anchor text recorded for it, matched as a pattern in which `%` matches any run of characters and `_` matches one character. A numeric value also matches links whose stored status equals that number exactly'
       ),
     status: z
       .enum(['ok', 'bad', 'redirect', 'unexpected'])

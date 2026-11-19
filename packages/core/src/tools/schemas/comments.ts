@@ -41,7 +41,7 @@ export const commentSchema = z.object({
     .datetime()
     .nullable()
     .describe(
-      'ISO 8601 date and time, in UTC, when the comment was last edited, or `null` when it has never been edited since it was written. A deletion also stamps the row, but a deleted comment is never returned, so a value here always means an edit.'
+      'ISO 8601 date and time, in UTC, when the comment was last edited, or `null` when it has never been edited since it was written. A deleted comment is never returned, so a value here always means an edit.'
     ),
   itemId: z
     .number()

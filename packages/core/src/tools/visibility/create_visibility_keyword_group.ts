@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const create_visibility_keyword_group = {
   name: 'create_visibility_keyword_group',
   description:
-    'Creates a group for splitting the project’s keywords into topics and returns it with its `id` — the id `update_visibility_keywords_group` takes as `groupId`, `create_visibility_keywords` takes as `group`, and the `group` filter of `get_visibility_project_ranking` accepts. Names are trimmed before they are stored and are unique within a project, and the call is safe to repeat: a name that already exists does not fail and does not add a second group, and a name that belonged to a group deleted earlier revives that group under its old id. Keywords keep their group across a revive, because deleting a group never unassigned them. A group is not a precondition for tracking keywords.',
+    'Creates a group for splitting the project’s keywords into topics and returns it with its `id` — the id `update_visibility_keywords_group` takes as `groupId`, `create_visibility_keywords` takes as `group`, and the `group` filter of `get_visibility_project_ranking` accepts. Names are trimmed before they are stored and are unique within a project, and the call is safe to repeat: a name that already exists does not fail and does not add a second group, and a name that belonged to a group deleted earlier brings that group back under its old id rather than creating a second one. Keywords come back with it, because deleting a group never unassigned them. A group is not a precondition for tracking keywords.',
   inputSchema: z.object({
     projectId: z.number().describe('Numeric project id, from `get_projects`.'),
     name: z
@@ -18,7 +18,7 @@ export const create_visibility_keyword_group = {
     id: z
       .number()
       .describe(
-        'ID of the group, whether it was just created, already existed, or was revived after deletion.'
+        'ID of the group, whether it was just created, already existed, or was deleted and created again.'
       ),
     name: z
       .string()

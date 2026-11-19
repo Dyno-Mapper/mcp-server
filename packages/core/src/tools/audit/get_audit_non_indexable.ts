@@ -10,7 +10,7 @@ export const get_audit_non_indexable = {
       .string()
       .optional()
       .describe(
-        'Term matched against the URL of the affected page: one starting with `http` is matched as a URL prefix, any other is matched anywhere in the URL. Case sensitivity follows the database column’s collation; omitted returns every row.'
+        'Term matched against the URL of the affected page: one starting with `http` is matched as a URL prefix, any other is matched anywhere in the URL. Omitted returns every row.'
       ),
     archived: z
       .enum(['0', '1'])

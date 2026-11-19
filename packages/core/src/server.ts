@@ -21,14 +21,13 @@ export interface CreateServerOptions {
  * Tools that cannot work without the caller's filesystem.
  *
  * A hosted server's paths are the pod's, not the caller's, so `upload_file`
- * is not registered and `create_project_from_file` drops its `file` argument.
- * Its `url` and `fileKey` sources still work.
+ * is not registered. Everything that takes a file takes a key the upload
+ * returned, so those tools still work there: a key minted on a stdio install
+ * of this server, against the same account, is just as good.
  */
 const HOSTED_SKIPPED_TOOLS = new Set(['upload_file']);
 
-const HOSTED_OMITTED_ARGS: Record<string, string[]> = {
-  create_project_from_file: ['file'],
-};
+const HOSTED_OMITTED_ARGS: Record<string, string[]> = {};
 
 /**
  * Descriptions that would otherwise mention an argument hosted mode removes.

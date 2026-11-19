@@ -99,7 +99,7 @@ export const get_commented_items = {
             .datetime()
             .nullable()
             .describe(
-              'ISO 8601 date and time, in UTC, when the newest published comment on the item was written. This is what the default order sorts on. Null only in the database edge case where no published comment carries a date'
+              'ISO 8601 date and time, in UTC, when the newest published comment on the item was written. This is what the default order sorts on. Null only in the inconsistent case where the item reports comments while none can be read'
             ),
         })
       )

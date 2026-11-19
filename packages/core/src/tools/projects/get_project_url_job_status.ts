@@ -7,7 +7,7 @@ export const get_project_url_job_status = {
     'Poll it immediately with the project id returned by `create_project_from_url` or `create_project_from_sharepoint` — the project exists while the crawl is still queued. ' +
     '`status` goes from `PENDING` (queued) to `RUNNING` (crawling pages, or waiting for a login input) to `PERSIST` (writing the results) to `FINISHED`; `data` is null until the crawler reports progress, then carries `pageCount`, `downloadCount` and `crawlTime` in milliseconds. ' +
     'Answer a paused sign-in with `get_project_login_inputs` and `submit_project_login_input`, and read a `FINISHED` project with `get_project_details`. ' +
-    'A project with no crawl job, or a job the crawler has discarded, answers 500 with the reason rather than 404.',
+    'A project this API did not create from a URL, a project with no crawl job, and a job the crawler has discarded all answer 500 with the reason rather than 404.',
   inputSchema: z.object({
     id: z.coerce
       .number()

@@ -76,55 +76,34 @@ export class ApiHelper {
   }
 
   /**
-   * Builds the request body for a multipart tool.
+   * Builds the request body for an upload.
    *
-   * `'fields'` sends every argument as its own form field next to the file,
-   * which is the shape an upload expects. `'file-and-body'` sends the file
-   * part next to a JSON `body` part, which is how the text and XML imports
-   * carry their options.
+   * Every argument goes in as its own form field next to the file, which is
+   * the shape an upload expects. Imports do not take this path: they name a
+   * key the upload returned, so no other call sends a file.
    */
-  private buildMultipartBody(
-    finalArgs: any,
-    mode: 'fields' | 'file-and-body'
-  ): { data?: FormData; error?: CallToolResult } {
+  private buildMultipartBody(finalArgs: any): {
+    data?: FormData;
+    error?: CallToolResult;
+  } {
     const formData = new FormData();
 
-    if (mode === 'fields') {
-      for (const [key, value] of Object.entries(finalArgs ?? {})) {
-        if (value === undefined || value === null) {
-          continue;
-        }
-
-        if (key === 'file') {
-          if (!fs.existsSync(String(value))) {
-            return { error: this.fileNotFoundResult(String(value)) };
-          }
-          const { blob, fileName } = this.buildFilePart(String(value));
-          formData.append('file', blob, fileName);
-          continue;
-        }
-
-        formData.append(key, String(value));
+    for (const [key, value] of Object.entries(finalArgs ?? {})) {
+      if (value === undefined || value === null) {
+        continue;
       }
 
-      return { data: formData };
+      if (key === 'file') {
+        if (!fs.existsSync(String(value))) {
+          return { error: this.fileNotFoundResult(String(value)) };
+        }
+        const { blob, fileName } = this.buildFilePart(String(value));
+        formData.append('file', blob, fileName);
+        continue;
+      }
+
+      formData.append(key, String(value));
     }
-
-    const { file, ...restArgs } = finalArgs || {};
-
-    if (!fs.existsSync(file)) {
-      return { error: this.fileNotFoundResult(file) };
-    }
-
-    const { blob, fileName } = this.buildFilePart(file);
-    formData.append('file', blob, fileName);
-
-    const jsonBody = JSON.stringify(restArgs);
-    formData.append(
-      'body',
-      new Blob([jsonBody], { type: 'application/json' }),
-      'body'
-    );
 
     return { data: formData };
   }
@@ -134,7 +113,7 @@ export class ApiHelper {
     path: string,
     args: any,
     apiKey?: string,
-    multiPart?: boolean | 'fields'
+    multiPart?: 'fields'
   ): Promise<CallToolResult> {
     try {
       const headers: Record<string, string> = {};
@@ -155,14 +134,9 @@ export class ApiHelper {
       );
 
       let data = finalArgs;
-      const hasFile =
-        typeof finalArgs?.file === 'string' && finalArgs.file.length > 0;
 
-      if (multiPart === 'fields' || (multiPart && hasFile)) {
-        const { data: formData, error } = this.buildMultipartBody(
-          finalArgs,
-          multiPart === 'fields' ? 'fields' : 'file-and-body'
-        );
+      if (multiPart === 'fields') {
+        const { data: formData, error } = this.buildMultipartBody(finalArgs);
 
         if (error) {
           return error;

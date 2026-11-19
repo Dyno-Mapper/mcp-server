@@ -5,10 +5,10 @@ export const delete_item_comment = {
   name: 'delete_item_comment',
   description:
     'Delete a comment. ' +
-    'Soft-deletes one comment; a deleted comment is no longer returned, and there is no restore through this API. ' +
+    'Deletes one comment: it stops appearing in every read of the project and in the item’s thread, and nothing else about the item changes. There is no restore through this API. ' +
     'Deleting an already-deleted comment answers 204 again rather than 404, because the caller asked for a state the comment is already in. ' +
     'An id from another project, or an item that no longer exists, still answers 404. ' +
-    'The call returns no body. ' +
+    'Writes are refused on a project that is not published, with `409 project_not_editable`, so a delete there changes nothing. The call returns no body. ' +
     'Read the remaining thread with `get_item_comments`.',
   inputSchema: z.object({
     projectId: z

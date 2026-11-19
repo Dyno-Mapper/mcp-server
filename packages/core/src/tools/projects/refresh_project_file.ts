@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const refresh_project_file = {
   name: 'refresh_project_file',
   description:
-    "Re-import a project created by `create_project_from_file` with `type: 'text'` or `type: 'xml'`, instead of creating a second project. Only applies to projects created from a `url`: one created from an uploaded `file` or a `fileKey` keeps no source URL and answers 500, and `get_project_details` reports the same fact as `allowTextRefresh` or `allowXmlRefresh` for the matching `type`. The project must be published, and only one refresh may run at a time — a second answers 500 asking the caller to wait, so cancel the outstanding one with `cancel_project_file_refresh` first if different options are needed. The re-import is queued and progress is reported by `get_project_file_job_status` with the same `type`.",
+    "Re-import a project created by `create_project_from_file` with `type: 'text'` or `type: 'xml'`, instead of creating a second project. Only applies to projects created from a `url`: one created from a `fileKey` keeps no source URL and answers 500, and `get_project_details` reports the same fact as `allowTextRefresh` or `allowXmlRefresh` for the matching `type`. The project must be published, and only one refresh may run at a time — a second answers 500 asking the caller to wait, so cancel the outstanding one with `cancel_project_file_refresh` first if different options are needed. The re-import is queued and progress is reported by `get_project_file_job_status` with the same `type`.",
   inputSchema: z.object({
     type: z
       .enum(['text', 'xml'])

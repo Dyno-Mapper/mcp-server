@@ -29,6 +29,14 @@ the repository change behind it.
   run, the three that change a file's findings and the note call.
 - `tools.test.ts` registers the fifteen new tools by name, so a missing
   registration fails the suite rather than only the coverage check.
+- `upload_file` on the hosted image, which used to be dropped there because a
+  path names the pod's disk rather than the caller's. It takes the file as
+  `content` — base64 with `name` and `mimeType` — or as a `url` this server
+  fetches, and re-posts it as the multipart call the API expects. A `url` is
+  fetched only after every address it resolves to has been found public, and
+  the download stops the moment the file passes its purpose's limit.
+- An Uploads section in [HOSTING.md](HOSTING.md#uploads): what an upload costs
+  in memory, which guards bound it, and what a `url` is allowed to be.
 
 ### Changed
 
@@ -48,12 +56,24 @@ the repository change behind it.
 - `resource/api.json` is the published reference for this release. Its own
   `## Files` table still names two purposes and one 64 MB limit; the operation
   schema settles it, and the tools follow the schema.
+- `MCP_MAX_BODY_BYTES` defaults to 96 MiB rather than 256 KiB. Base64 carries a
+  64 MB file as 87.4 MB of JSON, so the old limit refused every upload worth
+  making; the server now warns at startup when a deployment lowers it again.
+- `MCP_MAX_UPLOAD_CONCURRENCY` and `MCP_UPLOAD_GATE_BYTES` are new. An upload
+  holds its file several times over while it is decoded and re-sent, so a body
+  over the gate is charged to a per-caller slot before it is read, and a caller
+  with both slots busy is answered `503` rather than by running out of memory.
+- `MCP_REQUEST_TIMEOUT_MS` now bounds the whole tool call. A `url` upload used
+  to have no deadline of its own, which would have made the documented
+  `Request Timeout` a promise the server no longer kept.
 
-Hosted mode is unchanged. It still does not register `upload_file`, because a
-path names the pod's disk rather than the caller's, and the four tools that
-spend a key say so only through `create_project_from_file`'s hosted
-description. A hosted upload path is a transport feature of its own and is not
-part of this release.
+Hosted mode now registers `upload_file` too, so nothing has to run on the
+caller's machine to move a file into the API, and the four tools that spend a
+key are reachable from a hosted agent with no other setup. Its argument remains
+the one thing that differs by transport, and the only thing that should: stdio
+reads a path, a hosted server takes the bytes or fetches a `url`, and the
+package is unchanged. What a deployment has to be sized for, and which addresses
+a `url` may reach, are in [HOSTING.md](HOSTING.md#uploads).
 
 ## [0.5.0] - 2026-11-13
 

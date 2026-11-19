@@ -251,6 +251,21 @@ describe('tool registry', () => {
       'create_item_comment',
       'update_item_comment',
       'delete_item_comment',
+      'store_content_image',
+      'get_content_images',
+      'delete_content_image',
+      'store_content_file',
+      'get_content_files',
+      'delete_content_file',
+      'run_accessibility_pdf_upload_test',
+      'run_accessibility_pdf_url_test',
+      'run_accessibility_pdf_sitemap_test',
+      'get_accessibility_pdf_run',
+      'delete_accessibility_pdf_item',
+      'refresh_accessibility_pdf_item',
+      'archive_accessibility_pdf_results',
+      'unarchive_accessibility_pdf_results',
+      'set_accessibility_pdf_result_note',
     ]) {
       expect(name in tools, `missing tool ${name}`).toBe(true);
     }

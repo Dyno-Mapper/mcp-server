@@ -101,9 +101,24 @@ import { get_accessibility_report_item_result } from './accessibility/get_access
 import { get_accessibility_pdf_files } from './accessibility/get_accessibility_pdf_files.js';
 import { get_accessibility_pdf_guidelines } from './accessibility/get_accessibility_pdf_guidelines.js';
 import { get_accessibility_pdf_item_result } from './accessibility/get_accessibility_pdf_item_result.js';
+import { run_accessibility_pdf_upload_test } from './accessibility/run_accessibility_pdf_upload_test.js';
+import { run_accessibility_pdf_url_test } from './accessibility/run_accessibility_pdf_url_test.js';
+import { run_accessibility_pdf_sitemap_test } from './accessibility/run_accessibility_pdf_sitemap_test.js';
+import { get_accessibility_pdf_run } from './accessibility/get_accessibility_pdf_run.js';
+import { delete_accessibility_pdf_item } from './accessibility/delete_accessibility_pdf_item.js';
+import { refresh_accessibility_pdf_item } from './accessibility/refresh_accessibility_pdf_item.js';
+import { archive_accessibility_pdf_results } from './accessibility/archive_accessibility_pdf_results.js';
+import { unarchive_accessibility_pdf_results } from './accessibility/unarchive_accessibility_pdf_results.js';
+import { set_accessibility_pdf_result_note } from './accessibility/set_accessibility_pdf_result_note.js';
 import { get_accessibility_login_inputs } from './accessibility/get_accessibility_login_inputs.js';
 import { submit_accessibility_login_input } from './accessibility/submit_accessibility_login_input.js';
 import { upload_file } from './files/upload_file.js';
+import { store_content_image } from './content/store_content_image.js';
+import { get_content_images } from './content/get_content_images.js';
+import { delete_content_image } from './content/delete_content_image.js';
+import { store_content_file } from './content/store_content_file.js';
+import { get_content_files } from './content/get_content_files.js';
+import { delete_content_file } from './content/delete_content_file.js';
 import { get_assignments } from './assignments/get_assignments.js';
 import { get_project_assignments } from './assignments/get_project_assignments.js';
 import { get_assignments_totals } from './assignments/get_assignments_totals.js';
@@ -118,12 +133,11 @@ export interface Tool {
   method: string;
   path: string;
   /**
-   * `true` sends the file part next to a JSON `body` part (text and XML
-   * imports); `'fields'` sends every argument as its own form field next to
-   * the file (uploads). A `true` tool called without a file sends a plain
-   * JSON body instead.
+   * `'fields'` sends every argument as its own form field next to the file,
+   * which is the shape an upload expects. Uploads are the only calls that
+   * take a file: an import names a key the upload returned instead.
    */
-  multipart?: boolean | 'fields';
+  multipart?: 'fields';
 }
 
 export const tools: Record<string, Tool> = {
@@ -233,9 +247,25 @@ export const tools: Record<string, Tool> = {
   get_accessibility_pdf_files: get_accessibility_pdf_files as any,
   get_accessibility_pdf_guidelines: get_accessibility_pdf_guidelines as any,
   get_accessibility_pdf_item_result: get_accessibility_pdf_item_result as any,
+  run_accessibility_pdf_upload_test: run_accessibility_pdf_upload_test as any,
+  run_accessibility_pdf_url_test: run_accessibility_pdf_url_test as any,
+  run_accessibility_pdf_sitemap_test: run_accessibility_pdf_sitemap_test as any,
+  get_accessibility_pdf_run: get_accessibility_pdf_run as any,
+  delete_accessibility_pdf_item: delete_accessibility_pdf_item as any,
+  refresh_accessibility_pdf_item: refresh_accessibility_pdf_item as any,
+  archive_accessibility_pdf_results: archive_accessibility_pdf_results as any,
+  unarchive_accessibility_pdf_results:
+    unarchive_accessibility_pdf_results as any,
+  set_accessibility_pdf_result_note: set_accessibility_pdf_result_note as any,
   get_accessibility_login_inputs: get_accessibility_login_inputs as any,
   submit_accessibility_login_input: submit_accessibility_login_input as any,
   upload_file: upload_file as any,
+  store_content_image: store_content_image as any,
+  get_content_images: get_content_images as any,
+  delete_content_image: delete_content_image as any,
+  store_content_file: store_content_file as any,
+  get_content_files: get_content_files as any,
+  delete_content_file: delete_content_file as any,
   get_assignments: get_assignments as any,
   get_project_assignments: get_project_assignments as any,
   get_assignments_totals: get_assignments_totals as any,

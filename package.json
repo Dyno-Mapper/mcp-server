@@ -19,6 +19,7 @@
     "check:artifact": "node scripts/check-artifact.mjs",
     "check:changelogs": "node scripts/check-changelogs.mjs",
     "check:secrets": "node scripts/check-secrets.mjs",
+    "api:download": "node scripts/download-api.mjs",
     "prepare": "husky"
   },
   "devDependencies": {

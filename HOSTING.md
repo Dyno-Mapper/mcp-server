@@ -71,19 +71,19 @@ warns at startup when it is set.
 Failures that happen before a tool runs are HTTP statuses with a JSON-RPC error
 body, so a client never receives an HTML page:
 
-| Status | Meaning                                                                                          |
-| ------ | ------------------------------------------------------------------------------------------------ |
-| `400`  | Malformed JSON (`-32700`) or an unsupported protocol version                                     |
-| `401`  | No token or an expired one (`-32001`); `WWW-Authenticate` names the metadata document            |
-| `403`  | Bad `Host` or `Origin`; on an upload URL, `upload_ticket_invalid` or `upload_ticket_expired`     |
-| `405`  | `GET`/`DELETE` on `/mcp` (`Allow: POST`), or anything but `PUT` on an upload URL (`Allow: PUT`)  |
-| `406`  | `Accept` missing `text/event-stream`                                                             |
-| `413`  | Body over `MCP_MAX_BODY_BYTES`, or an upload over its purpose's ceiling                          |
-| `429`  | Over the per-caller rate limit; honours `Retry-After`                                            |
-| `502`  | The API answered an upload with a redirect, an unreachable error, or a body over 1 MiB           |
-| `503`  | `MCP_MAX_CONCURRENCY` requests in flight, or an upload with no free slot, per caller or in total |
-| `504`  | The upstream leg of an upload outlived `MCP_UPLOAD_TIMEOUT_MS`                                   |
-| `507`  | No temp space left to spool an upload                                                            |
+| Status | Meaning                                                                                         |
+| ------ | ----------------------------------------------------------------------------------------------- |
+| `400`  | Malformed JSON (`-32700`) or an unsupported protocol version                                    |
+| `401`  | No token or an expired one (`-32001`); `WWW-Authenticate` names the metadata document           |
+| `403`  | Bad `Host` or `Origin`; on an upload URL, `upload_ticket_invalid` or `upload_ticket_expired`    |
+| `405`  | `GET`/`DELETE` on `/mcp` (`Allow: POST`), or anything but `PUT` on an upload URL (`Allow: PUT`) |
+| `406`  | `Accept` missing `text/event-stream`                                                            |
+| `413`  | Body over `MCP_MAX_BODY_BYTES`, or an upload over its purpose's ceiling                         |
+| `429`  | Over the per-caller rate limit; honours `Retry-After`                                           |
+| `502`  | The API answered an upload with a redirect, an unreachable error, or a body over 1 MiB          |
+| `503`  | `MCP_MAX_CONCURRENCY` requests in flight, or an upload with no free slot for that caller        |
+| `504`  | The upstream leg of an upload outlived `MCP_UPLOAD_TIMEOUT_MS`                                  |
+| `507`  | No temp space left to spool an upload                                                           |
 
 A tool that fails — including a rejected token — is a normal `200` with an
 `isError` result, because the DYNO Mapper API is the authority on whether a
@@ -166,27 +166,27 @@ are what a deployment has to be sized for; see [Uploads](#uploads).
 
 ## Configuration
 
-| Variable                     | Default                      | Meaning                                                                                                                                                                                                                    |
-| ---------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `MCP_PORT` / `PORT`          | `3000`                       | Listener port.                                                                                                                                                                                                             |
-| `MCP_HOST` / `HOST`          | `127.0.0.1`                  | Listener interface. A container sets `0.0.0.0`.                                                                                                                                                                            |
-| `MCP_ALLOWED_HOSTS`          | —                            | Comma-separated `Host` allowlist. Unset, a loopback listener accepts only localhost names; a public one is not checked at all.                                                                                             |
-| `MCP_ALLOWED_ORIGINS`        | —                            | Comma-separated `Origin` allowlist. Unset, `Origin` is not checked. A request without `Origin` is always allowed. This rejects foreign origins; it does not turn on CORS, which only the well-known metadata routes speak. |
-| `MCP_TRUST_PROXY`            | `false`                      | Read the caller IP from the CDN's viewer-address header when present, then the last `X-Forwarded-For` entry.                                                                                                               |
-| `MCP_RATE_LIMIT`             | `60`                         | Sustained requests per minute per caller.                                                                                                                                                                                  |
-| `MCP_RATE_BURST`             | `20`                         | Burst allowance per caller.                                                                                                                                                                                                |
-| `MCP_MAX_BODY_BYTES`         | `4194304`                    | Largest accepted `application/json` request body: 4 MiB. A JSON-RPC tool call is kilobytes; files are PUT to an upload URL instead.                                                                                        |
-| `MCP_MAX_CONCURRENCY`        | `100`                        | Requests in flight before `503`.                                                                                                                                                                                           |
-| `MCP_MAX_UPLOAD_CONCURRENCY` | `2`                          | Uploads in flight before `503`, both **per caller** (JWT `sub`, or a digest of an opaque token) and **in total**. The total bound is what caps the temp disk.                                                              |
-| `DYNOMAPPER_API_URL`         | `https://api.dynomapper.com` | The API this server calls, for tool calls and for the upload re-post.                                                                                                                                                      |
-| `MCP_REQUEST_TIMEOUT_MS`     | `25000`                      | Deadline for one tool call. Uploads have their own budgets, below.                                                                                                                                                         |
-| `MCP_UPLOAD_SECRET`          | —                            | Passphrase that seals an upload URL. Required for uploads; unset, `create_upload_ticket` refuses and everything else works. Use at least 32 characters.                                                                    |
-| `MCP_UPLOAD_TICKET_TTL_MS`   | `600000`                     | How long an upload URL stays valid: ten minutes.                                                                                                                                                                           |
-| `MCP_UPLOAD_TIMEOUT_MS`      | `300000`                     | Budget for the whole upstream leg of one upload. The caller's link, not the API, decides how long that takes.                                                                                                              |
-| `MCP_UPLOAD_IDLE_TIMEOUT_MS` | `60000`                      | Budget for an upstream leg that has moved nothing at all, so a half-open connection cannot hold a slot and a spool file.                                                                                                   |
-| `MCP_JSON_RESPONSES`         | `true`                       | `false` answers with an SSE stream instead of one JSON body.                                                                                                                                                               |
-| `MCP_PUBLIC_URL`             | —                            | Origin this deployment answers at, such as `https://mcp.dynomapper.com`. Unset, every advertised URL is derived from the request `Host`.                                                                                   |
-| `MCP_AUTHORIZATION_SERVER`   | `https://api.dynomapper.com` | Issuer advertised in the protected-resource document. It must match that server's own `issuer` exactly, or a client rejects the document.                                                                                  |
+| Variable                     | Default                      | Meaning                                                                                                                                                                                                                                                          |
+| ---------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MCP_PORT` / `PORT`          | `3000`                       | Listener port.                                                                                                                                                                                                                                                   |
+| `MCP_HOST` / `HOST`          | `127.0.0.1`                  | Listener interface. A container sets `0.0.0.0`.                                                                                                                                                                                                                  |
+| `MCP_ALLOWED_HOSTS`          | —                            | Comma-separated `Host` allowlist. Unset, a loopback listener accepts only localhost names; a public one is not checked at all.                                                                                                                                   |
+| `MCP_ALLOWED_ORIGINS`        | —                            | Comma-separated `Origin` allowlist. Unset, `Origin` is not checked. A request without `Origin` is always allowed. This rejects foreign origins; it does not turn on CORS, which only the well-known metadata routes speak.                                       |
+| `MCP_TRUST_PROXY`            | `false`                      | Read the caller IP from the CDN's viewer-address header when present, then the last `X-Forwarded-For` entry.                                                                                                                                                     |
+| `MCP_RATE_LIMIT`             | `60`                         | Sustained requests per minute per caller.                                                                                                                                                                                                                        |
+| `MCP_RATE_BURST`             | `20`                         | Burst allowance per caller.                                                                                                                                                                                                                                      |
+| `MCP_MAX_BODY_BYTES`         | `4194304`                    | Largest accepted `application/json` request body: 4 MiB. A JSON-RPC tool call is kilobytes; files are PUT to an upload URL instead.                                                                                                                              |
+| `MCP_MAX_CONCURRENCY`        | `100`                        | Requests in flight before `503`.                                                                                                                                                                                                                                 |
+| `MCP_MAX_UPLOAD_CONCURRENCY` | `2`                          | Uploads in flight **per caller** before `503` (JWT `sub`, or a digest of an opaque token). One spool per slot, so a caller's own ceiling is `MCP_MAX_UPLOAD_CONCURRENCY ×` the largest purpose. It is not a server-wide bound: every caller has their own slots. |
+| `DYNOMAPPER_API_URL`         | `https://api.dynomapper.com` | The API this server calls, for tool calls and for the upload re-post.                                                                                                                                                                                            |
+| `MCP_REQUEST_TIMEOUT_MS`     | `25000`                      | Deadline for one tool call. Uploads have their own budgets, below.                                                                                                                                                                                               |
+| `MCP_UPLOAD_SECRET`          | —                            | Passphrase that seals an upload URL. Required for uploads; unset, `create_upload_ticket` refuses and everything else works. Use at least 32 characters.                                                                                                          |
+| `MCP_UPLOAD_TICKET_TTL_MS`   | `600000`                     | How long an upload URL stays valid: ten minutes.                                                                                                                                                                                                                 |
+| `MCP_UPLOAD_TIMEOUT_MS`      | `300000`                     | Budget for the whole upstream leg of one upload. The caller's link, not the API, decides how long that takes.                                                                                                                                                    |
+| `MCP_UPLOAD_IDLE_TIMEOUT_MS` | `60000`                      | Budget for an upstream leg that has moved nothing at all, so a half-open connection cannot hold a slot and a spool file.                                                                                                                                         |
+| `MCP_JSON_RESPONSES`         | `true`                       | `false` answers with an SSE stream instead of one JSON body.                                                                                                                                                                                                     |
+| `MCP_PUBLIC_URL`             | —                            | Origin this deployment answers at, such as `https://mcp.dynomapper.com`. Unset, every advertised URL is derived from the request `Host`.                                                                                                                         |
+| `MCP_AUTHORIZATION_SERVER`   | `https://api.dynomapper.com` | Issuer advertised in the protected-resource document. It must match that server's own `issuer` exactly, or a client rejects the document.                                                                                                                        |
 
 `MCP_`-prefixed names win over the generic ones, which matters when a shared pod
 injects `PORT` for the application container.
@@ -232,9 +232,11 @@ chunk, measured at about 0.2× the file rather than the several copies a decoded
 base64 body used to cost. Size the container for:
 
 - **Temp disk:** `MCP_MAX_UPLOAD_CONCURRENCY ×` the largest purpose (64 MB) —
-  128 MB at the default of two. That is a hard bound, not an estimate: a slot is
-  charged before anything is spooled, per caller and in total, so neither one
-  caller nor a crowd can exceed it.
+  128 MB at the default of two, **per caller**. A slot is charged before
+  anything is spooled, so no single caller can exceed its own ceiling; the bound
+  is not server-wide, though, so the spool as a whole is as large as the callers
+  are numerous. Set the container's `ephemeral-storage` limit to the disk you
+  are willing to give the spool: it is what a crowd of callers runs into.
 - **Memory:** a few megabytes per in-flight upload. The old rule — size for five
   times the file — belonged to base64 and no longer applies.
 - **`MCP_MAX_BODY_BYTES`:** now only a JSON-RPC limit, 4 MiB by default. It does
@@ -251,11 +253,12 @@ Two guards answer before a byte is written:
   `413 file_too_large` without reading the body. A streamed body with no length
   is counted as it arrives and stopped at the same point.
 - **The slots.** Each upload charges one slot, answering `503` with
-  `Retry-After` when the caller already holds `MCP_MAX_UPLOAD_CONCURRENCY` or
-  the server does. Slots are keyed on the caller's token identity — the JWT
+  `Retry-After` when the caller already holds `MCP_MAX_UPLOAD_CONCURRENCY`.
+  Slots are keyed on the caller's token identity — the JWT
   `sub`, or a digest of an opaque token — never on the account: nothing in a
   request carries an account id, and each personal access token of one account
-  is its own bucket.
+  is its own bucket. Another caller's uploads never count against yours, and
+  yours never refuse theirs.
 
 The route never follows a redirect: a `3xx` from the API is
 `502 upstream_redirect`, because following it would re-send the whole file

@@ -153,7 +153,8 @@ interface Harness {
   ticket: (
     purpose: string,
     name?: string,
-    mimeType?: string
+    mimeType?: string,
+    auth?: Record<string, string>
   ) => Promise<{ uploadUrl: string; curl: string; expiresAt: string }>;
   put: (
     url: string,
@@ -213,10 +214,15 @@ async function startHarness(
         headers: { ...JSON_HEADERS, ...AUTH, ...headers },
         body: JSON.stringify(body),
       }),
-    async ticket(purpose, name = 'shot.png', mimeType = 'image/png') {
+    async ticket(
+      purpose,
+      name = 'shot.png',
+      mimeType = 'image/png',
+      auth = AUTH
+    ) {
       const response = await fetch(`${origin}/mcp`, {
         method: 'POST',
-        headers: { ...JSON_HEADERS, ...AUTH },
+        headers: { ...JSON_HEADERS, ...auth },
         body: JSON.stringify({
           jsonrpc: '2.0',
           id: 20,
@@ -800,6 +806,35 @@ describe('upload route', () => {
     expect(
       (await app.put(third.uploadUrl, Buffer.from('png bytes'))).status
     ).toBe(201);
+  });
+
+  test('bounds uploads per caller rather than across the server', async () => {
+    const app = await harness({ maxUploadConcurrency: 1 }, { delayMs: 300 });
+    const mine = await app.ticket('sitemap_content_image');
+    const theirs = await app.ticket(
+      'sitemap_content_image',
+      'shot.png',
+      'image/png',
+      {
+        authorization: `Bearer ${expiresIn(3600)}`,
+      }
+    );
+
+    const first = app.put(mine.uploadUrl, Buffer.from('png bytes'));
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // The caller that holds its one slot is refused...
+    const refused = await app.put(mine.uploadUrl, Buffer.from('png bytes'));
+    expect(refused.status).toBe(503);
+    expect(refused.headers.get('retry-after')).toBe('1');
+    expect((await refused.json()).message).toContain('per caller');
+
+    // ...while a second caller still has a slot of its own.
+    expect(
+      (await app.put(theirs.uploadUrl, Buffer.from('png bytes'))).status
+    ).toBe(201);
+
+    expect((await first).status).toBe(201);
   });
 
   test('refuses uploads when the deployment has no secret', async () => {

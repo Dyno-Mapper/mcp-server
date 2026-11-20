@@ -39,8 +39,9 @@ consumer sees is in [packages/stdio/CHANGELOG.md](packages/stdio/CHANGELOG.md).
   (required for uploads, warned about below 32 characters), and
   `MCP_UPLOAD_TICKET_TTL_MS`, `MCP_UPLOAD_TIMEOUT_MS`,
   `MCP_UPLOAD_IDLE_TIMEOUT_MS`.
-- A per-caller and global upload-slot bound charged before spooling, so the temp
-  disk a pod can use is `MCP_MAX_UPLOAD_CONCURRENCY × the largest purpose`.
+- A per-caller upload-slot bound charged before spooling, so one caller's temp
+  disk is `MCP_MAX_UPLOAD_CONCURRENCY × the largest purpose`. It is not a
+  server-wide ceiling: each caller has its own slots.
 - `DYNOMAPPER_API_URL` is read into the hosted config, so the upload route and
   the tool calls cannot be pointed at two different APIs.
 

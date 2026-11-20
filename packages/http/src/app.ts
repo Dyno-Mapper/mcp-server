@@ -321,10 +321,12 @@ interface UploadSlot {
  * in-flight upload holds one temp file of up to the largest purpose, so the
  * count is what keeps the disk known.
  *
- * Two limits, one number. Per caller, so one caller cannot occupy every slot;
- * and in total, because the per-caller limit composes badly — ten callers at
- * two slots each is twenty spools, and the operator sized the disk for two.
- * Both are `MCP_MAX_UPLOAD_CONCURRENCY`.
+ * One limit, per caller: a caller holding `MCP_MAX_UPLOAD_CONCURRENCY` uploads
+ * is refused, so no single token can occupy the spool. It is deliberately not a
+ * server-wide ceiling — a caller's allowance does not depend on what anyone else
+ * is doing — so the spool can hold `callers × MCP_MAX_UPLOAD_CONCURRENCY × the
+ * largest purpose`, and the container's ephemeral-storage limit, not this
+ * counter, is what stops it.
  *
  * The key is `callerIdentity`, which is a token digest or a JWT subject, never
  * an account id: nothing in a request carries one, and resolving it would cost
@@ -332,7 +334,6 @@ interface UploadSlot {
  */
 function uploadSlots(config: HttpConfig) {
   const slots = new Map<string, UploadSlot>();
-  let inFlight = 0;
   const idleLimit = 10 * 60_000;
 
   const sweep = (now: number) => {
@@ -360,10 +361,7 @@ function uploadSlots(config: HttpConfig) {
       const slot = slots.get(key) ?? { inFlight: 0, updatedAt: now };
       slot.updatedAt = now;
 
-      if (
-        slot.inFlight >= config.maxUploadConcurrency ||
-        inFlight >= config.maxUploadConcurrency
-      ) {
+      if (slot.inFlight >= config.maxUploadConcurrency) {
         // The answer is the route's to write: this route speaks the upload
         // vocabulary, not JSON-RPC, and the client reading it is a plain HTTP
         // caller.
@@ -372,13 +370,11 @@ function uploadSlots(config: HttpConfig) {
       }
 
       slot.inFlight += 1;
-      inFlight += 1;
       slots.set(key, slot);
 
       onDone(res, () => {
         slot.inFlight = Math.max(0, slot.inFlight - 1);
         slot.updatedAt = Date.now();
-        inFlight = Math.max(0, inFlight - 1);
       });
 
       sweep(now);
@@ -461,8 +457,8 @@ interface UploadRouteDeps {
  *
  * The body is spooled to a temp file as it arrives and then streamed to the
  * API — never buffered. Two bounds apply before a byte is written: the
- * purpose's ceiling from the declared `Content-Length`, and a slot from the
- * shared upload accounting, so the temp disk is bounded by configuration.
+ * purpose's ceiling from the declared `Content-Length`, and a per-caller slot
+ * from the upload accounting.
  */
 function uploadRoute({
   config,
@@ -527,7 +523,7 @@ function uploadRoute({
       reply(
         503,
         'upload_too_many',
-        `Too many uploads in flight: the limit is ${config.maxUploadConcurrency} per caller and across the server. Retry after the upload in flight finishes.`
+        `Too many uploads in flight: the limit is ${config.maxUploadConcurrency} per caller. Retry after the upload in flight finishes.`
       );
       return;
     }

@@ -23,12 +23,12 @@ export interface HttpConfig {
   /** Largest accepted `application/json` request body, in bytes. */
   maxBodyBytes: number;
   /**
-   * Uploads in flight per caller, and in total, before the endpoint answers 503.
+   * Uploads in flight per caller before the endpoint answers 503.
    *
-   * One number for both bounds because they are the same question at two
-   * scales: how many spool files may this pod hold at once. Per caller, so one
-   * caller cannot occupy every slot; in total, so the temp disk has a known
-   * ceiling of `maxUploadConcurrency × the largest purpose`.
+   * One spool per slot, up to the largest purpose, so a caller's own ceiling is
+   * `maxUploadConcurrency × the largest purpose`. It is not a server-wide
+   * bound: every caller gets this many, and the container's ephemeral-storage
+   * limit is what stops the spool as a whole.
    */
   maxUploadConcurrency: number;
   /** Requests handled at once before the endpoint answers 503. */
@@ -203,8 +203,8 @@ export function readHttpConfig(
     // body — they are PUT to an upload ticket — so this is sized for a verbose
     // bulk call with headroom, not for a base64 file.
     maxBodyBytes: readInt(env, ['MCP_MAX_BODY_BYTES'], 4 * 1024 * 1024),
-    // Two spools at the largest purpose is 128 MiB of temp disk; raise it only
-    // alongside the disk that has to hold them.
+    // Two spools per caller at the largest purpose is 128 MiB of temp disk for
+    // that caller; raise it only alongside the disk that has to hold them.
     maxUploadConcurrency: readInt(env, ['MCP_MAX_UPLOAD_CONCURRENCY'], 2),
     maxConcurrency: readInt(env, ['MCP_MAX_CONCURRENCY'], 100),
     // Below CloudFront's 30 second response timeout, so a slow call ends as a

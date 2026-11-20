@@ -111,6 +111,7 @@ The following tools are available through this MCP server:
 | Tool                                   | Description                                                                   |
 | -------------------------------------- | ----------------------------------------------------------------------------- |
 | `get_current_user`                     | Get current user information and account details                              |
+| `get_account_usage`                    | Get the plan’s allowances and how much of each is in use                      |
 | `get_projects`                         | Get a list of projects                                                        |
 | `get_project_details`                  | Get the details of a project                                                  |
 | `create_project_from_url`              | Create a Project from URL                                                     |

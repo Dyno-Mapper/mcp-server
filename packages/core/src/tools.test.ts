@@ -217,6 +217,7 @@ describe('tool registry', () => {
 
   test('registers the latest tools', () => {
     for (const name of [
+      'get_account_usage',
       'get_project_dacq_score',
       'get_project_login_inputs',
       'submit_project_login_input',

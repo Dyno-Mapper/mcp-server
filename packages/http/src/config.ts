@@ -22,14 +22,32 @@ export interface HttpConfig {
   rateLimitBurst: number;
   /** Largest accepted `application/json` request body, in bytes. */
   maxBodyBytes: number;
-  /** Uploads in flight per caller, before the endpoint answers 503. */
+  /**
+   * Uploads in flight per caller, and in total, before the endpoint answers 503.
+   *
+   * One number for both bounds because they are the same question at two
+   * scales: how many spool files may this pod hold at once. Per caller, so one
+   * caller cannot occupy every slot; in total, so the temp disk has a known
+   * ceiling of `maxUploadConcurrency × the largest purpose`.
+   */
   maxUploadConcurrency: number;
-  /** Body size at which a request is treated as an upload, in bytes. */
-  uploadGateBytes: number;
   /** Requests handled at once before the endpoint answers 503. */
   maxConcurrency: number;
+  /** The DYNO Mapper API this server calls, without a trailing slash. */
+  apiBaseUrl: string;
   /** Deadline for one DYNO Mapper API call, in milliseconds. */
   requestTimeoutMs: number;
+  /**
+   * Passphrase the upload ticket is sealed with. Shorter values are warned
+   * about at startup; empty means uploads are refused and nothing else changes.
+   */
+  uploadSecret: string;
+  /** How long an upload URL stays valid, in milliseconds. */
+  uploadTicketTtlMs: number;
+  /** Budget for the whole upstream leg of one upload, in milliseconds. */
+  uploadTimeoutMs: number;
+  /** Budget for an upstream leg that has transferred nothing, in milliseconds. */
+  uploadIdleTimeoutMs: number;
   /** Answer a POST with one `application/json` body instead of an SSE stream. */
   jsonResponses: boolean;
   /**
@@ -181,20 +199,37 @@ export function readHttpConfig(
     trustProxy: readBool(env, 'MCP_TRUST_PROXY', false),
     rateLimitPerMinute: readInt(env, ['MCP_RATE_LIMIT'], 60),
     rateLimitBurst: readInt(env, ['MCP_RATE_BURST'], 20),
-    // 96 MiB, because the largest file an upload accepts is 64 MB and base64
-    // spends four bytes to carry three: 64 MiB of file arrives as 87.4 MB of
-    // JSON, and the margin covers the envelope around it.
-    maxBodyBytes: readInt(env, ['MCP_MAX_BODY_BYTES'], 96 * 1024 * 1024),
-    // An upload holds the file several times over while it is decoded, typed
-    // and re-sent, so only a couple per caller may be in flight at once.
+    // A JSON-RPC tool call is kilobytes. Files no longer travel in a request
+    // body — they are PUT to an upload ticket — so this is sized for a verbose
+    // bulk call with headroom, not for a base64 file.
+    maxBodyBytes: readInt(env, ['MCP_MAX_BODY_BYTES'], 4 * 1024 * 1024),
+    // Two spools at the largest purpose is 128 MiB of temp disk; raise it only
+    // alongside the disk that has to hold them.
     maxUploadConcurrency: readInt(env, ['MCP_MAX_UPLOAD_CONCURRENCY'], 2),
-    // Nothing but an upload carries this much argument, so a body this large
-    // can be charged to an upload slot before it is buffered.
-    uploadGateBytes: readInt(env, ['MCP_UPLOAD_GATE_BYTES'], 8 * 1024 * 1024),
     maxConcurrency: readInt(env, ['MCP_MAX_CONCURRENCY'], 100),
     // Below CloudFront's 30 second response timeout, so a slow call ends as a
     // tool error the agent can read rather than a 504 it cannot.
+    // Read here as well as in core, so the upload route and the tool calls
+    // cannot be pointed at two different APIs.
+    apiBaseUrl: readUrl(
+      env,
+      'DYNOMAPPER_API_URL',
+      'https://api.dynomapper.com'
+    ),
     requestTimeoutMs: readInt(env, ['MCP_REQUEST_TIMEOUT_MS'], 25_000),
+    // Any passphrase is accepted; the key is derived by hashing it, so a
+    // readable sentence is as good as a hex string. The startup warning says
+    // when it is too short to be worth much.
+    uploadSecret: (env.MCP_UPLOAD_SECRET ?? '').trim(),
+    // Ten minutes: long enough for a slow 64 MB upload, short enough that a URL
+    // pasted into the wrong place is useless by the time it is found.
+    uploadTicketTtlMs: readInt(env, ['MCP_UPLOAD_TICKET_TTL_MS'], 600_000),
+    // The upload leg is the one call whose duration is set by the caller's
+    // link, not by the API, so it does not share the tool-call budget.
+    uploadTimeoutMs: readInt(env, ['MCP_UPLOAD_TIMEOUT_MS'], 300_000),
+    // A half-open connection holds a slot and a spool; nothing at all moving
+    // for a minute is a dead link, not a slow one.
+    uploadIdleTimeoutMs: readInt(env, ['MCP_UPLOAD_IDLE_TIMEOUT_MS'], 60_000),
     jsonResponses: readBool(env, 'MCP_JSON_RESPONSES', true),
     publicUrl: readUrl(env, 'MCP_PUBLIC_URL', '', true),
     authorizationServer: readUrl(

@@ -41,16 +41,17 @@ the SSE-removal error. `--help` lists the flags and the hosted settings.
 
 One endpoint, `POST /mcp`, speaking JSON-RPC 2.0.
 
-| Concern          | Behaviour                                                         |
-| ---------------- | ----------------------------------------------------------------- |
-| Authentication   | `Authorization: Bearer <access token>`, on every request          |
-| `Accept`         | Must include both `application/json` and `text/event-stream`      |
-| `Content-Type`   | `application/json`                                                |
-| Responses        | One JSON body per call; `MCP_JSON_RESPONSES=false` streams SSE    |
-| Sessions         | None. No `Mcp-Session-Id` is sent or accepted                     |
-| `GET` / `DELETE` | `405`, because there is no stream to resume and no session to end |
-| Health           | `GET /health`, unauthenticated, not rate limited                  |
-| Metadata         | `GET /.well-known/oauth-protected-resource`, unauthenticated      |
+| Concern          | Behaviour                                                                |
+| ---------------- | ------------------------------------------------------------------------ |
+| Authentication   | `Authorization: Bearer <access token>`, on every request                 |
+| `Accept`         | Must include both `application/json` and `text/event-stream`             |
+| `Content-Type`   | `application/json`                                                       |
+| Responses        | One JSON body per call; `MCP_JSON_RESPONSES=false` streams SSE           |
+| Sessions         | None. No `Mcp-Session-Id` is sent or accepted                            |
+| `GET` / `DELETE` | `405`, because there is no stream to resume and no session to end        |
+| Uploads          | `PUT /upload/{ticket}`, authenticated by the ticket rather than a header |
+| Health           | `GET /health`, unauthenticated, not rate limited                         |
+| Metadata         | `GET /.well-known/oauth-protected-resource`, unauthenticated             |
 
 ```bash
 curl -s -X POST http://127.0.0.1:3000/mcp \
@@ -70,16 +71,19 @@ warns at startup when it is set.
 Failures that happen before a tool runs are HTTP statuses with a JSON-RPC error
 body, so a client never receives an HTML page:
 
-| Status | Meaning                                                                                                                       |
-| ------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| `400`  | Malformed JSON (`-32700`) or an unsupported protocol version                                                                  |
-| `401`  | No token or an expired one (`-32001`); `WWW-Authenticate` names the metadata document                                         |
-| `403`  | Bad `Host` or `Origin`                                                                                                        |
-| `405`  | `GET`/`DELETE`; `Allow: POST`                                                                                                 |
-| `406`  | `Accept` missing `text/event-stream`                                                                                          |
-| `413`  | Body over `MCP_MAX_BODY_BYTES`                                                                                                |
-| `429`  | Over the per-caller rate limit; honours `Retry-After`                                                                         |
-| `503`  | `MCP_MAX_CONCURRENCY` requests in flight, or an upload when `MCP_MAX_UPLOAD_CONCURRENCY` is already in flight for that caller |
+| Status | Meaning                                                                                          |
+| ------ | ------------------------------------------------------------------------------------------------ |
+| `400`  | Malformed JSON (`-32700`) or an unsupported protocol version                                     |
+| `401`  | No token or an expired one (`-32001`); `WWW-Authenticate` names the metadata document            |
+| `403`  | Bad `Host` or `Origin`; on an upload URL, `upload_ticket_invalid` or `upload_ticket_expired`     |
+| `405`  | `GET`/`DELETE` on `/mcp` (`Allow: POST`), or anything but `PUT` on an upload URL (`Allow: PUT`)  |
+| `406`  | `Accept` missing `text/event-stream`                                                             |
+| `413`  | Body over `MCP_MAX_BODY_BYTES`, or an upload over its purpose's ceiling                          |
+| `429`  | Over the per-caller rate limit; honours `Retry-After`                                            |
+| `502`  | The API answered an upload with a redirect, an unreachable error, or a body over 1 MiB           |
+| `503`  | `MCP_MAX_CONCURRENCY` requests in flight, or an upload with no free slot, per caller or in total |
+| `504`  | The upstream leg of an upload outlived `MCP_UPLOAD_TIMEOUT_MS`                                   |
+| `507`  | No temp space left to spool an upload                                                            |
 
 A tool that fails — including a rejected token — is a normal `200` with an
 `isError` result, because the DYNO Mapper API is the authority on whether a
@@ -142,15 +146,20 @@ the server named in `authorization_servers`, not to this one.
 
 ### Tool surface
 
-The tool surface is the stdio server's, with one tool's argument exchanged for
-another. `upload_file` reads a path on the stdio server, where the caller and
-the server share a filesystem, and takes the caller's bytes here, where they do
-not:
+The tool surface is the stdio server's, with the upload tool exchanged for one
+that works without a shared filesystem:
 
-| Transport | Source of the file                                     |
-| --------- | ------------------------------------------------------ |
-| stdio     | `file`, an absolute path on the caller's machine       |
-| hosted    | `content`, base64 plus `name` and `mimeType`, or `url` |
+| Transport | How a file reaches the API                                              |
+| --------- | ----------------------------------------------------------------------- |
+| stdio     | `upload_file`, with `file`: an absolute path on the caller's machine    |
+| hosted    | `create_upload_ticket`, then a `PUT` of the bytes to the URL it returns |
+
+`upload_file` is **not registered here**. Its only source is a path, and this
+server's filesystem is the pod's, so every call would fail; a tool that cannot
+work is absent rather than present and refusing. A hosted agent gets its file
+key from the PUT's response and passes it to `store_content_image`,
+`store_content_file`, `run_accessibility_pdf_upload_test` or
+`create_project_from_file` exactly as the stdio server does.
 
 Everything else is identical to the stdio server in `packages/stdio`. Uploads
 are what a deployment has to be sized for; see [Uploads](#uploads).
@@ -166,11 +175,15 @@ are what a deployment has to be sized for; see [Uploads](#uploads).
 | `MCP_TRUST_PROXY`            | `false`                      | Read the caller IP from the CDN's viewer-address header when present, then the last `X-Forwarded-For` entry.                                                                                                               |
 | `MCP_RATE_LIMIT`             | `60`                         | Sustained requests per minute per caller.                                                                                                                                                                                  |
 | `MCP_RATE_BURST`             | `20`                         | Burst allowance per caller.                                                                                                                                                                                                |
-| `MCP_MAX_BODY_BYTES`         | `100663296`                  | Largest accepted request body: 96 MiB, which holds a 64 MB file as base64. A body above 8 MiB is charged to an upload slot.                                                                                                |
+| `MCP_MAX_BODY_BYTES`         | `4194304`                    | Largest accepted `application/json` request body: 4 MiB. A JSON-RPC tool call is kilobytes; files are PUT to an upload URL instead.                                                                                        |
 | `MCP_MAX_CONCURRENCY`        | `100`                        | Requests in flight before `503`.                                                                                                                                                                                           |
-| `MCP_MAX_UPLOAD_CONCURRENCY` | `2`                          | Uploads in flight **per caller** before `503`. Keyed on the JWT `sub`, or a digest of an opaque token.                                                                                                                     |
-| `MCP_UPLOAD_GATE_BYTES`      | `8388608`                    | Body size at which a request is treated as an upload and charged a slot before it is read.                                                                                                                                 |
-| `MCP_REQUEST_TIMEOUT_MS`     | `25000`                      | Deadline for the whole tool call, a `url` fetch included. Hosted mode only.                                                                                                                                                |
+| `MCP_MAX_UPLOAD_CONCURRENCY` | `2`                          | Uploads in flight before `503`, both **per caller** (JWT `sub`, or a digest of an opaque token) and **in total**. The total bound is what caps the temp disk.                                                              |
+| `DYNOMAPPER_API_URL`         | `https://api.dynomapper.com` | The API this server calls, for tool calls and for the upload re-post.                                                                                                                                                      |
+| `MCP_REQUEST_TIMEOUT_MS`     | `25000`                      | Deadline for one tool call. Uploads have their own budgets, below.                                                                                                                                                         |
+| `MCP_UPLOAD_SECRET`          | —                            | Passphrase that seals an upload URL. Required for uploads; unset, `create_upload_ticket` refuses and everything else works. Use at least 32 characters.                                                                    |
+| `MCP_UPLOAD_TICKET_TTL_MS`   | `600000`                     | How long an upload URL stays valid: ten minutes.                                                                                                                                                                           |
+| `MCP_UPLOAD_TIMEOUT_MS`      | `300000`                     | Budget for the whole upstream leg of one upload. The caller's link, not the API, decides how long that takes.                                                                                                              |
+| `MCP_UPLOAD_IDLE_TIMEOUT_MS` | `60000`                      | Budget for an upstream leg that has moved nothing at all, so a half-open connection cannot hold a slot and a spool file.                                                                                                   |
 | `MCP_JSON_RESPONSES`         | `true`                       | `false` answers with an SSE stream instead of one JSON body.                                                                                                                                                               |
 | `MCP_PUBLIC_URL`             | —                            | Origin this deployment answers at, such as `https://mcp.dynomapper.com`. Unset, every advertised URL is derived from the request `Host`.                                                                                   |
 | `MCP_AUTHORIZATION_SERVER`   | `https://api.dynomapper.com` | Issuer advertised in the protected-resource document. It must match that server's own `issuer` exactly, or a client rejects the document.                                                                                  |
@@ -180,72 +193,74 @@ injects `PORT` for the application container.
 
 ## Uploads
 
-`upload_file` is how a file reaches the API: an import, a PDF accessibility
-run, or an image or document a page points at. The API takes the file as
-`multipart/form-data` and answers a key, and every call that spends that key
-takes `fileKey` instead of a file.
+A file reaches the API — an import, a PDF accessibility run, or an image or
+document a page points at — through an upload, which is the API's own
+`multipart/form-data` call. It answers a key, and every call that spends that
+key takes `fileKey` instead of a file.
 
-This server cannot read the caller's disk, so the bytes arrive one of two ways
-— and only on this server, because the stdio one shares the caller's filesystem:
+This server cannot read the caller's disk, and a tool call is JSON, so the bytes
+cannot travel as an argument: a 10 MB image is about 13 MB of tokens. Instead
+the agent gets a URL to PUT the file to:
 
-- **`content`** — the file's bytes as base64, with `name` and `mimeType`
-  alongside. Nothing about this is free: base64 carries three bytes in four, so
-  a 64 MB file is 87.4 MB of request body, and the process holds it several
-  times over while it decodes, types and re-sends it.
-- **`url`** — the server fetches it. The response's `Content-Type` is the
-  declared media type and its filename is the name, unless `mimeType` or `name`
-  overrides them. Reading stops the moment the file passes the purpose's limit,
-  whether or not the response declared a length.
+```
+create_upload_ticket({ purpose, name, mimeType })   one tool call, no bytes
+      ↓  { uploadUrl, method: "PUT", expiresAt, curl }
+curl -T ./shot.png "<uploadUrl>"                    the bytes, with any HTTP client
+      ↓  { key, name, size, mimeType }              the API's answer, relayed
+store_content_image({ projectId, fileKey: key })    or the call that purpose names
+```
 
-Send exactly one, or the call answers `invalid_file_source`.
+`purpose` is a contract, not a label: it fixes the media types the file may
+have, its size limit, and the one call allowed to spend the returned key. It is
+sealed into the ticket, so the PUT needs no arguments of its own — the body is
+the file, and a `Content-Type` the client sends is ignored in favour of the
+ticket's.
+
+**The URL is a capability.** It works for one upload, for one purpose, for ten
+minutes (`MCP_UPLOAD_TICKET_TTL_MS`), and it carries the caller's token sealed
+inside it — that is how the route calls the API as that caller, since an agent
+sandbox has no credential to present on a bare PUT. Treat it as you would the
+token: it appears in proxy logs, in shell history and in anything that records
+URLs. The server's own log line redacts it. Rotating `MCP_UPLOAD_SECRET`
+invalidates every URL already handed out.
 
 ### What a deployment has to be sized for
 
-An upload costs roughly five times the file: the base64 string inside the
-parsed body, the raw body buffer, the decoded bytes, the `Blob` the form is
-built from, and the serialised request. Two concurrent 64 MB uploads are
-therefore around 600 MB of transient heap, which is what
-`MCP_MAX_UPLOAD_CONCURRENCY` bounds. Size the container for
-`MCP_MAX_UPLOAD_CONCURRENCY x 5 x 64 MB` on top of everything else the pod does.
+An upload costs **disk**, not heap. The body is spooled to a temp file as it
+arrives and then streamed to the API, so the process holds a buffer of one
+chunk, measured at about 0.2× the file rather than the several copies a decoded
+base64 body used to cost. Size the container for:
 
-Two guards keep that bounded:
+- **Temp disk:** `MCP_MAX_UPLOAD_CONCURRENCY ×` the largest purpose (64 MB) —
+  128 MB at the default of two. That is a hard bound, not an estimate: a slot is
+  charged before anything is spooled, per caller and in total, so neither one
+  caller nor a crowd can exceed it.
+- **Memory:** a few megabytes per in-flight upload. The old rule — size for five
+  times the file — belonged to base64 and no longer applies.
+- **`MCP_MAX_BODY_BYTES`:** now only a JSON-RPC limit, 4 MiB by default. It does
+  not bound an upload.
 
-- **Per-caller upload slots.** A body over `MCP_UPLOAD_GATE_BYTES` is treated as
-  an upload — no other tool carries that much argument — and is charged a slot
-  before it is read, answering `503` with `Retry-After` when the caller already
-  has `MCP_MAX_UPLOAD_CONCURRENCY` in flight. The slot is keyed on the account,
-  not the address: a platform calling on behalf of many accounts shares an
-  address and nothing else.
-- **The body limit.** `MCP_MAX_BODY_BYTES` defaults to 96 MiB, which is what a
-  64 MB file needs as base64. A request with no `Content-Length` cannot be
-  charged a slot before it is read, and is bounded only by
-  `MCP_MAX_CONCURRENCY`.
+The spool lives in `os.tmpdir()`; there is no setting for it. A file is unlinked
+when the request ends, however it ends, but a pod killed mid-upload leaves its
+spool behind until the container goes away — another reason the temp directory
+should be the container's own filesystem, not a shared volume.
 
-Lowering `MCP_MAX_BODY_BYTES` is supported; the server warns at startup when it
-is below what a 64 MB upload needs. The effect is that `content` uploads above
-three quarters of the limit are refused with `413`, while `url` uploads are
-unaffected.
+Two guards answer before a byte is written:
 
-### What a URL may be
+- **The declared size.** A `Content-Length` over the purpose's ceiling is
+  `413 file_too_large` without reading the body. A streamed body with no length
+  is counted as it arrives and stopped at the same point.
+- **The slots.** Each upload charges one slot, answering `503` with
+  `Retry-After` when the caller already holds `MCP_MAX_UPLOAD_CONCURRENCY` or
+  the server does. Slots are keyed on the caller's token identity — the JWT
+  `sub`, or a digest of an opaque token — never on the account: nothing in a
+  request carries an account id, and each personal access token of one account
+  is its own bucket.
 
-A caller-supplied URL is fetched from inside the network this container runs in,
-and the caller learns only whether it worked — never the body that was fetched.
-Left open, that is a blind SSRF primitive. A hosted server therefore refuses any
-URL whose host resolves to a loopback, private, link-local (including the
-metadata endpoint), CGNAT, multicast or reserved address, in either family,
-including the IPv4-mapped and NAT64 spellings. It follows at most three
-redirects and re-checks every hop.
-
-Two things stay the operator's:
-
-- The check runs on the addresses DNS returned and the connection resolves
-  again, so a rebinding attack narrows the window rather than closing it.
-- The pod's egress rules decide what is reachable regardless. Restrict egress to
-  the API and the public internet, never the internal network.
-
-None of this reaches the stdio server: it reads a path and never fetches a URL,
-so there is no address for it to refuse. A file the stdio user has is a file
-they can name.
+The route never follows a redirect: a `3xx` from the API is
+`502 upstream_redirect`, because following it would re-send the whole file
+somewhere the operator did not configure. The API's own refusals —
+`400 invalid_file_type`, `413 file_too_large` — are relayed as they are.
 
 ## Deploying behind a CDN
 
@@ -268,6 +283,12 @@ configuring; its defaults break MCP in ways that look like server bugs:
 - **No custom error responses for 4xx.** A configured page replaces the
   JSON-RPC body. Only some statuses are replaceable at all; `401` and `429`
   pass through untouched.
+- **Allow an upload's size and duration.** `PUT /upload/{ticket}` carries a body
+  up to 64 MB and keeps the response open while the file crosses to the API, so
+  the CDN's request-body limit and its origin timeout apply to it as well. The
+  response timeout must allow for `MCP_UPLOAD_TIMEOUT_MS`, not only
+  `MCP_REQUEST_TIMEOUT_MS`; a CDN that caps a request at 30s will cut a 64 MB
+  upload on a slow link while the server is still sizing for five minutes.
 - **Terminate TLS at the CDN.** A CDN usually reaches a private origin over
   plain HTTP, so an origin load balancer with a **TLS listener will not work**
   behind one. Restrict origin ingress to the CDN's published egress ranges —

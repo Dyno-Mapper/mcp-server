@@ -1,9 +1,16 @@
 import { afterEach, describe, expect, test } from 'vite-plus/test';
 import { createServer as createHttpServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
+import { mkdtemp, readdir, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import * as pathMod from 'node:path';
 import { DynoMapperServer } from '@dynomapper/mcp-core';
 import { readHttpConfig, type HttpConfig } from './config.js';
 import { createHostedApp } from './app.js';
+import { publicOrigin } from './protected-resource.js';
+import { uploadTicketTool } from './upload/create_upload_ticket.js';
+
+const SECRET = 'your_upload_secret_of_at_least_32_characters';
 
 const USER = {
   id: 7,
@@ -66,9 +73,13 @@ function config(overrides: Partial<HttpConfig> = {}): HttpConfig {
     rateLimitBurst: 20,
     maxBodyBytes: 256 * 1024,
     maxUploadConcurrency: 2,
-    uploadGateBytes: 8 * 1024 * 1024,
     maxConcurrency: 100,
+    apiBaseUrl: '',
     requestTimeoutMs: 5_000,
+    uploadSecret: SECRET,
+    uploadTicketTtlMs: 600_000,
+    uploadTimeoutMs: 5_000,
+    uploadIdleTimeoutMs: 2_000,
     jsonResponses: true,
     publicUrl: '',
     authorizationServer: 'https://api.dynomapper.com',
@@ -93,15 +104,17 @@ async function startStub(options: { delayMs?: number } = {}) {
           contentType: req.headers['content-type'],
           body: Buffer.concat(chunks).toString('utf8'),
         });
-        res.writeHead(201, { 'content-type': 'application/json' });
-        res.end(
-          JSON.stringify({
-            key: 'uploads/api/project_text/b2/list.txt',
-            name: 'list.txt',
-            size: 19,
-            mimeType: 'text/plain',
-          })
-        );
+        setTimeout(() => {
+          res.writeHead(201, { 'content-type': 'application/json' });
+          res.end(
+            JSON.stringify({
+              key: 'uploads/api/project_text/b2/list.txt',
+              name: 'list.txt',
+              size: 19,
+              mimeType: 'text/plain',
+            })
+          );
+        }, options.delayMs ?? 0);
       });
       return;
     }
@@ -132,6 +145,22 @@ interface Harness {
   url: string;
   stub: Awaited<ReturnType<typeof startStub>>;
   rpc: (body: unknown, headers?: Record<string, string>) => Promise<Response>;
+  /** Where uploads are spooled, so a test can assert the file is gone. */
+  spoolDir: string;
+  /** Every line the app logged. */
+  logs: string[];
+  /** A ticket, as an agent would obtain one: through the tool. */
+  ticket: (
+    purpose: string,
+    name?: string,
+    mimeType?: string
+  ) => Promise<{ uploadUrl: string; curl: string; expiresAt: string }>;
+  put: (
+    url: string,
+    body: BodyInit,
+    headers?: Record<string, string>,
+    init?: RequestInit
+  ) => Promise<Response>;
   close: () => Promise<void>;
 }
 
@@ -140,19 +169,29 @@ async function startHarness(
   overrides: Partial<HttpConfig> = {},
   stubOptions: { delayMs?: number } = {}
 ): Promise<Harness> {
-  const settings = config(overrides);
   const stub = await startStub(stubOptions);
+  const settings = config({ apiBaseUrl: stub.url, ...overrides });
+  const spoolDir = await mkdtemp(pathMod.join(tmpdir(), 'dynomapper-upload-'));
+  const logs: string[] = [];
   const server = new DynoMapperServer({
-    baseUrl: stub.url,
+    baseUrl: settings.apiBaseUrl,
     apiKey: 'env-token',
     requestTimeoutMs: settings.requestTimeoutMs,
   });
 
   const hosted = createHostedApp({
     config: settings,
-    createServer: () => server.createServer({ hosted: true }),
+    createServer: (request) =>
+      server.createServer({
+        hosted: true,
+        extraTools: [uploadTicketTool(settings)],
+        ...(publicOrigin(request, settings)
+          ? { requestOrigin: publicOrigin(request, settings) }
+          : {}),
+      }),
     version: 'test',
-    log: () => {},
+    log: (line) => logs.push(line),
+    spoolDir,
   });
 
   const httpServer = createHttpServer(hosted.app);
@@ -161,19 +200,50 @@ async function startHarness(
   );
   const { port } = httpServer.address() as AddressInfo;
 
+  const origin = `http://127.0.0.1:${port}`;
+
   return {
-    url: `http://127.0.0.1:${port}`,
+    url: origin,
     stub,
+    spoolDir,
+    logs,
     rpc: (body, headers = {}) =>
-      fetch(`http://127.0.0.1:${port}/mcp`, {
+      fetch(`${origin}/mcp`, {
         method: 'POST',
         headers: { ...JSON_HEADERS, ...AUTH, ...headers },
         body: JSON.stringify(body),
       }),
+    async ticket(purpose, name = 'shot.png', mimeType = 'image/png') {
+      const response = await fetch(`${origin}/mcp`, {
+        method: 'POST',
+        headers: { ...JSON_HEADERS, ...AUTH },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 20,
+          method: 'tools/call',
+          params: {
+            name: 'create_upload_ticket',
+            arguments: { purpose, name, mimeType },
+          },
+        }),
+      });
+      const body = await response.json();
+      if (body.result?.isError) {
+        throw new Error(JSON.stringify(body.result.content[0].text));
+      }
+      return body.result.structuredContent;
+    },
+    put: (url, body, headers = {}, init = {}) =>
+      fetch(url, { method: 'PUT', body, headers, ...init }),
     async close() {
+      // A test that abandons a request mid-body leaves its socket open, and
+      // `close()` then waits out the keep-alive window. The production shutdown
+      // does the same thing for the same reason.
+      httpServer.closeAllConnections();
       await new Promise<void>((resolve) => httpServer.close(() => resolve()));
       await hosted.close();
       await stub.close();
+      await rm(spoolDir, { recursive: true, force: true });
     },
   };
 }
@@ -427,7 +497,7 @@ describe('expired tokens', () => {
 });
 
 describe('hosted tool surface', () => {
-  test('offers uploads as bytes, because a pod cannot read the caller’s disk', async () => {
+  test('does not offer the path upload, and offers the ticket instead', async () => {
     const app = await harness();
 
     const listed = await app.rpc({
@@ -438,112 +508,313 @@ describe('hosted tool surface', () => {
     const tools = (await listed.json()).result.tools as any[];
     const byName = new Map(tools.map((tool) => [tool.name, tool]));
 
-    const upload = byName.get('upload_file') as any;
-    expect(upload).toBeDefined();
+    // A pod cannot read the caller's disk, so the tool that takes a path is
+    // absent rather than present-and-failing.
+    expect(byName.has('upload_file')).toBe(false);
 
-    const uploadArgs = Object.keys(upload.inputSchema.properties);
-    expect(uploadArgs).toEqual(
-      expect.arrayContaining(['purpose', 'content', 'name', 'mimeType', 'url'])
+    const ticketTool = byName.get('create_upload_ticket') as any;
+    expect(ticketTool).toBeDefined();
+    expect(Object.keys(ticketTool.inputSchema.properties)).toEqual(
+      expect.arrayContaining(['purpose', 'name', 'mimeType'])
     );
-    expect(uploadArgs).not.toContain('file');
-    // The description must not offer an argument this transport refuses.
-    expect(upload.description).not.toContain('Absolute path');
-    expect(upload.description).toContain('base64');
+  });
 
-    const fromFile = byName.get('create_project_from_file') as any;
+  test('names the ticket in the four tools that used to say upload_file', async () => {
+    const app = await harness();
+
+    const listed = await app.rpc({
+      jsonrpc: '2.0',
+      id: 5,
+      method: 'tools/list',
+    });
+    const tools = (await listed.json()).result.tools as any[];
+    const byName = new Map(tools.map((tool) => [tool.name, tool]));
+
+    // A description that tells a hosted agent to call a tool this server does
+    // not register is worse than no description at all. What must not happen is
+    // the rest of the text disappearing with the clause: each of these says
+    // something about the call that no other sentence does.
+    const retained: Record<string, string> = {
+      store_content_image: 'SHA-1',
+      store_content_file: 'the name it was uploaded with',
+      run_accessibility_pdf_upload_test: '429 too_many_runs',
+      create_project_from_file: 'purpose_mismatch',
+    };
+
+    for (const [name, phrase] of Object.entries(retained)) {
+      const tool = byName.get(name) as any;
+      expect(tool).toBeDefined();
+      expect(tool.description).toContain('create_upload_ticket');
+      expect(tool.description).not.toContain('`upload_file`');
+      expect(tool.description).toContain(phrase);
+    }
+  });
+
+  test('still lists an import as taking a key rather than a file', async () => {
+    const app = await harness();
+
+    const listed = await app.rpc({
+      jsonrpc: '2.0',
+      id: 6,
+      method: 'tools/list',
+    });
+    const tools = (await listed.json()).result.tools as any[];
+    const fromFile = tools.find(
+      (tool) => tool.name === 'create_project_from_file'
+    ) as any;
+
     expect(Object.keys(fromFile.inputSchema.properties)).not.toContain('file');
     expect(Object.keys(fromFile.inputSchema.properties)).toEqual(
       expect.arrayContaining(['url', 'fileKey', 'type'])
     );
-    // Nothing about this call differs by transport, so a hosted deployment must
-    // read the same text — including the errors it answers, which a hand-kept
-    // override silently dropped.
-    expect(fromFile.description).toContain('invalid_file_source');
-    expect(fromFile.description).toContain('purpose_mismatch');
   });
+});
 
-  test('uploads bytes sent as base64 to the API as a file part', async () => {
+describe('upload route', () => {
+  test('spools the bytes, re-sends them as multipart, and relays the API answer', async () => {
     const app = await harness();
+    const ticket = await app.ticket(
+      'sitemap_content_image',
+      'shot.png',
+      'image/png'
+    );
 
-    const response = await app.rpc({
-      jsonrpc: '2.0',
-      id: 5,
-      method: 'tools/call',
-      params: {
-        name: 'upload_file',
-        arguments: {
-          purpose: 'project_text',
-          content: Buffer.from('https://example.com').toString('base64'),
-          name: 'list.txt',
-          mimeType: 'text/plain',
-        },
-      },
-    });
+    expect(ticket.uploadUrl).toContain('/upload/');
+    expect(ticket.curl).toContain(ticket.uploadUrl);
 
-    expect(response.status).toBe(200);
-    const body = await response.json();
-    expect(body.result.isError).toBeFalsy();
-    expect(body.result.structuredContent.key).toBe(
+    const response = await app.put(ticket.uploadUrl, Buffer.from('png bytes'));
+
+    expect(response.status).toBe(201);
+    expect((await response.json()).key).toBe(
       'uploads/api/project_text/b2/list.txt'
     );
 
-    // The whole point: base64 arrived in the request body and left as a file.
+    // The API's own answer, relayed: same status, same body, same content type.
+    expect(response.headers.get('content-type')).toContain('application/json');
+
     expect(app.stub.uploads).toHaveLength(1);
-    expect(app.stub.uploads[0].contentType).toContain('multipart/form-data');
-    expect(app.stub.uploads[0].body).toContain('https://example.com');
-    expect(app.stub.uploads[0].body).toContain('name="purpose"');
-    expect(app.stub.uploads[0].body).toContain('filename="list.txt"');
+    const sent = app.stub.uploads[0];
+    expect(sent.contentType).toContain('multipart/form-data');
+    expect(sent.body).toContain('name="purpose"');
+    expect(sent.body).toContain('sitemap_content_image');
+    expect(sent.body).toContain('filename="shot.png"');
+    expect(sent.body).toContain('Content-Type: image/png');
+    expect(sent.body).toContain('png bytes');
+    // The route calls the API as the caller: the ticket's token, not the
+    // server's own missing credential.
+    expect(app.stub.authorizations).toContain('Bearer caller-token');
   });
 
-  test('accepts the empty url a client fills in for an argument it did not use', async () => {
+  test('leaves no spool file behind on success', async () => {
     const app = await harness();
+    const ticket = await app.ticket('sitemap_content_image');
 
-    // Exactly what a client that populates every property sends: the content
-    // upload, with `url` left as an empty string. It used to fail the schema
-    // with -32602 "Invalid URL at url" before the tool was ever reached.
-    const response = await app.rpc({
-      jsonrpc: '2.0',
-      id: 9,
-      method: 'tools/call',
-      params: {
-        name: 'upload_file',
-        arguments: {
-          purpose: 'project_text',
-          content: Buffer.from('https://example.com').toString('base64'),
-          name: 'list.txt',
-          mimeType: 'text/plain',
-          url: '',
-        },
-      },
-    });
+    await app.put(ticket.uploadUrl, Buffer.from('png bytes'));
 
-    expect(response.status).toBe(200);
-    const body = await response.json();
-    expect(body.error).toBeUndefined();
-    expect(body.result.isError).toBeFalsy();
-    expect(app.stub.uploads).toHaveLength(1);
+    expect(await readdir(app.spoolDir)).toEqual([]);
   });
 
-  test('refuses an upload that names no source, in the API’s own word', async () => {
+  test('refuses a ticket that was edited, and spools nothing', async () => {
     const app = await harness();
+    const ticket = await app.ticket('sitemap_content_image');
+    const tampered = `${ticket.uploadUrl.slice(0, -2)}xy`;
 
-    const response = await app.rpc({
-      jsonrpc: '2.0',
-      id: 6,
-      method: 'tools/call',
-      params: {
-        name: 'upload_file',
-        arguments: { purpose: 'project_text' },
-      },
-    });
+    const response = await app.put(tampered, Buffer.from('png bytes'));
 
-    expect(response.status).toBe(200);
-    const body = await response.json();
-    expect(body.result.isError).toBe(true);
-    expect(JSON.parse(body.result.content[0].text).error).toBe(
-      'invalid_file_source'
-    );
+    expect(response.status).toBe(403);
+    expect((await response.json()).error).toBe('upload_ticket_invalid');
     expect(app.stub.uploads).toHaveLength(0);
+    expect(await readdir(app.spoolDir)).toEqual([]);
+  });
+
+  test('says to mint a new ticket when the old one has expired', async () => {
+    const app = await harness({ uploadTicketTtlMs: -1_000 });
+    const ticket = await app.ticket('sitemap_content_image');
+
+    const response = await app.put(ticket.uploadUrl, Buffer.from('png bytes'));
+
+    expect(response.status).toBe(403);
+    const body = await response.json();
+    expect(body.error).toBe('upload_ticket_expired');
+    expect(body.message).toContain('create_upload_ticket');
+  });
+
+  test('refuses a declared body over the purpose ceiling without reading it', async () => {
+    const app = await harness();
+    const ticket = await app.ticket('sitemap_content_image');
+
+    const response = await app.put(
+      ticket.uploadUrl,
+      Buffer.alloc(10 * 1024 * 1024 + 1)
+    );
+
+    expect(response.status).toBe(413);
+    expect((await response.json()).error).toBe('file_too_large');
+    expect(app.stub.uploads).toHaveLength(0);
+    expect(await readdir(app.spoolDir)).toEqual([]);
+  });
+
+  test('stops a streamed body that runs over the ceiling, and cleans up', async () => {
+    const app = await harness();
+    const ticket = await app.ticket('sitemap_content_image');
+
+    // No Content-Length, so only the running count can stop it.
+    const chunk = Buffer.alloc(1024 * 1024);
+    let sent = 0;
+    const body = new ReadableStream({
+      pull(controller) {
+        if (sent >= 12) {
+          controller.close();
+          return;
+        }
+        sent += 1;
+        controller.enqueue(chunk);
+      },
+    });
+
+    const response = await app.put(
+      ticket.uploadUrl,
+      body,
+      { 'content-type': 'application/octet-stream' },
+      // A streamed body has no length, which is the case this covers.
+      { duplex: 'half' } as RequestInit
+    );
+
+    expect(response.status).toBe(413);
+    expect(app.stub.uploads).toHaveLength(0);
+    expect(await readdir(app.spoolDir)).toEqual([]);
+  });
+
+  test('cleans up when the caller disconnects mid-upload', async () => {
+    const app = await harness();
+    const ticket = await app.ticket('sitemap_content_image');
+    const controller = new AbortController();
+
+    // A body that keeps producing: the upload is under way when it is cut off.
+    const body = new ReadableStream({
+      pull(stream) {
+        stream.enqueue(Buffer.alloc(64 * 1024));
+      },
+    });
+
+    // Not awaited: undici takes its time to settle a streamed request it
+    // aborted, and what this test is about is the server's spool, not the
+    // client's teardown.
+    void app
+      .put(
+        ticket.uploadUrl,
+        body,
+        { 'content-type': 'application/octet-stream' },
+        { duplex: 'half', signal: controller.signal } as RequestInit
+      )
+      .catch(() => undefined);
+
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    controller.abort();
+
+    // The spool is unlinked in a `finally`, which runs on the aborted path too.
+    for (let attempt = 0; attempt < 50; attempt += 1) {
+      if ((await readdir(app.spoolDir)).length === 0) {
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+
+    expect(await readdir(app.spoolDir)).toEqual([]);
+    expect(app.stub.uploads).toHaveLength(0);
+    // A client that hung up is not an error worth a log line.
+    expect(app.logs.some((line) => line.includes('outcome=error'))).toBe(false);
+  });
+
+  test('answers a method other than PUT with 405 and Allow', async () => {
+    const app = await harness();
+    const ticket = await app.ticket('sitemap_content_image');
+
+    const response = await fetch(ticket.uploadUrl, { method: 'GET' });
+
+    expect(response.status).toBe(405);
+    expect(response.headers.get('allow')).toBe('PUT');
+    expect((await response.json()).error).toBe('invalid_request');
+  });
+
+  test('does not write the ticket into the log', async () => {
+    const app = await harness();
+    const ticket = await app.ticket('sitemap_content_image');
+
+    await app.put(ticket.uploadUrl, Buffer.from('png bytes'));
+
+    expect(app.logs.some((line) => line.includes('/upload/:ticket'))).toBe(
+      true
+    );
+    // The sealed ticket carries the caller's token; a log line is durable.
+    expect(
+      app.logs.some((line) => /\/upload\/[A-Za-z0-9_-]{20,}/.test(line))
+    ).toBe(false);
+    expect(app.logs.some((line) => line.includes('outcome=ok'))).toBe(true);
+  });
+
+  test('refuses to follow a redirect from the API', async () => {
+    const redirector: Server = createHttpServer((req, res) => {
+      req.resume();
+      res.writeHead(302, { location: 'https://elsewhere.example/upload' });
+      res.end();
+    });
+    await new Promise<void>((resolve) =>
+      redirector.listen(0, '127.0.0.1', resolve)
+    );
+    const { port } = redirector.address() as AddressInfo;
+
+    try {
+      const app = await harness({ apiBaseUrl: `http://127.0.0.1:${port}` });
+      const ticket = await app.ticket('sitemap_content_image');
+      const response = await app.put(ticket.uploadUrl, Buffer.from('png'));
+
+      expect(response.status).toBe(502);
+      const body = await response.json();
+      expect(body.error).toBe('upstream_redirect');
+      expect(body.message).toContain('DYNOMAPPER_API_URL');
+      // Following it would have re-sent the whole file somewhere else.
+      expect(await readdir(app.spoolDir)).toEqual([]);
+    } finally {
+      await new Promise<void>((resolve) => redirector.close(() => resolve()));
+    }
+  });
+
+  test('charges a slot before spooling, and releases it after', async () => {
+    const app = await harness({ maxUploadConcurrency: 1 }, { delayMs: 300 });
+    const first = await app.ticket('sitemap_content_image');
+    const second = await app.ticket('sitemap_content_image');
+
+    const inFlight = app.put(first.uploadUrl, Buffer.from('png bytes'));
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const refused = await app.put(second.uploadUrl, Buffer.from('png bytes'));
+    expect(refused.status).toBe(503);
+    expect(refused.headers.get('retry-after')).toBe('1');
+
+    expect((await inFlight).status).toBe(201);
+
+    // The slot is released when the response ends, so the next upload is served
+    // rather than punished for the one before it.
+    const third = await app.ticket('sitemap_content_image');
+    expect(
+      (await app.put(third.uploadUrl, Buffer.from('png bytes'))).status
+    ).toBe(201);
+  });
+
+  test('refuses uploads when the deployment has no secret', async () => {
+    const app = await harness({ uploadSecret: '' });
+
+    await expect(app.ticket('sitemap_content_image')).rejects.toThrow(
+      /MCP_UPLOAD_SECRET/
+    );
+
+    const response = await app.put(
+      `${app.url}/upload/anything`,
+      Buffer.from('x')
+    );
+    expect(response.status).toBe(503);
+    expect((await response.json()).error).toBe('upload_ticket_unavailable');
   });
 });
 
@@ -560,84 +831,6 @@ describe('hosted request guards', () => {
 
     expect(response.status).toBe(413);
     expect((await response.json()).error.code).toBe(-32000);
-  });
-
-  test('caps uploads in flight per caller before the body is read', async () => {
-    const app = await harness(
-      { uploadGateBytes: 256, maxUploadConcurrency: 1 },
-      { delayMs: 300 }
-    );
-
-    const call = {
-      jsonrpc: '2.0',
-      id: 6,
-      method: 'tools/call',
-      params: {
-        name: 'get_current_user',
-        arguments: { note: 'x'.repeat(500) },
-      },
-    };
-
-    const first = app.rpc(call);
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    const refused = await app.rpc(call);
-    expect(refused.status).toBe(503);
-    expect(refused.headers.get('retry-after')).toBe('1');
-    expect((await refused.json()).error.code).toBe(-32000);
-
-    expect((await first).status).toBe(200);
-
-    // The slot is released when the response ends, so the next upload is served
-    // rather than punished for the one before it.
-    expect((await app.rpc(call)).status).toBe(200);
-  });
-
-  test('counts uploads per subject, so a shared address is not throttled', async () => {
-    const app = await harness(
-      { uploadGateBytes: 256, maxUploadConcurrency: 1 },
-      { delayMs: 300 }
-    );
-
-    const call = {
-      jsonrpc: '2.0',
-      id: 7,
-      method: 'tools/call',
-      params: {
-        name: 'get_current_user',
-        arguments: { note: 'x'.repeat(500) },
-      },
-    };
-
-    // Two accounts calling through one platform share an address and nothing
-    // else; keying the cap on the address would make them queue behind each
-    // other, which is the monopolisation the cap exists to prevent.
-    const as = (sub: string) => ({
-      authorization: `Bearer ${jwt({ sub, exp: Math.floor(Date.now() / 1000) + 600 })}`,
-    });
-
-    const first = app.rpc(call, as('account-a'));
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    expect((await app.rpc(call, as('account-b'))).status).toBe(200);
-    expect((await first).status).toBe(200);
-  });
-
-  test('does not charge a body under the gate to an upload slot', async () => {
-    const app = await harness(
-      { uploadGateBytes: 256, maxUploadConcurrency: 1 },
-      { delayMs: 150 }
-    );
-
-    const small = {
-      jsonrpc: '2.0',
-      id: 8,
-      method: 'tools/call',
-      params: { name: 'get_current_user', arguments: {} },
-    };
-
-    const [a, b] = await Promise.all([app.rpc(small), app.rpc(small)]);
-    expect([a.status, b.status]).toEqual([200, 200]);
   });
 
   test('rejects malformed JSON with a JSON-RPC parse error', async () => {

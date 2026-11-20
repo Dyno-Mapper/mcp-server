@@ -17,6 +17,8 @@ yarn-error.log*
 .junie/
 .docker/
 .tmp-handover/
+.tmp-spike/
+.tmp-spike2/
 
 .env
 .env.*

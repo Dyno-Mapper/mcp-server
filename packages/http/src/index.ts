@@ -3,13 +3,14 @@ dotenv.config({ quiet: true });
 
 import {
   DynoMapperServer,
-  MAX_UPLOAD_BYTES,
   packageVersion,
   parseEntrypoint,
   UsageError,
 } from '@dynomapper/mcp-core';
 import { readHttpConfig } from './config.js';
 import { startHostedServer } from './app.js';
+import { publicOrigin } from './protected-resource.js';
+import { uploadTicketTool } from './upload/create_upload_ticket.js';
 import { SPEC, USAGE } from './cli.js';
 
 /**
@@ -59,28 +60,39 @@ async function main(): Promise<void> {
     );
   }
 
-  // Base64 spends four bytes to carry three, so the body a full-size upload
-  // needs is larger than the file itself. A limit below that does not stop the
-  // endpoint working — it refuses the largest uploads with a 413 mid-call —
-  // which is why this is said now rather than discovered by an agent.
-  const neededForLargestUpload = Math.ceil((MAX_UPLOAD_BYTES * 4) / 3) + 4096;
-  if (config.maxBodyBytes < neededForLargestUpload) {
+  // Uploads are refused rather than broken when the secret is missing: `/mcp`
+  // keeps working, which is what makes the rollout order safe — the secret is
+  // shipped before the image that needs it.
+  if (config.uploadSecret.length === 0) {
     console.error(
-      `[http] warning: MCP_MAX_BODY_BYTES is ${config.maxBodyBytes} bytes, below the ` +
-        `${neededForLargestUpload} that a ${MAX_UPLOAD_BYTES}-byte upload needs as base64; ` +
-        `a \`content\` upload above ${Math.floor((config.maxBodyBytes * 3) / 4)} bytes ` +
-        'will be refused with 413. An upload by `url` is unaffected.'
+      '[http] warning: MCP_UPLOAD_SECRET is unset, so `create_upload_ticket` ' +
+        'refuses and no file can be uploaded; every other tool works.'
+    );
+  } else if (config.uploadSecret.length < 32) {
+    console.error(
+      `[http] warning: MCP_UPLOAD_SECRET is ${config.uploadSecret.length} characters; ` +
+        'use at least 32 so the sealed upload URL is not worth attacking.'
     );
   }
 
   const server = new DynoMapperServer({
+    baseUrl: config.apiBaseUrl,
     requestTimeoutMs: config.requestTimeoutMs,
     log: (line) => console.error(line),
   });
 
+  const extraTools = [uploadTicketTool(config)];
+
   await startHostedServer({
     config,
-    createServer: () => server.createServer({ hosted: true }),
+    createServer: (request) =>
+      server.createServer({
+        hosted: true,
+        extraTools,
+        ...(publicOrigin(request, config)
+          ? { requestOrigin: publicOrigin(request, config) }
+          : {}),
+      }),
     version: packageVersion(),
   });
 }

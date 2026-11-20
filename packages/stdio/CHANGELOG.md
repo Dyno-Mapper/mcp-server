@@ -5,6 +5,20 @@ Notable changes to `@dynomapper/mcp-server`, the stdio server published to npm.
 The version tracks the release it ships with. `0.1.0` was the first publish and
 predates this file.
 
+## [0.7.0] - 2026-11-20
+
+The release that moved file uploads off the tool-call channel affects the
+server, not this package: `upload_file` still takes a path here, because this
+process runs on the machine that holds the file. The one consumer-visible change
+is its description.
+
+### Changed
+
+- `upload_file`'s description now says where a file goes when the server cannot
+  read your disk — an upload URL it hands you — so the same tool reads correctly
+  wherever it is offered. No argument was removed, added or renamed in this
+  package.
+
 ## [0.6.0] - 2026-11-19
 
 Follows the public API reference, which gained 15 operations, three upload

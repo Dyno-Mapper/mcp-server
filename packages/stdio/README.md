@@ -63,9 +63,15 @@ Add the following to your Claude Desktop configuration file:
 
 For MCP clients that cannot launch a process — GitHub's Copilot coding agent
 among them — the DYNO Mapper tools are available at
-`https://mcp.dynomapper.com/mcp` over Streamable HTTP, except the ones that need
-a local file. It needs no installation and keeps no session: every request
-authenticates with your personal access token in an `Authorization` header.
+`https://mcp.dynomapper.com/mcp` over Streamable HTTP. It needs no installation
+and keeps no session: every request authenticates with your personal access
+token in an `Authorization` header.
+
+One tool differs there. `upload_file` takes a path on the machine running the
+server, which a hosted server cannot read, so it is not offered; the hosted
+server registers `create_upload_ticket` instead, which returns a URL to PUT the
+file to. Everything else, and every way of spending the returned key, is the
+same.
 
 Point the client at that URL and pass the token:
 
@@ -111,7 +117,7 @@ The following tools are available through this MCP server:
 | `create_project_from_sharepoint`       | Create a private Project from a SharePoint team site                          |
 | `create_project_from_scratch`          | Create an empty project to build by hand                                      |
 | `create_project_from_file`             | Create a Project from a text or xml source, by key or URL                     |
-| `upload_file`                          | Upload a file and get the key another call accepts                            |
+| `upload_file`                          | Upload a local file by path and get the key another call accepts              |
 | `get_project_url_job_status`           | Get Project job status created by URL                                         |
 | `get_project_file_job_status`          | Get status of project job created from text or xml file                       |
 | `cancel_project_url_job`               | Cancel Project job created by URL                                             |

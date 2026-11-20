@@ -61,6 +61,14 @@ if (bundle) {
     'StreamableHTTPServerTransport',
     'cloudfront-viewer-address',
     'createHostedApp',
+    // The upload ticket: its sealing, its route and the spool that feeds it are
+    // hosted-only. The *name* `create_upload_ticket` is not a marker — the
+    // stdio descriptions mention it, telling a caller where a file goes when
+    // the server cannot read their disk — so the markers are the crypto and the
+    // file-backed blob that would have to ship with it.
+    'sealTicket',
+    'aes-256-gcm',
+    'openAsBlob',
   ]) {
     check(
       !bundle.includes(marker),

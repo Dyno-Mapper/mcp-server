@@ -8,6 +8,60 @@ each release here points at the entry for that version.
 Versions are shared: the root manifest, every workspace and both changelogs
 carry one version per release, and `npm run check:changelogs` enforces it.
 
+## [0.7.0] - 2026-11-20
+
+The hosted server could accept no real upload. A file only arrived as base64 in
+a tool call — tens of megabytes of tokens for an image — or as a public URL an
+agent working on a local file does not have. This release moves the bytes off
+the tool-call channel entirely: a new hosted-only `create_upload_ticket` returns
+a short-lived, sealed URL, the agent PUTs the file to it, and the server spools
+the bytes and re-sends them to the API as the multipart call it already accepts.
+`upload_file` remains on stdio, where a path is the whole interface, and is no
+longer offered by a server that cannot read the caller's disk. What a package
+consumer sees is in [packages/stdio/CHANGELOG.md](packages/stdio/CHANGELOG.md).
+
+### Breaking
+
+- The hosted server no longer offers `upload_file`, and its `content` and `url`
+  sources are gone with it. A hosted agent calls `create_upload_ticket` and PUTs
+  the bytes to the URL it returns; the PUT's response body carries the `key`.
+- `MCP_MAX_BODY_BYTES` now defaults to 4 MiB, was 96 MiB. The old figure existed
+  only to carry a 64 MB file as 87.4 MB of base64 JSON, which no longer travels
+  in a body; a deployment that still sends large `content` bodies will now be
+  refused with `413`.
+- `MCP_UPLOAD_GATE_BYTES` is removed. It recognised an upload by its declared
+  body size, which only made sense while an upload was a JSON body. A deployment
+  still setting it is not failed for it.
+
+### Added
+
+- `create_upload_ticket` and `PUT /upload/{ticket}`, with `MCP_UPLOAD_SECRET`
+  (required for uploads, warned about below 32 characters), and
+  `MCP_UPLOAD_TICKET_TTL_MS`, `MCP_UPLOAD_TIMEOUT_MS`,
+  `MCP_UPLOAD_IDLE_TIMEOUT_MS`.
+- A per-caller and global upload-slot bound charged before spooling, so the temp
+  disk a pod can use is `MCP_MAX_UPLOAD_CONCURRENCY × the largest purpose`.
+- `DYNOMAPPER_API_URL` is read into the hosted config, so the upload route and
+  the tool calls cannot be pointed at two different APIs.
+
+### Changed
+
+- The upload body is spooled to a temp file and streamed to the API with native
+  `http`, not handed to axios: axios' default transport buffers the whole body
+  to replay a redirect. Measured client memory is ~0.2× the file instead of
+  ~1.0×, and the request still carries an exact `Content-Length`.
+- `HOSTING.md`'s upload section is rewritten: one source instead of three, the
+  ticket flow with a ready-to-run `curl` line, temp-disk sizing, and the URL
+  described as a capability. The SSRF section is gone with the blocklist.
+- The request log redacts an upload ticket instead of writing a capability that
+  contains the caller's token into a durable log line.
+- Descriptions that told a hosted agent to call `upload_file` now name
+  `create_upload_ticket`: `store_content_image`, `store_content_file`,
+  `run_accessibility_pdf_upload_test` and `create_project_from_file`.
+- Deleting the hosted branch removed `upload/source.ts` (base64 decoding, URL
+  fetching, the private-address blocklist) and the per-transport input-schema
+  function, which had one user.
+
 ## [0.6.0] - 2026-11-19
 
 The public API reference gained 15 operations: six that store, list and delete

@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-import type { UploadPart } from '../upload/source.js';
 import { get_current_user } from './account/get_current_user.js';
 import { get_projects } from './projects/get_projects.js';
 import { get_project_details } from './projects/get_project_details.js';
@@ -144,41 +143,30 @@ export interface ToolContext {
    * only, where a call has a deadline its caller is waiting on.
    */
   timeoutMs?: number;
+  /**
+   * The caller's bearer token, verbatim, as the request carried it.
+   *
+   * Only a tool that has to act as the caller after the request is over needs
+   * it — today the one that seals an upload ticket — and it must never be
+   * logged, echoed or stored. Absent on stdio, where the token comes from the
+   * environment.
+   */
+  token?: string;
+  /**
+   * The origin this request was addressed at, when the deployment states one.
+   *
+   * Used to build an absolute URL the caller can reach from outside: the
+   * process only knows the socket it is listening on, not the name or scheme a
+   * proxy presents to the world.
+   */
+  requestOrigin?: string;
 }
-
-/** A call a tool prepared from its arguments. */
-export interface PreparedCall {
-  /** Arguments to send, which may differ from the ones the caller gave. */
-  args: any;
-  /** Bytes an upload sends, when the source was not a local path. */
-  upload?: UploadPart;
-  /** Where those bytes came from, for the operator's log line. */
-  source?: 'file' | 'content' | 'url';
-}
-
-/**
- * Either a prepared call or the refusal to make one.
- *
- * A tool that has work to do before the API is called — resolving a file into
- * bytes, say — reports a refusal as a result rather than as a thrown error,
- * because a caller's bad file is a tool error, not a crash. A refusal still
- * names which source was attempted, so the operator's line can say so.
- */
-export type PrepareResult =
-  | PreparedCall
-  | { error: CallToolResult; source?: PreparedCall['source'] };
 
 export interface Tool {
   name: string;
   description: string;
-  /**
-   * The arguments this tool takes, per transport where they differ.
-   *
-   * A function is how a tool says it accepts different arguments depending on
-   * where it runs: `upload_file` takes a path on stdio and bytes on a hosted
-   * server. Everything else is one schema for both.
-   */
-  inputSchema: z.ZodObject<any> | ((mode: TransportMode) => z.ZodObject<any>);
+  /** The arguments this tool takes. */
+  inputSchema: z.ZodObject<any>;
   outputSchema: z.ZodObject<any>;
   method: string;
   path: string;
@@ -188,23 +176,43 @@ export interface Tool {
    * take a file: an import names a key the upload returned instead.
    */
   multipart?: 'fields';
-  /**
-   * Resolves arguments before the call is made.
-   *
-   * `upload_file` uses it to turn base64 or a URL into the bytes an upload
-   * sends. A tool without one sends its arguments as the caller gave them.
-   */
-  prepare?: (args: any, context: ToolContext) => Promise<PrepareResult>;
 }
 
-/** The input schema a tool offers on one transport. */
-export function inputSchemaFor(
-  tool: Tool,
-  mode: TransportMode = 'stdio'
-): z.ZodObject<any> {
-  return typeof tool.inputSchema === 'function'
-    ? tool.inputSchema(mode)
-    : tool.inputSchema;
+/**
+ * A tool that answers without calling the API.
+ *
+ * `Tool` describes one API call — a method, a path, and the arguments that go
+ * with them — and nearly everything is one. A tool that has no such call cannot
+ * be expressed as one: a `path` would have to be an empty string, and the
+ * generic handler would POST to the API's root with that tool's arguments. This
+ * type is the honest shape instead: a schema and an `execute`, registered
+ * alongside the API tools but owning its whole answer.
+ *
+ * It lives here, in core, so a transport package can add tools without core
+ * knowing what they are; the hosted package uses it for `create_upload_ticket`.
+ */
+export interface ExtraTool {
+  name: string;
+  description: string;
+  inputSchema: z.ZodObject<any>;
+  outputSchema: z.ZodObject<any>;
+  execute(
+    args: any,
+    context: ToolContext
+  ): Promise<CallToolResult> | CallToolResult;
+}
+
+/**
+ * The input schema a tool offers.
+ *
+ * Kept as a function because call sites and tests name it, and because the
+ * transport no longer changes a tool's arguments: the one tool that differed —
+ * `upload_file` — is now offered by one transport only. A tool that ever needs
+ * two shapes again should be two tools, or an `ExtraTool` that decides for
+ * itself.
+ */
+export function inputSchemaFor(tool: Tool): z.ZodObject<any> {
+  return tool.inputSchema;
 }
 
 export const tools: Record<string, Tool> = {

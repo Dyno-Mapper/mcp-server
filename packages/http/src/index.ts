@@ -3,7 +3,6 @@ dotenv.config({ quiet: true });
 
 import {
   DynoMapperServer,
-  MAX_UPLOAD_BYTES,
   packageVersion,
   parseEntrypoint,
   UsageError,
@@ -56,20 +55,6 @@ async function main(): Promise<void> {
     console.error(
       '[http] warning: DYNOMAPPER_API_KEY is set but ignored in hosted mode; ' +
         'every request must carry its own Authorization header'
-    );
-  }
-
-  // Base64 spends four bytes to carry three, so the body a full-size upload
-  // needs is larger than the file itself. A limit below that does not stop the
-  // endpoint working — it refuses the largest uploads with a 413 mid-call —
-  // which is why this is said now rather than discovered by an agent.
-  const neededForLargestUpload = Math.ceil((MAX_UPLOAD_BYTES * 4) / 3) + 4096;
-  if (config.maxBodyBytes < neededForLargestUpload) {
-    console.error(
-      `[http] warning: MCP_MAX_BODY_BYTES is ${config.maxBodyBytes} bytes, below the ` +
-        `${neededForLargestUpload} that a ${MAX_UPLOAD_BYTES}-byte upload needs as base64; ` +
-        `a \`content\` upload above ${Math.floor((config.maxBodyBytes * 3) / 4)} bytes ` +
-        'will be refused with 413. An upload by `url` is unaffected.'
     );
   }
 

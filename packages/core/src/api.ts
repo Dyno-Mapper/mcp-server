@@ -3,19 +3,11 @@ import { type CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import fs from 'node:fs';
 import * as pathMod from 'node:path';
 import mime from 'mime-types';
-import type { UploadPart } from './upload/source.js';
 
 /** What a tool needs beyond its arguments — the transport's own settings. */
 export interface ToolCallOptions {
   /** Sends every argument as its own form field next to a file part. */
   multipart?: 'fields';
-  /**
-   * Bytes an upload sends, for the sources that are not a local path.
-   *
-   * `upload_file` resolves base64 and URL sources itself, because neither is
-   * available to a server that does not share the caller's filesystem.
-   */
-  upload?: UploadPart;
   /** Deadline for this call, when it is shorter than the instance default. */
   timeoutMs?: number;
 }
@@ -95,37 +87,20 @@ export class ApiHelper {
    * Builds the request body for an upload.
    *
    * Every argument goes in as its own form field next to the file, which is
-   * the shape an upload expects. The file itself is either bytes already in
-   * hand — base64 the caller sent, or a URL this server fetched — or a path to
-   * read, which only works where the caller and the server share a filesystem.
-   * Imports do not take this path: they name a key the upload returned, so no
-   * other call sends a file.
+   * the shape an upload expects. The file is a path to read, which works
+   * because the only tool that sends one — `upload_file` — is offered by the
+   * stdio server, on the caller's own machine. A hosted server has no path to
+   * read, so it takes the ticket route instead and never reaches this method.
+   *
+   * The path is read whole. That is fine at the sizes this path carries: the
+   * file is one the caller already has, and reading it is the same cost as
+   * sending it.
    */
-  private buildMultipartBody(
-    finalArgs: any,
-    upload?: UploadPart
-  ): {
+  private buildMultipartBody(finalArgs: any): {
     data?: FormData;
     error?: CallToolResult;
   } {
     const formData = new FormData();
-
-    // Bytes the caller sent, or that this server fetched, are already in hand:
-    // there is no path to read and no media type to infer from one. The view
-    // is over the buffer rather than a copy of it, because a 64 MB upload is
-    // already held several times over by this point.
-    if (upload) {
-      const view = new Uint8Array(
-        upload.bytes.buffer as ArrayBuffer,
-        upload.bytes.byteOffset,
-        upload.bytes.byteLength
-      );
-      formData.append(
-        'file',
-        new Blob([view], { type: upload.mimeType }),
-        upload.name
-      );
-    }
 
     for (const [key, value] of Object.entries(finalArgs ?? {})) {
       if (value === undefined || value === null) {
@@ -133,9 +108,6 @@ export class ApiHelper {
       }
 
       if (key === 'file') {
-        if (upload) {
-          continue;
-        }
         if (!fs.existsSync(String(value))) {
           return { error: this.fileNotFoundResult(String(value)) };
         }
@@ -178,10 +150,7 @@ export class ApiHelper {
       let data = finalArgs;
 
       if (options.multipart === 'fields') {
-        const { data: formData, error } = this.buildMultipartBody(
-          finalArgs,
-          options.upload
-        );
+        const { data: formData, error } = this.buildMultipartBody(finalArgs);
 
         if (error) {
           return error;

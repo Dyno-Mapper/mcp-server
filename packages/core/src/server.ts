@@ -1,5 +1,11 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { inputSchemaFor, tools, type TransportMode } from './tools/tools.js';
+import {
+  inputSchemaFor,
+  tools,
+  type ExtraTool,
+  type ToolContext,
+  type TransportMode,
+} from './tools/tools.js';
 import { ApiHelper } from './api.js';
 import { packageVersion } from './version.js';
 
@@ -10,7 +16,7 @@ export interface DynoMapperServerOptions {
   apiKey?: string;
   /** Deadline for one API call, used by the hosted transport. */
   requestTimeoutMs?: number;
-  /** Where the one-line upload record goes. Defaults to silence. */
+  /** Where operational lines go. Defaults to silence. */
   log?: (line: string) => void;
 }
 
@@ -18,29 +24,69 @@ export interface CreateServerOptions {
   /**
    * Build the server for a hosted deployment rather than a local one.
    *
-   * It changes what a tool accepts, not whether it exists: both transports
-   * register every tool, and `upload_file` reads a path on one and bytes on the
-   * other.
+   * It changes which tools exist and what they accept: a hosted server cannot
+   * read the caller's filesystem, so it does not offer `upload_file` at all and
+   * offers `create_upload_ticket` instead.
    */
   hosted?: boolean;
+  /**
+   * Tools this package does not know about, registered alongside its own.
+   *
+   * The hosted package uses it for `create_upload_ticket`, which can only work
+   * where a public origin and an upload secret exist. Keeping that tool out of
+   * core is also what keeps it out of the npm tarball, which is a stdio-only
+   * artifact.
+   */
+  extraTools?: readonly ExtraTool[];
+  /** The origin this request arrived at, when the transport knows it. */
+  requestOrigin?: string;
 }
 
 /**
  * Descriptions that would otherwise say something untrue of this deployment.
  *
- * Kept next to the transport switch so the two cannot drift apart: a tool whose
- * arguments or capabilities differ also needs the sentences that describe them
- * to differ.
+ * An entry is a rewrite of the tool's own text, not a replacement for it: the
+ * description says how the upload reaches the server and leaves every other
+ * sentence alone. Restating the whole description here would work today and
+ * drift tomorrow — this repository has already lost an error name to a
+ * hand-kept override — so each entry only swaps the clause that names a tool
+ * this server does not register.
+ *
+ * Kept next to the transport switch so the two cannot drift apart.
  */
-const HOSTED_DESCRIPTIONS: Record<string, string> = {
-  upload_file:
-    'Upload a file and get the key another call accepts in its place. ' +
-    '`purpose` is a contract rather than a label: it fixes the media types the file may have, its size limit, and the one call allowed to spend the returned key. ' +
-    'The two import purposes feed `create_project_from_file` with the matching `type` — `project_text` for `text`, `project_xml` for `xml`. `pdf_accessibility` feeds `run_accessibility_pdf_upload_test`, `sitemap_content_image` feeds `store_content_image` and `sitemap_content_file` feeds `store_content_file`. ' +
-    'This server is hosted, so its filesystem is not yours: the file comes from `content`, its bytes as base64 with `name` and `mimeType` alongside, or from `url`, which this server fetches. Send exactly one. ' +
-    'Keys are account-scoped and not consumed. The upload itself stays in staging, and each call that resolves the key copies the bytes into the storage the project is served from, or hands them to the accessibility checker; an upload nothing resolves expires on its own schedule. ' +
-    'One upload can therefore back several calls, which is why the file is sent once and referred to by key from then on.',
+const HOSTED_DESCRIPTIONS: Record<string, (description: string) => string> = {
+  store_content_image: (text) =>
+    text.replace(
+      'Upload the picture once with `upload_file` and the `sitemap_content_image` purpose, then send the key it returned here.',
+      'Upload the picture once with `create_upload_ticket` and the `sitemap_content_image` purpose, PUT the bytes to the URL it returns, and send the `key` from that response here.'
+    ),
+  store_content_file: (text) =>
+    text.replace(
+      'Upload the file once with `upload_file` and the `sitemap_content_file` purpose, then send the key it returned here.',
+      'Upload the file once with `create_upload_ticket` and the `sitemap_content_file` purpose, PUT the bytes to the URL it returns, and send the `key` from that response here.'
+    ),
+  run_accessibility_pdf_upload_test: (text) =>
+    text.replace(
+      'Upload the PDF once with `upload_file` and the `pdf_accessibility` purpose, then send the key it returned here.',
+      'Upload the PDF once with `create_upload_ticket` and the `pdf_accessibility` purpose, PUT the bytes to the URL it returns, and send the `key` from that response here.'
+    ),
+  create_project_from_file: (text) =>
+    text.replace(
+      'a `fileKey` from `upload_file`, or a `url` the import service fetches',
+      'a `fileKey` from `create_upload_ticket`, whose URL you PUT the file to, or a `url` the import service fetches'
+    ),
 };
+
+/**
+ * Tools a hosted server must not offer.
+ *
+ * `upload_file` takes an absolute path on the machine running the server. On
+ * stdio that is the caller's machine and the tool is exactly right; hosted, it
+ * is the pod's, so the tool would fail every call and its schema would invite a
+ * caller to try. The tool is not merely discouraged there — it is absent, and
+ * `create_upload_ticket` is what exists instead.
+ */
+const HOSTED_SKIPPED_TOOLS = new Set(['upload_file']);
 
 export class DynoMapperServer {
   private readonly apiHelper: ApiHelper;
@@ -89,13 +135,18 @@ export class DynoMapperServer {
     const mode: TransportMode = options.hosted ? 'hosted' : 'stdio';
 
     for (const tool of Object.values(tools)) {
+      if (options.hosted && HOSTED_SKIPPED_TOOLS.has(tool.name)) {
+        continue;
+      }
+
       server.registerTool(
         tool.name,
         {
           description:
-            (options.hosted && HOSTED_DESCRIPTIONS[tool.name]) ||
+            (options.hosted &&
+              HOSTED_DESCRIPTIONS[tool.name]?.(tool.description)) ||
             tool.description,
-          inputSchema: inputSchemaFor(tool, mode) as any,
+          inputSchema: inputSchemaFor(tool) as any,
           outputSchema: tool.outputSchema,
           annotations: {
             readOnlyHint: tool.method.toLowerCase() === 'get',
@@ -104,55 +155,71 @@ export class DynoMapperServer {
           },
         },
         async (args: any, extra: any) => {
-          const authHeader = extra.requestInfo?.headers?.authorization;
-          const apiKey = Array.isArray(authHeader) ? authHeader[0] : authHeader;
-          const startedAt = Date.now();
-
-          const prepared = tool.prepare
-            ? await tool.prepare(args, {
-                mode,
-                ...(this.requestTimeoutMs
-                  ? { timeoutMs: this.requestTimeoutMs }
-                  : {}),
-              })
-            : { args };
-
-          const refused = 'error' in prepared;
-
-          // The budget covers the whole call, not one of its legs: a URL that
-          // took fifteen seconds leaves ten for the API, which is what makes
-          // the documented deadline true for the caller waiting on both.
-          const remaining = this.requestTimeoutMs
-            ? Math.max(1, this.requestTimeoutMs - (Date.now() - startedAt))
-            : undefined;
-
-          const result = refused
-            ? prepared.error
-            : await this.apiHelper.handleToolRequest(
-                tool.method,
-                tool.path,
-                prepared.args,
-                apiKey,
-                {
-                  ...(tool.multipart ? { multipart: tool.multipart } : {}),
-                  ...(prepared.upload ? { upload: prepared.upload } : {}),
-                  ...(remaining ? { timeoutMs: remaining } : {}),
-                }
-              );
-
-          // One line an operator can act on when a pod is running out of
-          // memory: what was uploaded, how big it was, and whether it worked.
-          if (tool.prepare) {
-            this.log?.(
-              `[upload] purpose=${args?.purpose ?? '-'} source=${prepared.source ?? '-'} ` +
-                `bytes=${refused ? '-' : (prepared.upload?.bytes.length ?? '-')} ` +
-                `outcome=${refused ? 'refused' : result.isError ? 'error' : 'ok'}`
-            );
-          }
+          const result = await this.apiHelper.handleToolRequest(
+            tool.method,
+            tool.path,
+            args,
+            tokenFrom(extra),
+            {
+              ...(tool.multipart ? { multipart: tool.multipart } : {}),
+              ...(this.requestTimeoutMs
+                ? { timeoutMs: this.requestTimeoutMs }
+                : {}),
+            }
+          );
 
           return result;
         }
       );
     }
+
+    for (const tool of options.extraTools ?? []) {
+      server.registerTool(
+        tool.name,
+        {
+          description: tool.description,
+          inputSchema: tool.inputSchema as any,
+          outputSchema: tool.outputSchema,
+          // Nothing here is known to be a read or a delete: an `ExtraTool`
+          // answers for itself, so it is described as an ordinary call.
+          annotations: {
+            readOnlyHint: false,
+            destructiveHint: false,
+            openWorldHint: true,
+          },
+        },
+        async (args: any, extra: any) =>
+          tool.execute(args, {
+            mode,
+            ...(this.requestTimeoutMs
+              ? { timeoutMs: this.requestTimeoutMs }
+              : {}),
+            ...(tokenFrom(extra) ? { token: tokenFrom(extra) } : {}),
+            ...(options.requestOrigin
+              ? { requestOrigin: options.requestOrigin }
+              : {}),
+          } satisfies ToolContext)
+      );
+    }
   }
+}
+
+const BEARER = /^Bearer\s+(\S+)$/i;
+
+/**
+ * The bare token from the transport's `Authorization` header.
+ *
+ * Bare, not the whole header, so that everything downstream of a call agrees on
+ * one string per caller: the API client adds the scheme back, and the upload
+ * route keys its slot accounting on a digest of the token the `/mcp` path used.
+ * A value that is not in `Bearer …` form is returned unchanged, because the API
+ * is the authority on what a token is.
+ */
+function tokenFrom(extra: any): string | undefined {
+  const header = extra?.requestInfo?.headers?.authorization;
+  const value = Array.isArray(header) ? header[0] : header;
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+  return BEARER.exec(value.trim())?.[1] ?? (value.trim() || undefined);
 }

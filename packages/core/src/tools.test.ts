@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vite-plus/test';
 import { readFileSync } from 'node:fs';
 import { z } from 'zod';
 import { inputSchemaFor, tools } from './tools/tools.js';
+import { DynoMapperServer } from './server.js';
 
 // The published API spec is a repository-level fixture, shared with the source
 // it documents rather than copied into the package.
@@ -336,16 +337,13 @@ describe('tool registry', () => {
       /\b(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+\/|\bendpoint\b/i;
 
     for (const tool of Object.values(tools) as any[]) {
-      // Both transports' arguments are described to an agent, so both are
-      // held to the same rule: a schema that names a route is a schema that
-      // reads like API documentation rather than like a tool.
+      // A schema that names a route reads like API documentation rather than
+      // like a tool.
       const inputJson = JSON.stringify(
-        (['stdio', 'hosted'] as const).map((mode) =>
-          z.toJSONSchema(inputSchemaFor(tool, mode), {
-            io: 'input',
-            unrepresentable: 'any',
-          })
-        )
+        z.toJSONSchema(inputSchemaFor(tool), {
+          io: 'input',
+          unrepresentable: 'any',
+        })
       );
       const outputJson = JSON.stringify(
         z.toJSONSchema(tool.outputSchema, {
@@ -390,17 +388,14 @@ describe('tool registry', () => {
         ['inputSchema', 'input'],
         ['outputSchema', 'output'],
       ] as const) {
-        // A tool whose arguments differ by transport is checked on both, so a
-        // second set of descriptions cannot escape the house style.
         const schemas =
           key === 'inputSchema'
-            ? (['stdio', 'hosted'] as const).map(
-                (mode) =>
-                  z.toJSONSchema(inputSchemaFor(tool, mode), {
-                    io,
-                    unrepresentable: 'any',
-                  }) as any
-              )
+            ? [
+                z.toJSONSchema(inputSchemaFor(tool), {
+                  io,
+                  unrepresentable: 'any',
+                }) as any,
+              ]
             : [
                 z.toJSONSchema(tool.outputSchema, {
                   io,
@@ -425,5 +420,48 @@ describe('tool registry', () => {
     );
 
     expect(violations).toEqual([]);
+  });
+});
+
+describe('the tool surface per transport', () => {
+  const registeredNames = (hosted: boolean): string[] => {
+    const server = new DynoMapperServer({}).createServer({ hosted });
+    return Object.keys((server as any)._registeredTools).sort();
+  };
+
+  test('a hosted server does not offer a tool that reads a local path', () => {
+    const hosted = registeredNames(true);
+
+    // `upload_file` takes an absolute path on the machine running the server.
+    // Hosted, that is the pod's filesystem, so every call would fail and its
+    // schema would invite a caller to try. It is absent, not discouraged.
+    expect(hosted).not.toContain('upload_file');
+    expect(hosted).toContain('store_content_image');
+  });
+
+  test('stdio offers the path upload and neither hosted-only tool', () => {
+    const stdio = registeredNames(false);
+
+    expect(stdio).toContain('upload_file');
+    expect(stdio).not.toContain('create_upload_ticket');
+  });
+
+  test('a host can add a tool core does not know about', () => {
+    const server = new DynoMapperServer({}).createServer({
+      hosted: true,
+      extraTools: [
+        {
+          name: 'create_upload_ticket',
+          description: 'test tool',
+          inputSchema: z.object({ list: z.string() }),
+          outputSchema: z.object({ url: z.string() }),
+          execute: () => ({ content: [{ type: 'text', text: '{}' }] }),
+        },
+      ],
+    });
+
+    expect(Object.keys((server as any)._registeredTools)).toContain(
+      'create_upload_ticket'
+    );
   });
 });

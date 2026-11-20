@@ -20,6 +20,12 @@ the bytes and re-sends them to the API as the multipart call it already accepts.
 longer offered by a server that cannot read the caller's disk. What a package
 consumer sees is in [packages/stdio/CHANGELOG.md](packages/stdio/CHANGELOG.md).
 
+The same release follows a reference update. The public API gained
+`GET /v1/account/usage`, which reports the plan's allowances, and
+`get_account_usage` covers it. The reference also re-worded what a block's
+`properties` mean for an `image` and a `file`, so the descriptions that repeated
+the old wording now follow it.
+
 ### Breaking
 
 - The hosted server no longer offers `upload_file`, and its `content` and `url`
@@ -44,6 +50,11 @@ consumer sees is in [packages/stdio/CHANGELOG.md](packages/stdio/CHANGELOG.md).
   server-wide ceiling: each caller has its own slots.
 - `DYNOMAPPER_API_URL` is read into the hosted config, so the upload route and
   the tool calls cannot be pointed at two different APIs.
+- `get_account_usage`, the tool for the reference's new `GET /v1/account/usage`:
+  the plan and four allowance counters — projects, keywords, page-content
+  storage in bytes and seats — each of them capped, unlimited or unavailable.
+- `resource/api.json` is refreshed to the published reference: 102 paths and 131
+  operations, one more than 0.6.0 covered.
 
 ### Changed
 
@@ -62,6 +73,11 @@ consumer sees is in [packages/stdio/CHANGELOG.md](packages/stdio/CHANGELOG.md).
 - Deleting the hosted branch removed `upload/source.ts` (base64 decoding, URL
   fetching, the private-address blocklist) and the per-transport input-schema
   function, which had one user.
+- The descriptions of a block's `properties` follow the reference: an `image` in
+  the project's image store is `custom: 0` with `imageUrl`, `custom: 1` with
+  `url` and `alt` is for an address the caller supplies, and a `file` reads no
+  `custom` at all. The `url` fields of both store tools and the README's image
+  workflow say the same.
 
 ## [0.6.0] - 2026-11-19
 

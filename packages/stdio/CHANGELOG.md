@@ -9,8 +9,16 @@ predates this file.
 
 The release that moved file uploads off the tool-call channel affects the
 server, not this package: `upload_file` still takes a path here, because this
-process runs on the machine that holds the file. The one consumer-visible change
-is its description.
+process runs on the machine that holds the file. What a consumer sees in this
+version is three changes: its description, a new tool for the plan's
+allowances, and re-worded advice for the keys a content block reads.
+
+### Added
+
+- `get_account_usage`: the plan an account is on and how much of four allowances
+  is in use — projects, tracked keywords, page-content storage in bytes, and
+  seats. Each counter is capped, unlimited, or left out by the plan, and an
+  account with no subscription reports a null plan rather than failing.
 
 ### Changed
 
@@ -18,6 +26,12 @@ is its description.
   read your disk — an upload URL it hands you — so the same tool reads correctly
   wherever it is offered. No argument was removed, added or renamed in this
   package.
+- A block's `properties` are described as the reference describes them: an image
+  in the project's image store is `custom: 0` with `imageUrl`, `custom: 1` with
+  `url` and `alt` is for an address you supply, and a `file` reads no `custom`
+  at all. `get_project_sitemap_item_content`,
+  `replace_project_sitemap_item_content`, `store_content_image` and
+  `store_content_file` say so.
 
 ## [0.6.0] - 2026-11-19
 

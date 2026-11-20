@@ -1,4 +1,11 @@
 import { createServer, type Server } from 'node:http';
+import { randomUUID } from 'node:crypto';
+import { createWriteStream, openAsBlob } from 'node:fs';
+import { unlink } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import * as pathMod from 'node:path';
+import { Transform } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import express, {
   type Express,
   type NextFunction,
@@ -20,17 +27,33 @@ import {
   protectedResourceMetadata,
   publicOrigin,
 } from './protected-resource.js';
+import { PURPOSE_MAX_BYTES, openTicket, ticketKey } from './upload/ticket.js';
+import {
+  UpstreamError,
+  postUpload as defaultPostUpload,
+} from './upload/upstream.js';
 
 export interface HostedAppOptions {
   config: HttpConfig;
   /**
    * Builds one MCP server for one request. Sessions are not kept, so the
    * server and its transport live only as long as the response.
+   *
+   * The request is passed because one tool has to describe a URL the caller
+   * can reach: only the request knows the name and scheme a proxy presented,
+   * and `MCP_PUBLIC_URL` may be unset.
    */
-  createServer: () => McpServer;
+  createServer: (request: Request) => McpServer;
   version: string;
   /** Where request lines go. Defaults to stderr. */
   log?: (line: string) => void;
+  /**
+   * Where an upload is spooled before it is re-sent. Defaults to the OS temp
+   * directory; a test sets it so it can assert the file is gone.
+   */
+  spoolDir?: string;
+  /** Swapped in tests, so the route can be exercised without an API. */
+  postUpload?: typeof defaultPostUpload;
 }
 
 export interface HostedApp {
@@ -290,76 +313,77 @@ interface UploadSlot {
 }
 
 /**
- * Caps uploads in flight per caller, before the body is buffered.
+ * The upload slots, charged explicitly rather than by a body size.
  *
- * The JSON body is parsed before the JSON-RPC call inside it is dispatched, so
- * the only moment at which an upload can be refused for capacity is before it
- * is read. What makes that possible here is that no other call carries this
- * much argument: a declared body over `MCP_UPLOAD_GATE_BYTES` is an upload, and
- * everything smaller is served exactly as it was.
+ * An upload no longer arrives as a JSON body — it is PUT to a ticket — so the
+ * old heuristic (a declared body over N bytes is probably an upload) has
+ * nothing left to recognise. What still needs a bound is the spool: each
+ * in-flight upload holds one temp file of up to the largest purpose, so the
+ * count is what keeps the disk known.
  *
- * Per caller rather than global, so one account cannot occupy every slot, and
- * keyed on the account rather than the address, because a shared egress — an
- * agent platform calling on behalf of many accounts — would otherwise throttle
- * itself. The count is released when the response ends or the connection dies.
+ * Two limits, one number. Per caller, so one caller cannot occupy every slot;
+ * and in total, because the per-caller limit composes badly — ten callers at
+ * two slots each is twenty spools, and the operator sized the disk for two.
+ * Both are `MCP_MAX_UPLOAD_CONCURRENCY`.
  *
- * A caller that sends no `Content-Length` cannot be charged before the read,
- * and is bounded only by the general concurrency guard.
+ * The key is `callerIdentity`, which is a token digest or a JWT subject, never
+ * an account id: nothing in a request carries one, and resolving it would cost
+ * an API call before a byte is read.
  */
-function uploadGate(config: HttpConfig) {
+function uploadSlots(config: HttpConfig) {
   const slots = new Map<string, UploadSlot>();
+  let inFlight = 0;
   const idleLimit = 10 * 60_000;
 
-  return (req: Request, res: Response, next: NextFunction) => {
-    const declared = Number(req.headers['content-length']);
-
-    if (!Number.isFinite(declared) || declared <= config.uploadGateBytes) {
-      next();
-      return;
-    }
-
-    const token = bearerToken(req.headers.authorization);
-    if (!token) {
-      // authGuard has already refused a tokenless request; nothing to charge.
-      next();
-      return;
-    }
-
-    const key = callerIdentity(token);
-    const now = Date.now();
-    const slot = slots.get(key) ?? { inFlight: 0, updatedAt: now };
-    slot.updatedAt = now;
-
-    if (slot.inFlight >= config.maxUploadConcurrency) {
-      res.set('Retry-After', '1');
-      sendJsonRpcError(
-        res,
-        503,
-        -32000,
-        `Too many uploads in flight: the limit is ${config.maxUploadConcurrency} per caller`
-      );
-      return;
-    }
-
-    slot.inFlight += 1;
-    slots.set(key, slot);
-
-    onDone(res, () => {
-      slot.inFlight = Math.max(0, slot.inFlight - 1);
-      slot.updatedAt = Date.now();
-    });
-
+  const sweep = (now: number) => {
     // A caller that stops calling leaves an empty slot behind; drop those when
     // the map grows, never one that is still holding a request.
-    if (slots.size > 5_000) {
-      for (const [candidate, entry] of slots) {
-        if (entry.inFlight === 0 && now - entry.updatedAt > idleLimit) {
-          slots.delete(candidate);
-        }
+    if (slots.size <= 5_000) {
+      return;
+    }
+    for (const [candidate, entry] of slots) {
+      if (entry.inFlight === 0 && now - entry.updatedAt > idleLimit) {
+        slots.delete(candidate);
       }
     }
+  };
 
-    next();
+  return {
+    /**
+     * Charges one slot, answering `503` itself when there is none.
+     *
+     * Returns false when it has already answered, so the caller only has to
+     * stop.
+     */
+    charge(key: string, res: Response): boolean {
+      const now = Date.now();
+      const slot = slots.get(key) ?? { inFlight: 0, updatedAt: now };
+      slot.updatedAt = now;
+
+      if (
+        slot.inFlight >= config.maxUploadConcurrency ||
+        inFlight >= config.maxUploadConcurrency
+      ) {
+        // The answer is the route's to write: this route speaks the upload
+        // vocabulary, not JSON-RPC, and the client reading it is a plain HTTP
+        // caller.
+        res.set('Retry-After', '1');
+        return false;
+      }
+
+      slot.inFlight += 1;
+      inFlight += 1;
+      slots.set(key, slot);
+
+      onDone(res, () => {
+        slot.inFlight = Math.max(0, slot.inFlight - 1);
+        slot.updatedAt = Date.now();
+        inFlight = Math.max(0, inFlight - 1);
+      });
+
+      sweep(now);
+      return true;
+    },
   };
 }
 
@@ -389,10 +413,235 @@ function requestLogger(log: (line: string) => void) {
     const startedAt = Date.now();
     onDone(res, () => {
       log(
-        `[http] ${req.method} ${req.path} ${res.statusCode} ${Date.now() - startedAt}ms`
+        `[http] ${req.method} ${loggedPath(req.path)} ${res.statusCode} ${Date.now() - startedAt}ms`
       );
     });
     next();
+  };
+}
+
+const UPLOAD_PATH = /^\/upload\/[^/]+$/;
+
+/**
+ * The path as the log may carry it.
+ *
+ * `/upload/<ticket>` is a capability: the sealed ticket contains the caller's
+ * token as ciphertext, and a log line is durable. The same reasoning that keeps
+ * `Authorization` out of this file applies to a URL that carries it, so the
+ * ticket is replaced with the route's own parameter name and the line still
+ * says an upload happened and how it ended.
+ */
+function loggedPath(path: string): string {
+  return UPLOAD_PATH.test(path) ? '/upload/:ticket' : path;
+}
+
+/** Thrown into the spool pipeline when the bytes pass the purpose's ceiling. */
+class UploadTooLarge extends Error {
+  constructor() {
+    super('The upload is larger than its purpose allows');
+    this.name = 'UploadTooLarge';
+  }
+}
+
+interface UploadRouteDeps {
+  config: HttpConfig;
+  spoolDir: string;
+  postUpload: typeof defaultPostUpload;
+  uploads: ReturnType<typeof uploadSlots>;
+  log: (line: string) => void;
+}
+
+/**
+ * `PUT /upload/:ticket` — the byte path.
+ *
+ * The ticket is the credential: it is sealed, self-authenticating and carries
+ * the caller's token, so this route needs no `Authorization` header of its own.
+ * That is what makes it usable from an agent sandbox, which has a token for the
+ * MCP endpoint but no way to present one on a bare HTTP call.
+ *
+ * The body is spooled to a temp file as it arrives and then streamed to the
+ * API — never buffered. Two bounds apply before a byte is written: the
+ * purpose's ceiling from the declared `Content-Length`, and a slot from the
+ * shared upload accounting, so the temp disk is bounded by configuration.
+ */
+function uploadRoute({
+  config,
+  spoolDir,
+  postUpload,
+  uploads,
+  log,
+}: UploadRouteDeps) {
+  return async (req: Request, res: Response): Promise<void> => {
+    const reply = (status: number, error: string, message: string) => {
+      if (res.writableEnded || res.destroyed) {
+        return;
+      }
+      res.status(status).json({ error, message });
+    };
+
+    if (config.uploadSecret.length === 0) {
+      reply(
+        503,
+        'upload_ticket_unavailable',
+        'Uploads are not configured on this deployment: MCP_UPLOAD_SECRET is unset, so no ticket can be opened.'
+      );
+      return;
+    }
+
+    const opened = openTicket(
+      String(req.params.ticket),
+      ticketKey(config.uploadSecret)
+    );
+
+    if (!opened.ok) {
+      reply(
+        403,
+        opened.error === 'expired'
+          ? 'upload_ticket_expired'
+          : 'upload_ticket_invalid',
+        opened.error === 'expired'
+          ? 'This upload URL has expired. Call `create_upload_ticket` again to get a new one.'
+          : 'This upload URL is not valid — it may have been truncated, edited or copied incompletely. Call `create_upload_ticket` again to get a new one.'
+      );
+      return;
+    }
+
+    const claims = opened.claims;
+    const ceiling = PURPOSE_MAX_BYTES[claims.purpose];
+    const declared = Number(req.headers['content-length']);
+
+    if (Number.isFinite(declared) && declared > ceiling) {
+      // The client may still be sending; answer, then close rather than absorb
+      // a body that has already been refused. Registered first, because
+      // `finish` can fire before the next line runs.
+      res.once('finish', () => req.destroy());
+      reply(
+        413,
+        'file_too_large',
+        `This upload is ${declared} bytes, over the ${ceiling} bytes a \`${claims.purpose}\` file may have. Nothing was read.`
+      );
+      return;
+    }
+
+    if (!uploads.charge(callerIdentity(claims.token), res)) {
+      reply(
+        503,
+        'upload_too_many',
+        `Too many uploads in flight: the limit is ${config.maxUploadConcurrency} per caller and across the server. Retry after the upload in flight finishes.`
+      );
+      return;
+    }
+
+    const spool = pathMod.join(spoolDir, `dynomapper-upload-${randomUUID()}`);
+    let bytes = 0;
+    const controller = new AbortController();
+    // `close` fires on a finished response too, so only a connection that went
+    // away before the answer counts as a disconnect — otherwise a successful
+    // upload would abort its own upstream request.
+    const onClose = () => {
+      if (!res.writableFinished) {
+        controller.abort();
+      }
+    };
+
+    try {
+      const limiter = new Transform({
+        transform(chunk: Buffer, _encoding, callback) {
+          bytes += chunk.length;
+
+          if (bytes > ceiling) {
+            callback(new UploadTooLarge());
+            return;
+          }
+
+          callback(null, chunk);
+        },
+      });
+
+      await pipeline(
+        req,
+        limiter,
+        createWriteStream(spool, { mode: 0o600, flags: 'wx' })
+      );
+
+      res.once('close', onClose);
+
+      const answer = await postUpload({
+        baseUrl: config.apiBaseUrl,
+        token: claims.token,
+        purpose: claims.purpose,
+        name: claims.name,
+        mimeType: claims.mimeType,
+        blob: await openAsBlob(spool, { type: claims.mimeType }),
+        signal: controller.signal,
+        timeoutMs: config.uploadTimeoutMs,
+        idleTimeoutMs: config.uploadIdleTimeoutMs,
+      });
+
+      log(`[upload] purpose=${claims.purpose} bytes=${bytes} outcome=ok`);
+
+      if (res.writableEnded || res.destroyed) {
+        return;
+      }
+
+      res.status(answer.status);
+      if (answer.contentType) {
+        res.set('Content-Type', answer.contentType);
+      }
+      res.send(answer.body);
+    } catch (error) {
+      if (error instanceof UploadTooLarge) {
+        reply(
+          413,
+          'file_too_large',
+          `The upload passed the ${ceiling} bytes a \`${claims.purpose}\` file may have. Nothing was sent to the API.`
+        );
+        return;
+      }
+
+      if ((error as NodeJS.ErrnoException)?.code === 'ENOSPC') {
+        reply(
+          507,
+          'upload_spool_full',
+          `The server ran out of temp space while spooling this upload, in ${spoolDir}. An operator has to enlarge it.`
+        );
+        return;
+      }
+
+      if (error instanceof UpstreamError) {
+        if (error.code === 'aborted') {
+          // The caller hung up; there is nobody to answer and nothing to log
+          // as a failure.
+          return;
+        }
+
+        reply(
+          error.code === 'upstream_timeout' ? 504 : 502,
+          error.code,
+          error.message
+        );
+        log(
+          `[upload] purpose=${claims.purpose} bytes=${bytes} outcome=error code=${error.code}`
+        );
+        return;
+      }
+
+      if (
+        (error as NodeJS.ErrnoException)?.code === 'ERR_STREAM_PREMATURE_CLOSE'
+      ) {
+        // The client disappeared mid-body; `close` has already fired.
+        return;
+      }
+
+      reply(
+        500,
+        'upload_failed',
+        `The upload failed: ${(error as Error).message}`
+      );
+    } finally {
+      res.off('close', onClose);
+      await unlink(spool).catch(() => {});
+    }
   };
 }
 
@@ -407,6 +656,13 @@ export function createHostedApp(options: HostedAppOptions): HostedApp {
   const { config, createServer, version } = options;
   const log = options.log ?? ((line: string) => console.error(line));
   const transports = new Set<StreamableHTTPServerTransport>();
+  const spoolDir = options.spoolDir ?? tmpdir();
+  const postUpload = options.postUpload ?? defaultPostUpload;
+  // One instance, so `/mcp` and `/upload` share a budget: a second call to the
+  // factory would build a second bucket map, which is a doubled allowance
+  // rather than a shared one.
+  const rateLimit = rateLimitGuard(config);
+  const uploads = uploadSlots(config);
 
   const app = express();
   app.disable('x-powered-by');
@@ -503,19 +759,38 @@ export function createHostedApp(options: HostedAppOptions): HostedApp {
       });
   });
 
+  // The upload route, before the MCP handlers and after the Host guard. It
+  // carries no bearer token — the ticket is the credential — and no body
+  // parser: the bytes are spooled as they arrive.
+  app.put(
+    '/upload/:ticket',
+    rateLimit,
+    uploadRoute({ config, spoolDir, postUpload, uploads, log })
+  );
+
+  // Every other method, so a `GET` on an upload URL reads as "this takes PUT"
+  // rather than as Express's HTML 404 on a server whose errors are JSON.
+  app.all('/upload/:ticket', (req: Request, res: Response) => {
+    res
+      .set('Allow', 'PUT')
+      .status(405)
+      .json({
+        error: 'invalid_request',
+        error_message: `Uploads are sent with PUT, not ${req.method}.`,
+      });
+  });
+
   app.all('/mcp', originGuard(config), authGuard(config));
 
   app.post(
     '/mcp',
-    rateLimitGuard(config),
-    // Both of these run before the body is buffered: refusing for capacity
-    // after reading a request is the cost they exist to avoid, and an upload
-    // is the one request large enough to be recognised by its declared size.
-    uploadGate(config),
+    rateLimit,
+    // Before the body is buffered: refusing for capacity after reading a
+    // request is the cost this exists to avoid.
     concurrencyGuard(config),
     express.json({ limit: config.maxBodyBytes, type: 'application/json' }),
     async (req: Request, res: Response) => {
-      const server = createServer();
+      const server = createServer(req);
       const transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: undefined,
         enableJsonResponse: config.jsonResponses,

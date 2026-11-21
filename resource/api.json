@@ -275,6 +275,530 @@
         }
       }
     },
+    "/v1/account/usage": {
+      "get": {
+        "operationId": "getAccountUsage",
+        "summary": "Get the account’s allowances and usage",
+        "tags": [
+          "Account"
+        ],
+        "description": "Reports the plan’s allowances for the authenticated account and how much of each is already in use, so a client can tell whether the account has room for the work before it starts writing.\n\nFour counters come back. `projects` counts projects that are pending or published; `keywords` counts tracked keywords that are active; `content` is the page-content storage the account occupies; `users` counts the owner and the invites that hold a seat. Only `content` is measured in bytes, and it uses decimal units, so a 10 GB allowance reads `10000000000`.\n\nEach counter is one of three shapes. `capped` gives `used`, `limit` and `remaining`, where `remaining` is the limit minus usage and never negative — an account that was downgraded can sit over its limit. `unlimited` gives `used` and no ceiling. `unavailable` means the plan does not include the allowance and carries no numbers at all, so there is nothing to format into a progress bar.\n\n`plan` is null when the account has no subscription, and every counter then reports `unavailable` — the call still answers `200`, because a missing subscription is a fact about the account rather than a failure to read it.",
+        "security": [
+          {
+            "oauth2": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The account’s allowances and how much of each is in use.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accountId": {
+                      "type": "number",
+                      "description": "ID of the account the allowances belong to."
+                    },
+                    "plan": {
+                      "nullable": true,
+                      "description": "The plan the account is on, or null when the account has no subscription. A null here means every counter reports `unavailable`, not that the account is unlimited.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "nullable": true,
+                          "description": "Name the plan is sold under, for example `Starter`. Null when the plan row carries no name.",
+                          "type": "string"
+                        },
+                        "term": {
+                          "nullable": true,
+                          "description": "Billing term the account signed up for: `monthly` or `annually`. Null when the plan is not sold by term, as a free plan is not.",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "term"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "projects": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "capped"
+                              ],
+                              "description": "The plan sets a ceiling for this allowance, described by `used`, `limit` and `remaining`."
+                            },
+                            "used": {
+                              "type": "number",
+                              "description": "How much of the allowance is in use. Projects are counted as projects, keywords as keywords, seats as seats, and `content` as bytes."
+                            },
+                            "limit": {
+                              "type": "number",
+                              "description": "The ceiling the plan sets."
+                            },
+                            "remaining": {
+                              "type": "number",
+                              "description": "How much of the allowance is left: the limit minus usage. `0` when the account has used it up, and also when a downgrade left it over the limit, so treat `0` as \"nothing more\" rather than as an exact figure."
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "used",
+                            "limit",
+                            "remaining"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "unlimited"
+                              ],
+                              "description": "The plan sets no ceiling for this allowance. Only `used` is reported; there is no limit to read or format."
+                            },
+                            "used": {
+                              "type": "number",
+                              "description": "How much is in use. Nothing stops it growing, which is the difference from `capped`."
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "used"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "unavailable"
+                              ],
+                              "description": "The plan does not include this allowance. No numbers are reported, because there is no limit to measure against and usage of a feature the plan excludes is not work the account can add to."
+                            }
+                          },
+                          "required": [
+                            "kind"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ],
+                      "description": "Projects the account owns that are pending or published, against the plan’s project allowance. An archived project holds no place."
+                    },
+                    "keywords": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "capped"
+                              ],
+                              "description": "The plan sets a ceiling for this allowance, described by `used`, `limit` and `remaining`."
+                            },
+                            "used": {
+                              "type": "number",
+                              "description": "How much of the allowance is in use. Projects are counted as projects, keywords as keywords, seats as seats, and `content` as bytes."
+                            },
+                            "limit": {
+                              "type": "number",
+                              "description": "The ceiling the plan sets."
+                            },
+                            "remaining": {
+                              "type": "number",
+                              "description": "How much of the allowance is left: the limit minus usage. `0` when the account has used it up, and also when a downgrade left it over the limit, so treat `0` as \"nothing more\" rather than as an exact figure."
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "used",
+                            "limit",
+                            "remaining"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "unlimited"
+                              ],
+                              "description": "The plan sets no ceiling for this allowance. Only `used` is reported; there is no limit to read or format."
+                            },
+                            "used": {
+                              "type": "number",
+                              "description": "How much is in use. Nothing stops it growing, which is the difference from `capped`."
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "used"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "unavailable"
+                              ],
+                              "description": "The plan does not include this allowance. No numbers are reported, because there is no limit to measure against and usage of a feature the plan excludes is not work the account can add to."
+                            }
+                          },
+                          "required": [
+                            "kind"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ],
+                      "description": "Tracked keywords that are active, against the plan’s keyword allowance. `unavailable` when the plan does not include keyword tracking — a keyword added without the feature is parked as pending rather than refused, so the count would otherwise suggest room that does not exist."
+                    },
+                    "content": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "capped"
+                              ],
+                              "description": "The plan sets a ceiling for this allowance, described by `used`, `limit` and `remaining`."
+                            },
+                            "used": {
+                              "type": "number",
+                              "description": "How much of the allowance is in use. Projects are counted as projects, keywords as keywords, seats as seats, and `content` as bytes."
+                            },
+                            "limit": {
+                              "type": "number",
+                              "description": "The ceiling the plan sets."
+                            },
+                            "remaining": {
+                              "type": "number",
+                              "description": "How much of the allowance is left: the limit minus usage. `0` when the account has used it up, and also when a downgrade left it over the limit, so treat `0` as \"nothing more\" rather than as an exact figure."
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "used",
+                            "limit",
+                            "remaining"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "unlimited"
+                              ],
+                              "description": "The plan sets no ceiling for this allowance. Only `used` is reported; there is no limit to read or format."
+                            },
+                            "used": {
+                              "type": "number",
+                              "description": "How much is in use. Nothing stops it growing, which is the difference from `capped`."
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "used"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "unavailable"
+                              ],
+                              "description": "The plan does not include this allowance. No numbers are reported, because there is no limit to measure against and usage of a feature the plan excludes is not work the account can add to."
+                            }
+                          },
+                          "required": [
+                            "kind"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ],
+                      "description": "Page-content storage in bytes, which is images and files stored across every project, against the plan’s storage allowance. Bytes are the unit of both `used` and `limit`, in decimal units, so a 10 GB plan reports `10000000000`."
+                    },
+                    "users": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "capped"
+                              ],
+                              "description": "The plan sets a ceiling for this allowance, described by `used`, `limit` and `remaining`."
+                            },
+                            "used": {
+                              "type": "number",
+                              "description": "How much of the allowance is in use. Projects are counted as projects, keywords as keywords, seats as seats, and `content` as bytes."
+                            },
+                            "limit": {
+                              "type": "number",
+                              "description": "The ceiling the plan sets."
+                            },
+                            "remaining": {
+                              "type": "number",
+                              "description": "How much of the allowance is left: the limit minus usage. `0` when the account has used it up, and also when a downgrade left it over the limit, so treat `0` as \"nothing more\" rather than as an exact figure."
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "used",
+                            "limit",
+                            "remaining"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "unlimited"
+                              ],
+                              "description": "The plan sets no ceiling for this allowance. Only `used` is reported; there is no limit to read or format."
+                            },
+                            "used": {
+                              "type": "number",
+                              "description": "How much is in use. Nothing stops it growing, which is the difference from `capped`."
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "used"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "unavailable"
+                              ],
+                              "description": "The plan does not include this allowance. No numbers are reported, because there is no limit to measure against and usage of a feature the plan excludes is not work the account can add to."
+                            }
+                          },
+                          "required": [
+                            "kind"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ],
+                      "description": "Seats in use — the account owner plus every invite that holds a seat, whether the invitee has joined or not — against the plan’s seat allowance."
+                    }
+                  },
+                  "required": [
+                    "accountId",
+                    "plan",
+                    "projects",
+                    "keywords",
+                    "content",
+                    "users"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window. Omitted when the counter store could not be reached and the request was allowed without counting.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Whole seconds until the window ends and the count starts again. Never 0, so a retry always waits.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token was sent, or it is malformed or expired. Send a Personal Access Token or an OAuth2 access token in the `Authorization: Bearer` header.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "description": "Machine-readable reason: `invalid_request` or `invalid_token` on 401, `unauthorized_access` or `feature_disabled` on 403. Note this key carries a **code**, not an HTTP status text — the opposite of its meaning in the other error body. The assignment endpoints omit it and send `message` alone.",
+                      "type": "string"
+                    },
+                    "message": {
+                      "description": "Human-readable explanation of why the request was refused.",
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": {}
+                }
+              }
+            },
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window. Omitted when the counter store could not be reached and the request was allowed without counting.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Whole seconds until the window ends and the count starts again. Never 0, so a retry always waits.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The request allowance for this API key is used up. Every rejected request counts too, so wait for the number of seconds in `Retry-After` before retrying rather than immediately.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "description": "HTTP status code, repeated in the body so a client can read it without inspecting the transport.",
+                      "type": "number"
+                    },
+                    "error": {
+                      "description": "HTTP status text for `statusCode`, for example `Not Found`.",
+                      "type": "string"
+                    },
+                    "message": {
+                      "description": "Human-readable explanation of what was wrong, safe to surface to the person using your integration.",
+                      "type": "string"
+                    },
+                    "code": {
+                      "description": "Stable machine-readable code for this failure, for example `project_not_found` or `rate_limit_exceeded`. Branch on this rather than on `message`, which is prose and may be reworded. Omitted when no code applies.",
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": {}
+                }
+              }
+            },
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window. Omitted when the counter store could not be reached and the request was allowed without counting.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Whole seconds until the window ends and the count starts again. Never 0, so a retry always waits.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Retry-After": {
+                "description": "Whole seconds to wait before retrying. Only sent with a 429, and equal to `RateLimit-Reset`.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The request reached the endpoint but a precondition failed — for example a project that is not in a cancellable state. This API answers those as 500 rather than a 4xx today; see the \"Known issues\" section of the guide.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "description": "HTTP status code, repeated in the body so a client can read it without inspecting the transport.",
+                      "type": "number"
+                    },
+                    "error": {
+                      "description": "HTTP status text for `statusCode`, for example `Not Found`.",
+                      "type": "string"
+                    },
+                    "message": {
+                      "description": "Human-readable explanation of what was wrong, safe to surface to the person using your integration.",
+                      "type": "string"
+                    },
+                    "code": {
+                      "description": "Stable machine-readable code for this failure, for example `project_not_found` or `rate_limit_exceeded`. Branch on this rather than on `message`, which is prose and may be reworded. Omitted when no code applies.",
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": {}
+                }
+              }
+            },
+            "headers": {
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window. Omitted when the counter store could not be reached and the request was allowed without counting.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Whole seconds until the window ends and the count starts again. Never 0, so a retry always waits.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/project": {
       "get": {
         "operationId": "listProjects",
@@ -12293,7 +12817,7 @@
                           "properties": {
                             "type": "object",
                             "additionalProperties": {},
-                            "description": "Settings the block’s type reads, as an object of free-form keys, by type:\n\n- `richtext`, `text` — no keys. The block renders `content` alone.\n- `link` — `url` (required), `text` (the label; `#empty` is rendered when it is missing) and `newTab` (`1` to open the link in a new tab).\n- `image` — `imageUrl` (the picture) for an image that links nowhere, or `custom: 1` with `url` (where the picture links to) and `alt` (its alternative text) for one that does.\n- `file` — `url` (required, the file itself) and `name` (the label; `#empty` is rendered when it is missing).\n- `video` — `url` (required) for a YouTube, Vimeo or Dailymotion page, or a `.mp4`/`.ogg` file, and `text` (the caption below the player); with `custom: 1` the block renders `content` instead and reads neither.\n\nA key a type does not read is kept as stored and has no effect on the markup. The application writes the numeric keys as `0` and `1`, not as JSON booleans."
+                            "description": "Settings the block’s type reads, as an object of free-form keys, by type:\n\n- `richtext`, `text` — no keys. The block renders `content` alone.\n- `link` — `url` (required), `text` (the label; `#empty` is rendered when it is missing) and `newTab` (`1` to open the link in a new tab).\n- `image` — `custom: 0` with `imageUrl` (the address of an image in the project’s image store, including the address `POST /v1/project/{projectId}/content/image` returns for an uploaded image). For an image addressed by a URL the caller supplies, `custom: 1` with `url` (the address of the picture) and `alt` (its alternative text); `imageUrl` is then ignored.\n- `file` — `url` (required, the address of the file, including the address `POST /v1/project/{projectId}/content/file` returns for an uploaded file) and `name` (the label; `#empty` is rendered when it is missing). A `file` reads no other key: `custom` is stored as sent and has no effect on the markup, so send `custom: 0`, and `1` changes nothing.\n- `video` — `url` (required) for a YouTube, Vimeo or Dailymotion page, or a `.mp4`/`.ogg` file, and `text` (the caption below the player); with `custom: 1` the block renders `content` instead and reads neither.\n\nA key a type does not read is kept as stored and has no effect on the markup. The application writes the numeric keys as `0` and `1`, not as JSON booleans."
                           },
                           "settings": {
                             "type": "object",
@@ -12609,7 +13133,7 @@
                           "type": "string"
                         },
                         "properties": {
-                          "description": "The keys the block’s type reads, by type:\n\n- `richtext`, `text` — no keys. The block renders `content` alone.\n- `link` — `url` (required), `text` (the label; `#empty` is rendered when it is missing) and `newTab` (`1` to open the link in a new tab).\n- `image` — `imageUrl` (the picture) for an image that links nowhere, or `custom: 1` with `url` (where the picture links to) and `alt` (its alternative text) for one that does.\n- `file` — `url` (required, the file itself) and `name` (the label; `#empty` is rendered when it is missing).\n- `video` — `url` (required) for a YouTube, Vimeo or Dailymotion page, or a `.mp4`/`.ogg` file, and `text` (the caption below the player); with `custom: 1` the block renders `content` instead and reads neither.\n\nA key a type does not read is kept as stored and has no effect on the markup. The application writes the numeric keys as `0` and `1`, not as JSON booleans.\n\nAn address that reaches an `href` or a `src` must be absolute `http(s)`; a protocol-relative `//` address is accepted too, and a `link` may be a `mailto:` address. A block the application stored with a relative address is refused for the same reason, so a page that holds one has to have that block corrected or left out of the write. Omitted means no keys, which leaves a `link`, `image`, `file` or non-custom `video` with nothing to render. The object may hold up to 64 KB.",
+                          "description": "The keys the block’s type reads, by type:\n\n- `richtext`, `text` — no keys. The block renders `content` alone.\n- `link` — `url` (required), `text` (the label; `#empty` is rendered when it is missing) and `newTab` (`1` to open the link in a new tab).\n- `image` — `custom: 0` with `imageUrl` (the address of an image in the project’s image store, including the address `POST /v1/project/{projectId}/content/image` returns for an uploaded image). For an image addressed by a URL the caller supplies, `custom: 1` with `url` (the address of the picture) and `alt` (its alternative text); `imageUrl` is then ignored.\n- `file` — `url` (required, the address of the file, including the address `POST /v1/project/{projectId}/content/file` returns for an uploaded file) and `name` (the label; `#empty` is rendered when it is missing). A `file` reads no other key: `custom` is stored as sent and has no effect on the markup, so send `custom: 0`, and `1` changes nothing.\n- `video` — `url` (required) for a YouTube, Vimeo or Dailymotion page, or a `.mp4`/`.ogg` file, and `text` (the caption below the player); with `custom: 1` the block renders `content` instead and reads neither.\n\nA key a type does not read is kept as stored and has no effect on the markup. The application writes the numeric keys as `0` and `1`, not as JSON booleans.\n\nAn address that reaches an `href` or a `src` must be absolute `http(s)`; a protocol-relative `//` address is accepted too, and a `link` may be a `mailto:` address. A block the application stored with a relative address is refused for the same reason, so a page that holds one has to have that block corrected or left out of the write. Omitted means no keys, which leaves a `link`, `image`, `file` or non-custom `video` with nothing to render. The object may hold up to 64 KB.",
                           "type": "object",
                           "additionalProperties": {}
                         },
@@ -12708,7 +13232,7 @@
                           "properties": {
                             "type": "object",
                             "additionalProperties": {},
-                            "description": "Settings the block’s type reads, as an object of free-form keys, by type:\n\n- `richtext`, `text` — no keys. The block renders `content` alone.\n- `link` — `url` (required), `text` (the label; `#empty` is rendered when it is missing) and `newTab` (`1` to open the link in a new tab).\n- `image` — `imageUrl` (the picture) for an image that links nowhere, or `custom: 1` with `url` (where the picture links to) and `alt` (its alternative text) for one that does.\n- `file` — `url` (required, the file itself) and `name` (the label; `#empty` is rendered when it is missing).\n- `video` — `url` (required) for a YouTube, Vimeo or Dailymotion page, or a `.mp4`/`.ogg` file, and `text` (the caption below the player); with `custom: 1` the block renders `content` instead and reads neither.\n\nA key a type does not read is kept as stored and has no effect on the markup. The application writes the numeric keys as `0` and `1`, not as JSON booleans."
+                            "description": "Settings the block’s type reads, as an object of free-form keys, by type:\n\n- `richtext`, `text` — no keys. The block renders `content` alone.\n- `link` — `url` (required), `text` (the label; `#empty` is rendered when it is missing) and `newTab` (`1` to open the link in a new tab).\n- `image` — `custom: 0` with `imageUrl` (the address of an image in the project’s image store, including the address `POST /v1/project/{projectId}/content/image` returns for an uploaded image). For an image addressed by a URL the caller supplies, `custom: 1` with `url` (the address of the picture) and `alt` (its alternative text); `imageUrl` is then ignored.\n- `file` — `url` (required, the address of the file, including the address `POST /v1/project/{projectId}/content/file` returns for an uploaded file) and `name` (the label; `#empty` is rendered when it is missing). A `file` reads no other key: `custom` is stored as sent and has no effect on the markup, so send `custom: 0`, and `1` changes nothing.\n- `video` — `url` (required) for a YouTube, Vimeo or Dailymotion page, or a `.mp4`/`.ogg` file, and `text` (the caption below the player); with `custom: 1` the block renders `content` instead and reads neither.\n\nA key a type does not read is kept as stored and has no effect on the markup. The application writes the numeric keys as `0` and `1`, not as JSON booleans."
                           },
                           "settings": {
                             "type": "object",
@@ -13136,7 +13660,7 @@
         "tags": [
           "Sitemap"
         ],
-        "description": "Copies an image the account has uploaded into the project’s image store and returns the public address that a content block points at.\n\nThe image is sent once to `POST /v1/files` with the `sitemap_content_image` purpose, and this call takes the key that upload returned. Adoption is what makes the bytes public and what counts them against the account’s storage: until it runs, the upload waits in staging and expires there. The address is put into a block afterwards by the caller — `properties.imageUrl` for an `image` block, an `<img>` element for a `richtext` block — and a write of the blocks themselves is a separate call.\n\nAn image is stored under the SHA-1 of its bytes, so uploading and adopting the same picture twice returns the same address and stores nothing new. The account’s storage is checked before anything is copied: a plan with no room left refuses the call with `403` and leaves the upload untouched.",
+        "description": "Copies an image the account has uploaded into the project’s image store and returns the public address that a content block points at.\n\nThe image is sent once to `POST /v1/files` with the `sitemap_content_image` purpose, and this call takes the key that upload returned. Adoption is what makes the bytes public and what counts them against the account’s storage: until it runs, the upload waits in staging and expires there. The address is put into a block afterwards by the caller — `properties.imageUrl` with `properties.custom` set to `0` for an `image` block, an `<img>` element for a `richtext` block — and a write of the blocks themselves is a separate call.\n\nAn image is stored under the SHA-1 of its bytes, so uploading and adopting the same picture twice returns the same address and stores nothing new. The account’s storage is checked before anything is copied: a plan with no room left refuses the call with `403` and leaves the upload untouched.",
         "requestBody": {
           "required": true,
           "content": {
@@ -13189,7 +13713,7 @@
                   "properties": {
                     "url": {
                       "type": "string",
-                      "description": "Public address of the stored image. This is the value an `image` block holds as `properties.imageUrl`, and the address a `richtext` block embeds in an `<img>` element."
+                      "description": "Public address of the stored image. This is the value an `image` block holds as `properties.imageUrl`, with `properties.custom` set to `0`, and the address a `richtext` block embeds in an `<img>` element."
                     },
                     "hash": {
                       "type": "string",
@@ -14631,7 +15155,7 @@
         "tags": [
           "Sitemap"
         ],
-        "description": "Copies a file the account has uploaded into the project’s file store and returns the public address and label that a `file` block shows.\n\nThe file is sent once to `POST /v1/files` with the `sitemap_content_file` purpose, and this call takes the key that upload returned. Adoption is what makes the bytes public and what counts them against the account’s storage: until it runs, the upload waits in staging and expires there. The address is put into a block afterwards by the caller, as `properties.url` and `properties.name` of a `file` block, and a write of the blocks themselves is a separate call.\n\nA file is stored under the name it was uploaded with, so adopting a file of the same name again replaces the stored one — the address stays the same and only the difference in size counts. The account’s storage is checked before anything is copied: a plan with no room left refuses the call with `403` and leaves the upload untouched.",
+        "description": "Copies a file the account has uploaded into the project’s file store and returns the public address and label that a `file` block shows.\n\nThe file is sent once to `POST /v1/files` with the `sitemap_content_file` purpose, and this call takes the key that upload returned. Adoption is what makes the bytes public and what counts them against the account’s storage: until it runs, the upload waits in staging and expires there. The address is put into a block afterwards by the caller, as `properties.url` and `properties.name` of a `file` block with `properties.custom` set to `0`, and a write of the blocks themselves is a separate call.\n\nA file is stored under the name it was uploaded with, so adopting a file of the same name again replaces the stored one — the address stays the same and only the difference in size counts. The account’s storage is checked before anything is copied: a plan with no room left refuses the call with `403` and leaves the upload untouched.",
         "requestBody": {
           "required": true,
           "content": {
@@ -14684,7 +15208,7 @@
                   "properties": {
                     "url": {
                       "type": "string",
-                      "description": "Public address of the stored file. This is the value a `file` block holds as `properties.url`."
+                      "description": "Public address of the stored file. This is the value a `file` block holds as `properties.url`, with `properties.custom` set to `0`."
                     },
                     "name": {
                       "type": "string",
@@ -53662,7 +54186,7 @@
   "tags": [
     {
       "name": "Account",
-      "description": "The user the access token belongs to. `GET /v1/user/me` is the cheapest way to check that a token works."
+      "description": "The user the access token belongs to, and the plan allowances that user’s account is working within. `GET /v1/user/me` is the cheapest way to check that a token works; `GET /v1/account/usage` says how much of each allowance is left."
     },
     {
       "name": "Projects",

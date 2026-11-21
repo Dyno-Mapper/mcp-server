@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { get_current_user } from './account/get_current_user.js';
+import { get_account_usage } from './account/get_account_usage.js';
 import { get_projects } from './projects/get_projects.js';
 import { get_project_details } from './projects/get_project_details.js';
 import { create_project_from_url } from './projects/create_project_from_url.js';
@@ -217,6 +218,7 @@ export function inputSchemaFor(tool: Tool): z.ZodObject<any> {
 
 export const tools: Record<string, Tool> = {
   get_current_user: get_current_user as any,
+  get_account_usage: get_account_usage as any,
   get_projects: get_projects as any,
   get_project_details: get_project_details as any,
   create_project_from_url: create_project_from_url as any,

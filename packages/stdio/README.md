@@ -111,6 +111,7 @@ The following tools are available through this MCP server:
 | Tool                                   | Description                                                                   |
 | -------------------------------------- | ----------------------------------------------------------------------------- |
 | `get_current_user`                     | Get current user information and account details                              |
+| `get_account_usage`                    | Get the plan’s allowances and how much of each is in use                      |
 | `get_projects`                         | Get a list of projects                                                        |
 | `get_project_details`                  | Get the details of a project                                                  |
 | `create_project_from_url`              | Create a Project from URL                                                     |
@@ -319,11 +320,13 @@ different prompt.
 2. `store_content_image` with that key copies it into the project's image store and answers the
    public `url`. Uploading alone does not: until the key is used, the upload waits in staging and
    expires there.
-3. Put the `url` in the `properties.imageUrl` of an `image` block, or in an `<img>` element of
-   a `richtext` block, and write the page with `replace_project_sitemap_item_content`.
+3. Put the `url` in the `properties.imageUrl` of an `image` block whose `properties.custom` is
+   `0`, or in an `<img>` element of a `richtext` block, and write the page with
+   `replace_project_sitemap_item_content`.
 
 Files work the same way, with `purpose: 'sitemap_content_file'`, `store_content_file` and a
-`file` block's `properties.url` and `properties.name`. `get_content_images` and
+`file` block's `properties.url` and `properties.name`, with `properties.custom` set to `0`
+because a `file` reads no other key. `get_content_images` and
 `get_content_files` list what a project already holds, so a caller can offer a choice instead of
 another upload. The two deletes remove an address that a page may still point at, because nothing
 counts the references, so change the block in the same round.

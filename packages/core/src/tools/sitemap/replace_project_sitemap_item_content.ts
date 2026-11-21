@@ -45,7 +45,7 @@ export const replace_project_sitemap_item_content = {
             .record(z.string(), z.unknown())
             .optional()
             .describe(
-              'The keys the block’s type reads: `link` reads `url`, `text` and `newTab`; `image` reads `imageUrl`, or `custom: 1` with `url` and `alt`; `file` reads `url` and `name`; `video` reads `url` and `text`, or `custom: 1` with the embed in `content`; `richtext` and `text` read none. A key the type does not read is kept as stored, and an address that reaches an `href` or `src` must be absolute `http(s)`; a protocol-relative `//` address is accepted, and a `link` may be a `mailto:` address. Omitted means no keys, which leaves a `link`, `image`, `file` or non-custom `video` with nothing to render.'
+              'The keys the block’s type reads: `link` reads `url`, `text` and `newTab`; `image` reads `custom: 0` with `imageUrl` for an image in the project’s image store, or `custom: 1` with `url` and `alt` for a picture the caller addresses itself, when `imageUrl` is ignored; `file` reads `url` and `name` and nothing else, so send `custom: 0` and a `1` changes no markup; `video` reads `url` and `text`, or `custom: 1` with the embed in `content`; `richtext` and `text` read none. A key the type does not read is kept as stored, and an address that reaches an `href` or `src` must be absolute `http(s)`; a protocol-relative `//` address is accepted, and a `link` may be a `mailto:` address. Omitted means no keys, which leaves a `link`, `image`, `file` or non-custom `video` with nothing to render.'
             ),
           settings: z
             .object({
